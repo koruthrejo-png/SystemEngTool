@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useStore } from './store'
+import ModuleTree from './components/ModuleTree'
 
 export default function App(): JSX.Element {
   const { project, loadProject } = useStore()
@@ -36,7 +37,9 @@ export default function App(): JSX.Element {
       </header>
       <div className="flex flex-1 overflow-hidden">
         <aside data-testid="panel-modules"
-          className="w-56 shrink-0 border-r border-gray-200 bg-white overflow-y-auto" />
+          className="w-56 shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
+          <ModuleTree />
+        </aside>
         <main data-testid="panel-list"
           className="flex-1 overflow-y-auto border-r border-gray-200 bg-white" />
         <aside data-testid="panel-detail"
