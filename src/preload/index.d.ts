@@ -1,8 +1,2 @@
-import { ElectronAPI } from '@electron-toolkit/preload'
-
-declare global {
-  interface Window {
-    electron: ElectronAPI
-    api: unknown
-  }
-}
+// Preload type declarations — window.api is typed via src/types/api.d.ts
+export {}
