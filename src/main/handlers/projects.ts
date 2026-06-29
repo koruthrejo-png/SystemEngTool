@@ -1,6 +1,8 @@
 import { ipcMain, app, dialog } from 'electron'
 import { openDatabase, getDatabase } from '../db/connection'
 import { initSettings, getLastProjectPath, setLastProjectPath } from '../settings'
+import { seedElementTypes } from './elementTypes'
+import { seedConnectionTypes } from './connectionTypes'
 import type { Project } from '../../types'
 
 function now(): string { return new Date().toISOString() }
@@ -56,6 +58,9 @@ export function registerProjectHandlers(): void {
     if (!filePath) return null
     openDatabase(filePath)
     const project = createProject(name)
+    const db = getDatabase()
+    seedElementTypes(db, project.id)
+    seedConnectionTypes(db, project.id)
     setLastProjectPath(filePath)
     return project
   })
