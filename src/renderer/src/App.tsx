@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from './store'
 import ModuleTree from './components/ModuleTree'
+import RequirementsList from './components/RequirementsList'
 
 export default function App(): JSX.Element {
   const { project, loadProject } = useStore()
@@ -41,7 +42,9 @@ export default function App(): JSX.Element {
           <ModuleTree />
         </aside>
         <main data-testid="panel-list"
-          className="flex-1 overflow-y-auto border-r border-gray-200 bg-white" />
+          className="flex-1 overflow-y-auto border-r border-gray-200 bg-white">
+          <RequirementsList />
+        </main>
         <aside data-testid="panel-detail"
           className="w-80 shrink-0 overflow-y-auto bg-white" />
       </div>
