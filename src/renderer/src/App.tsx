@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useStore } from './store'
 import ModuleTree from './components/ModuleTree'
 import RequirementsList from './components/RequirementsList'
+import RequirementDetail from './components/RequirementDetail'
 
 export default function App(): JSX.Element {
   const { project, loadProject } = useStore()
@@ -46,7 +47,9 @@ export default function App(): JSX.Element {
           <RequirementsList />
         </main>
         <aside data-testid="panel-detail"
-          className="w-80 shrink-0 overflow-y-auto bg-white" />
+          className="w-80 shrink-0 overflow-y-auto bg-white border-l border-gray-100">
+          <RequirementDetail />
+        </aside>
       </div>
     </div>
   )
