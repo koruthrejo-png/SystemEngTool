@@ -38,7 +38,13 @@
       "Bash(bash /Users/rejopckoruth/.claude/plugins/cache/superpowers-dev/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package 7364ae38fced8647a2ce8211345bd0888754834f HEAD)",
       "Bash(bash /Users/rejopckoruth/.claude/plugins/cache/superpowers-dev/superpowers/6.0.3/skills/subagent-driven-development/scripts/task-brief /Users/rejopckoruth/Documents/ReqArch2/docs/superpowers/plans/2026-06-28-requirements-management.md 10)",
       "Bash(bash /Users/rejopckoruth/.claude/plugins/cache/superpowers-dev/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package db3ad26d1ac588db936580afaf660df685a1a93e HEAD)",
-      "Bash(bash /Users/rejopckoruth/.claude/plugins/cache/superpowers-dev/superpowers/6.0.3/skills/subagent-driven-development/scripts/task-brief /Users/rejopckoruth/Documents/ReqArch2/docs/superpowers/plans/2026-06-28-requirements-management.md 11)"
+      "Bash(bash /Users/rejopckoruth/.claude/plugins/cache/superpowers-dev/superpowers/6.0.3/skills/subagent-driven-development/scripts/task-brief /Users/rejopckoruth/Documents/ReqArch2/docs/superpowers/plans/2026-06-28-requirements-management.md 11)",
+      "Bash(npm run *)",
+      "Read(//Users/rejopckoruth/.nvm/versions/**)",
+      "Read(//Users/rejopckoruth/.volta/**)",
+      "Read(//Users/rejopckoruth/.n/**)",
+      "Read(//usr/local/**)",
+      "Skill(run)"
     ]
   }
 }

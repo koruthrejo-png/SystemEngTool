@@ -14,7 +14,7 @@ Plan: docs/superpowers/plans/2026-06-28-requirements-management.md
 - [x] Task 9: App Shell (commits 7364ae3..db3ad26, review clean)
 - [x] Task 10: ModuleTree Component (commits db3ad26..ab4291c, review clean)
 - [x] Task 11: RequirementsList Component (commits e13f271, review clean)
-- [x] Task 12: RequirementDetail Component (pending commit, review clean)
+- [x] Task 12: RequirementDetail Component (commits 4982580, review clean)
 
 ## Minor findings log
 - Task 4: `write()` in settings.ts has no guard for uninitialized settingsPath (unlike `read()`)
