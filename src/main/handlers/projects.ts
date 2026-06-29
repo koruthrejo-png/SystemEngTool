@@ -26,7 +26,18 @@ export function createProject(name: string): Project {
   const result = db
     .prepare('INSERT INTO projects (name, created_at, updated_at) VALUES (?, ?, ?)')
     .run(name, ts, ts)
-  return { id: result.lastInsertRowid as number, name, createdAt: ts, updatedAt: ts }
+  return {
+    id: result.lastInsertRowid as number,
+    name,
+    elemIdPrefix: 'SYS',
+    elemIdPadding: 3,
+    elemNextCounter: 1,
+    connIdPrefix: 'ICN',
+    connIdPadding: 4,
+    connNextCounter: 1,
+    createdAt: ts,
+    updatedAt: ts
+  }
 }
 
 export function getFirstProject(): Project | null {
