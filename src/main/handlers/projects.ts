@@ -6,7 +6,18 @@ import type { Project } from '../../types'
 function now(): string { return new Date().toISOString() }
 
 function rowToProject(row: any): Project {
-  return { id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at }
+  return {
+    id: row.id,
+    name: row.name,
+    elemIdPrefix: row.elem_id_prefix ?? 'SYS',
+    elemIdPadding: row.elem_id_padding ?? 3,
+    elemNextCounter: row.elem_next_counter ?? 1,
+    connIdPrefix: row.conn_id_prefix ?? 'ICN',
+    connIdPadding: row.conn_id_padding ?? 4,
+    connNextCounter: row.conn_next_counter ?? 1,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }
 }
 
 export function createProject(name: string): Project {
