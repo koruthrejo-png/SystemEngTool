@@ -6,7 +6,10 @@ vi.mock('./store', () => ({
   useStore: () => ({
     project: null, modules: [], selectedModuleId: null,
     requirements: [], selectedRequirementId: null,
-    loadProject: vi.fn()
+    activeTab: 'requirements' as const,
+    setActiveTab: vi.fn(),
+    loadProject: vi.fn(),
+    loadArchitecture: vi.fn()
   })
 }))
 
@@ -23,5 +26,16 @@ describe('App', () => {
     render(<App />)
     expect(screen.getByRole('button', { name: /new project/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /open/i })).toBeInTheDocument()
+  })
+
+  it('renders tab bar with Requirements and Architecture tabs', () => {
+    render(<App />)
+    expect(screen.getByRole('button', { name: /requirements/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /architecture/i })).toBeInTheDocument()
+  })
+
+  it('shows requirements panels when Requirements tab is active', () => {
+    render(<App />)
+    expect(screen.getByTestId('panel-modules')).toBeInTheDocument()
   })
 })

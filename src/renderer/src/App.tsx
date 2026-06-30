@@ -5,9 +5,13 @@ import RequirementsList from './components/RequirementsList'
 import RequirementDetail from './components/RequirementDetail'
 
 export default function App(): JSX.Element {
-  const { project, loadProject } = useStore()
+  const { project, activeTab, setActiveTab, loadProject, loadArchitecture } = useStore()
 
   useEffect(() => { loadProject() }, [])
+
+  useEffect(() => {
+    if (activeTab === 'architecture' && project) loadArchitecture()
+  }, [activeTab, project?.id])
 
   async function handleNewProject(): Promise<void> {
     const name = window.prompt('Project name:')
@@ -37,20 +41,42 @@ export default function App(): JSX.Element {
           </button>
         </div>
       </header>
-      <div className="flex flex-1 overflow-hidden">
-        <aside data-testid="panel-modules"
-          className="w-56 shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
-          <ModuleTree />
-        </aside>
-        <main data-testid="panel-list"
-          className="flex-1 overflow-y-auto border-r border-gray-200 bg-white">
-          <RequirementsList />
-        </main>
-        <aside data-testid="panel-detail"
-          className="w-80 shrink-0 overflow-y-auto bg-white border-l border-gray-100">
-          <RequirementDetail />
-        </aside>
+
+      <div className="flex border-b border-gray-200 bg-white shrink-0 px-4">
+        {(['requirements', 'architecture'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px capitalize transition-colors
+              ${activeTab === tab
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            {tab === 'requirements' ? 'Requirements' : 'Architecture'}
+          </button>
+        ))}
       </div>
+
+      {activeTab === 'requirements' ? (
+        <div className="flex flex-1 overflow-hidden">
+          <aside data-testid="panel-modules"
+            className="w-56 shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
+            <ModuleTree />
+          </aside>
+          <main data-testid="panel-list"
+            className="flex-1 overflow-y-auto border-r border-gray-200 bg-white">
+            <RequirementsList />
+          </main>
+          <aside data-testid="panel-detail"
+            className="w-80 shrink-0 overflow-y-auto bg-white border-l border-gray-100">
+            <RequirementDetail />
+          </aside>
+        </div>
+      ) : (
+        <div data-testid="panel-architecture" className="flex flex-1 overflow-hidden">
+          {/* ArchitectureCanvas wired in Task 25 */}
+        </div>
+      )}
     </div>
   )
 }
