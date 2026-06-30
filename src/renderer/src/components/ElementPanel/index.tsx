@@ -72,7 +72,11 @@ export default function ElementPanel(): JSX.Element {
         <Field label="Type">
           <select
             value={elementTypeId ?? ''}
-            onChange={(e) => { setElementTypeId(e.target.value ? Number(e.target.value) : null); save() }}
+            onChange={(e) => {
+              const newTypeId = e.target.value ? Number(e.target.value) : null
+              setElementTypeId(newTypeId)
+              updateElement(el!.id, { name, description: description || null, color: color || null, elementTypeId: newTypeId })
+            }}
             className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
           >
             <option value="">— None —</option>
