@@ -69,7 +69,11 @@ export default function ConnectionPanel(): JSX.Element {
         <Field label="Type">
           <select
             value={connectionTypeId ?? ''}
-            onChange={(e) => { setConnectionTypeId(e.target.value ? Number(e.target.value) : null); save() }}
+            onChange={(e) => {
+              const newTypeId = e.target.value ? Number(e.target.value) : null
+              setConnectionTypeId(newTypeId)
+              updateConnection(conn!.id, { name: name || null, description: description || null, connectionTypeId: newTypeId })
+            }}
             className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
           >
             <option value="">— None —</option>
