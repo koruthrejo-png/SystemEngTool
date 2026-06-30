@@ -3,9 +3,12 @@ import { useStore } from './store'
 import ModuleTree from './components/ModuleTree'
 import RequirementsList from './components/RequirementsList'
 import RequirementDetail from './components/RequirementDetail'
+import ArchitectureCanvas from './components/ArchitectureCanvas'
+import ElementPanel from './components/ElementPanel'
+import ConnectionPanel from './components/ConnectionPanel'
 
 export default function App(): JSX.Element {
-  const { project, activeTab, setActiveTab, loadProject, loadArchitecture } = useStore()
+  const { project, activeTab, setActiveTab, loadProject, loadArchitecture, selectedElementId, selectedConnectionId } = useStore()
 
   useEffect(() => { loadProject() }, [])
 
@@ -74,7 +77,14 @@ export default function App(): JSX.Element {
         </div>
       ) : (
         <div data-testid="panel-architecture" className="flex flex-1 overflow-hidden">
-          {/* ArchitectureCanvas wired in Task 25 */}
+          <div className="flex-1 overflow-hidden">
+            <ArchitectureCanvas />
+          </div>
+          {(selectedElementId !== null || selectedConnectionId !== null) && (
+            <aside className="w-80 shrink-0 border-l border-gray-200 bg-white overflow-y-auto">
+              {selectedElementId !== null ? <ElementPanel /> : <ConnectionPanel />}
+            </aside>
+          )}
         </div>
       )}
     </div>
