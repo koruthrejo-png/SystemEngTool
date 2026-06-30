@@ -65,10 +65,22 @@ export function restoreRequirement(id: number): void {
   getDatabase().prepare('UPDATE requirements SET deleted_at = NULL, updated_at = ? WHERE id = ?').run(now(), id)
 }
 
+export function listRequirementsByProject(projectId: number): Requirement[] {
+  return (getDatabase()
+    .prepare(`
+      SELECT r.* FROM requirements r
+      JOIN modules m ON r.module_id = m.id
+      WHERE m.project_id = ? AND r.deleted_at IS NULL
+      ORDER BY m.id, r.position, r.id
+    `)
+    .all(projectId) as any[]).map(rowToRequirement)
+}
+
 export function registerRequirementHandlers(): void {
   ipcMain.handle('requirements:list', (_e, moduleId: number) => listRequirements(moduleId))
   ipcMain.handle('requirements:create', (_e, input: CreateRequirementInput) => createRequirement(input))
   ipcMain.handle('requirements:update', (_e, id: number, input: UpdateRequirementInput) => updateRequirement(id, input))
   ipcMain.handle('requirements:delete', (_e, id: number) => deleteRequirement(id))
   ipcMain.handle('requirements:restore', (_e, id: number) => restoreRequirement(id))
+  ipcMain.handle('requirements:listByProject', (_e, projectId: number) => listRequirementsByProject(projectId))
 }

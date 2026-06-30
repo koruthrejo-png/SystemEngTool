@@ -5,7 +5,7 @@ import { tmpdir } from 'os'
 import { openDatabase, closeDatabase } from '../db/connection'
 import { createProject } from './projects'
 import { createModule } from './modules'
-import { listRequirements, createRequirement, updateRequirement, deleteRequirement, restoreRequirement } from './requirements'
+import { listRequirements, listRequirementsByProject, createRequirement, updateRequirement, deleteRequirement, restoreRequirement } from './requirements'
 
 describe('requirements handler', () => {
   let tempDir: string
@@ -75,5 +75,16 @@ describe('requirements handler', () => {
     expect(req.acceptanceCriteria).toBe('Tested by inspection')
     expect(req.source).toBe('Customer spec')
     expect(req.rationale).toBe('Safety requirement')
+  })
+
+  it('listRequirementsByProject returns all active requirements across modules', async () => {
+    const { listRequirementsByProject } = await import('./requirements')
+    const project2 = createProject('Other')
+    const mod2 = createModule({ projectId: project2.id, parentId: null, name: 'HRS', idPrefix: 'HRS', idPadding: 4 })
+    createRequirement({ moduleId, text: 'Req A' })
+    createRequirement({ moduleId: mod2.id, text: 'Req B' })
+    const all = listRequirementsByProject(project2.id)
+    expect(all.map((r) => r.text)).toContain('Req B')
+    expect(all.map((r) => r.text)).not.toContain('Req A')
   })
 })
