@@ -3,6 +3,12 @@ import { join } from 'path'
 import { registerProjectHandlers } from './handlers/projects'
 import { registerModuleHandlers } from './handlers/modules'
 import { registerRequirementHandlers } from './handlers/requirements'
+import { registerElementTypeHandlers } from './handlers/elementTypes'
+import { registerConnectionTypeHandlers } from './handlers/connectionTypes'
+import { registerElementHandlers } from './handlers/elements'
+import { registerConnectionHandlers } from './handlers/connections'
+import { registerElementLinkHandlers } from './handlers/elementLinks'
+import { registerConnectionLinkHandlers } from './handlers/connectionLinks'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -24,6 +30,12 @@ app.whenReady().then(() => {
   registerProjectHandlers()
   registerModuleHandlers()
   registerRequirementHandlers()
+  registerElementTypeHandlers()
+  registerConnectionTypeHandlers()
+  registerElementHandlers()
+  registerConnectionHandlers()
+  registerElementLinkHandlers()
+  registerConnectionLinkHandlers()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
