@@ -78,7 +78,15 @@ export function updateElement(id: number, input: UpdateElementInput): Architectu
 
 export function deleteElement(id: number): void {
   const ts = now()
-  getDatabase().prepare('UPDATE architecture_elements SET deleted_at = ?, updated_at = ? WHERE id = ?').run(ts, ts, id)
+  const db = getDatabase()
+  db.transaction(() => {
+    db.prepare(
+      'UPDATE architecture_connections SET deleted_at = ?, updated_at = ? WHERE (source_id = ? OR target_id = ?) AND deleted_at IS NULL'
+    ).run(ts, ts, id, id)
+    db.prepare(
+      'UPDATE architecture_elements SET deleted_at = ?, updated_at = ? WHERE id = ?'
+    ).run(ts, ts, id)
+  })()
 }
 
 export function registerElementHandlers(): void {

@@ -5,6 +5,7 @@ import { tmpdir } from 'os'
 import { openDatabase, closeDatabase } from '../db/connection'
 import { createProject } from './projects'
 import { listElements, createElement, updateElement, deleteElement } from './elements'
+import { createConnection, listConnections } from './connections'
 
 describe('elements handler', () => {
   let tempDir: string
@@ -66,5 +67,13 @@ describe('elements handler', () => {
     updateElement(child.id, { parentId: parent.id })
     const unnested = updateElement(child.id, { parentId: null })
     expect(unnested.parentId).toBeNull()
+  })
+
+  it('deleteElement also soft-deletes connections referencing the element', () => {
+    const src = createElement({ projectId })
+    const tgt = createElement({ projectId })
+    createConnection({ projectId, sourceId: src.id, targetId: tgt.id })
+    deleteElement(src.id)
+    expect(listConnections(projectId)).toHaveLength(0)
   })
 })

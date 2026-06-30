@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ReactFlow, Background, Controls, ReactFlowProvider,
-  useNodesState, useEdgesState, addEdge,
+  useNodesState, useEdgesState,
   type Node, type Edge, type Connection, type NodeChange, type EdgeChange
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -30,19 +30,25 @@ export default function ArchitectureCanvas(): JSX.Element {
     selectElement, selectConnection
   } = useStore()
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(
-    elements.map((el) => elementToNode(el, selectedElementId))
-  )
-  const [edges, setEdges, onEdgesChange] = useEdgesState(
-    connections.map((c) => ({
-      id: String(c.id),
-      source: String(c.sourceId),
-      target: String(c.targetId),
-      type: 'labeled',
-      data: { label: c.name ?? '' },
-      selected: c.id === selectedConnectionId
-    } satisfies Edge))
-  )
+  const [nodes, setNodes, onNodesChange] = useNodesState([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+
+  useEffect(() => {
+    setNodes(elements.map((el) => elementToNode(el, selectedElementId)))
+  }, [elements, selectedElementId])
+
+  useEffect(() => {
+    setEdges(
+      connections.map((c) => ({
+        id: String(c.id),
+        source: String(c.sourceId),
+        target: String(c.targetId),
+        type: 'labeled' as const,
+        data: { label: c.name ?? '' },
+        selected: c.id === selectedConnectionId
+      }))
+    )
+  }, [connections, selectedConnectionId])
 
   const [connectMode, setConnectMode] = useState(false)
 
@@ -53,7 +59,7 @@ export default function ArchitectureCanvas(): JSX.Element {
       sourceId: Number(params.source),
       targetId: Number(params.target)
     })
-    setEdges((eds) => addEdge(params, eds))
+    // edges are re-derived from store via useEffect — no manual setEdges needed
   }, [project, addConnection])
 
   function handleAddBlock(): void {
