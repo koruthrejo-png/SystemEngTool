@@ -66,6 +66,21 @@ export interface UpdateRequirementInput {
   rationale?: string
 }
 
+export interface RequirementCustomField {
+  id: number
+  requirementId: number
+  key: string
+  value: string
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UpdateCustomFieldInput {
+  key?: string
+  value?: string
+}
+
 export interface ElementType {
   id: number
   projectId: number

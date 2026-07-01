@@ -108,6 +108,16 @@ export function runMigrations(db: Database.Database): void {
       requirement_id INTEGER NOT NULL REFERENCES requirements(id),
       PRIMARY KEY (connection_id, requirement_id)
     );
+
+    CREATE TABLE IF NOT EXISTS requirement_custom_fields (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      requirement_id INTEGER NOT NULL REFERENCES requirements(id),
+      key            TEXT    NOT NULL DEFAULT '',
+      value          TEXT    NOT NULL DEFAULT '',
+      position       INTEGER NOT NULL DEFAULT 0,
+      created_at     TEXT    NOT NULL,
+      updated_at     TEXT    NOT NULL
+    );
   `)
 
   addColumnIfMissing(db, 'projects', 'elem_id_prefix',    "TEXT NOT NULL DEFAULT 'SYS'")
