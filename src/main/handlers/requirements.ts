@@ -20,6 +20,12 @@ export function listRequirements(moduleId: number): Requirement[] {
     .all(moduleId) as any[]).map(rowToRequirement)
 }
 
+export function listDeletedRequirements(moduleId: number): Requirement[] {
+  return (getDatabase()
+    .prepare('SELECT * FROM requirements WHERE module_id = ? AND deleted_at IS NOT NULL ORDER BY updated_at DESC')
+    .all(moduleId) as any[]).map(rowToRequirement)
+}
+
 export function createRequirement(input: CreateRequirementInput): Requirement {
   const db = getDatabase()
   const ts = now()
@@ -82,5 +88,6 @@ export function registerRequirementHandlers(): void {
   ipcMain.handle('requirements:update', (_e, id: number, input: UpdateRequirementInput) => updateRequirement(id, input))
   ipcMain.handle('requirements:delete', (_e, id: number) => deleteRequirement(id))
   ipcMain.handle('requirements:restore', (_e, id: number) => restoreRequirement(id))
+  ipcMain.handle('requirements:listDeleted', (_e, moduleId: number) => listDeletedRequirements(moduleId))
   ipcMain.handle('requirements:listByProject', (_e, projectId: number) => listRequirementsByProject(projectId))
 }

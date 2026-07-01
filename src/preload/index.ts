@@ -3,6 +3,7 @@ import type {
   Project, Module, Requirement,
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
+  RequirementCustomField, UpdateCustomFieldInput,
   ElementType, ConnectionType,
   ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, CreateConnectionTypeInput,
@@ -25,11 +26,18 @@ contextBridge.exposeInMainWorld('api', {
   },
   requirements: {
     list: (moduleId: number): Promise<Requirement[]> => ipcRenderer.invoke('requirements:list', moduleId),
+    listDeleted: (moduleId: number): Promise<Requirement[]> => ipcRenderer.invoke('requirements:listDeleted', moduleId),
     listByProject: (projectId: number): Promise<Requirement[]> => ipcRenderer.invoke('requirements:listByProject', projectId),
     create: (input: CreateRequirementInput): Promise<Requirement> => ipcRenderer.invoke('requirements:create', input),
     update: (id: number, input: UpdateRequirementInput): Promise<Requirement> => ipcRenderer.invoke('requirements:update', id, input),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('requirements:delete', id),
     restore: (id: number): Promise<void> => ipcRenderer.invoke('requirements:restore', id)
+  },
+  customFields: {
+    list: (requirementId: number): Promise<RequirementCustomField[]> => ipcRenderer.invoke('customFields:list', requirementId),
+    create: (requirementId: number): Promise<RequirementCustomField> => ipcRenderer.invoke('customFields:create', requirementId),
+    update: (id: number, patch: UpdateCustomFieldInput): Promise<RequirementCustomField> => ipcRenderer.invoke('customFields:update', id, patch),
+    delete: (id: number): Promise<void> => ipcRenderer.invoke('customFields:delete', id)
   },
   elementTypes: {
     list: (projectId: number): Promise<ElementType[]> => ipcRenderer.invoke('elementTypes:list', projectId),
