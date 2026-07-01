@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../store'
 
 export default function RequirementDetail(): JSX.Element {
-  const { selectedRequirementId, requirements, updateRequirement } = useStore()
+  const {
+    selectedRequirementId, requirements, updateRequirement,
+    customFields, loadCustomFields, addCustomField, updateCustomField, removeCustomField
+  } = useStore()
   const req = requirements.find((r) => r.id === selectedRequirementId) ?? null
 
   const [text, setText] = useState('')
@@ -10,13 +13,35 @@ export default function RequirementDetail(): JSX.Element {
   const [source, setSource] = useState('')
   const [rationale, setRationale] = useState('')
 
+  // Local edits for custom fields: keyed by field id
+  const [localFields, setLocalFields] = useState<Record<number, { key: string; value: string }>>({})
+  const newFieldRef = useRef<HTMLInputElement>(null)
+  const prevCustomFieldCount = useRef(customFields.length)
+
   useEffect(() => {
     if (!req) return
     setText(req.text)
     setAc(req.acceptanceCriteria ?? '')
     setSource(req.source ?? '')
     setRationale(req.rationale ?? '')
+    loadCustomFields(req.id)
   }, [req?.id])
+
+  // Sync localFields when customFields change
+  useEffect(() => {
+    setLocalFields((prev) => {
+      const next: Record<number, { key: string; value: string }> = {}
+      for (const f of customFields) {
+        next[f.id] = prev[f.id] ?? { key: f.key, value: f.value }
+      }
+      return next
+    })
+    // Focus label input on newly added field
+    if (customFields.length > prevCustomFieldCount.current) {
+      setTimeout(() => newFieldRef.current?.focus(), 50)
+    }
+    prevCustomFieldCount.current = customFields.length
+  }, [customFields])
 
   if (!req) {
     return (
@@ -33,6 +58,14 @@ export default function RequirementDetail(): JSX.Element {
       source: source || undefined,
       rationale: rationale || undefined
     })
+  }
+
+  function setLocalField(id: number, part: 'key' | 'value', val: string): void {
+    setLocalFields((prev) => ({ ...prev, [id]: { ...prev[id], [part]: val } }))
+  }
+
+  async function handleAddField(): Promise<void> {
+    await addCustomField(req!.id)
   }
 
   return (
@@ -57,6 +90,45 @@ export default function RequirementDetail(): JSX.Element {
           <textarea value={rationale} onChange={(e) => setRationale(e.target.value)} onBlur={save} rows={3}
             className="w-full text-sm px-3 py-2 border border-gray-200 rounded resize-none focus:outline-none focus:ring-1 focus:ring-blue-400" />
         </Field>
+
+        {/* Custom fields */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium uppercase tracking-wide text-gray-400">Custom Fields</label>
+          {customFields.map((field, i) => {
+            const local = localFields[field.id] ?? { key: field.key, value: field.value }
+            const isNewest = i === customFields.length - 1
+            return (
+              <div key={field.id} className="flex gap-2 items-center">
+                <input
+                  ref={isNewest ? newFieldRef : undefined}
+                  value={local.key}
+                  onChange={(e) => setLocalField(field.id, 'key', e.target.value)}
+                  onBlur={() => updateCustomField(field.id, { key: local.key })}
+                  placeholder="Field name"
+                  className="w-2/5 text-sm px-2 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+                <input
+                  value={local.value}
+                  onChange={(e) => setLocalField(field.id, 'value', e.target.value)}
+                  onBlur={() => updateCustomField(field.id, { value: local.value })}
+                  placeholder="Value"
+                  className="flex-1 text-sm px-2 py-1.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+                <button
+                  onClick={() => removeCustomField(field.id)}
+                  className="text-gray-400 hover:text-red-500 text-lg leading-none px-1"
+                  title="Remove field"
+                >
+                  ×
+                </button>
+              </div>
+            )
+          })}
+          <button onClick={handleAddField}
+            className="text-sm text-blue-600 hover:underline">
+            + Add Field
+          </button>
+        </div>
       </div>
     </div>
   )
