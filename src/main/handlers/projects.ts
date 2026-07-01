@@ -1,4 +1,6 @@
-import { ipcMain, app, dialog } from 'electron'
+import { ipcMain, app, dialog, BrowserWindow } from 'electron'
+import { mkdirSync } from 'fs'
+import { join } from 'path'
 import { openDatabase, getDatabase } from '../db/connection'
 import { initSettings, getLastProjectPath, setLastProjectPath } from '../settings'
 import { seedElementTypes } from './elementTypes'
@@ -51,22 +53,28 @@ export function registerProjectHandlers(): void {
   initSettings(app.getPath('userData'))
 
   ipcMain.handle('project:create', async (_e, name: string) => {
-    const { filePath } = await dialog.showSaveDialog({
-      defaultPath: `${name}.reqarch`,
-      filters: [{ name: 'ReqArch Project', extensions: ['reqarch'] }]
-    })
-    if (!filePath) return null
-    openDatabase(filePath)
-    const project = createProject(name)
-    const db = getDatabase()
-    seedElementTypes(db, project.id)
-    seedConnectionTypes(db, project.id)
-    setLastProjectPath(filePath)
-    return project
+    try {
+      const projectsDir = join(app.getPath('userData'), 'projects')
+      mkdirSync(projectsDir, { recursive: true })
+      const safe = name.replace(/[^a-zA-Z0-9_\- ]/g, '_')
+      const filePath = join(projectsDir, `${safe}.reqarch`)
+      openDatabase(filePath)
+      const project = createProject(name)
+      const db = getDatabase()
+      seedElementTypes(db, project.id)
+      seedConnectionTypes(db, project.id)
+      setLastProjectPath(filePath)
+      console.log('[project:create] success:', filePath, project)
+      return project
+    } catch (err) {
+      console.error('[project:create] FAILED:', err)
+      return null
+    }
   })
 
-  ipcMain.handle('project:open', async () => {
-    const { filePaths } = await dialog.showOpenDialog({
+  ipcMain.handle('project:open', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender) ?? BrowserWindow.getAllWindows()[0]
+    const { filePaths } = await dialog.showOpenDialog(win, {
       filters: [{ name: 'ReqArch Project', extensions: ['reqarch'] }],
       properties: ['openFile']
     })

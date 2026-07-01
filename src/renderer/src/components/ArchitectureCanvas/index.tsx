@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import {
   ReactFlow, Background, Controls, ReactFlowProvider,
   useNodesState, useEdgesState,
-  type Node, type Edge, type Connection, type NodeChange, type EdgeChange
+  type Node, type Edge, type Connection
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useStore } from '../../store'
@@ -50,8 +50,6 @@ export default function ArchitectureCanvas(): JSX.Element {
     )
   }, [connections, selectedConnectionId])
 
-  const [connectMode, setConnectMode] = useState(false)
-
   const onConnect = useCallback((params: Connection) => {
     if (!project) return
     addConnection({
@@ -92,6 +90,14 @@ export default function ArchitectureCanvas(): JSX.Element {
     deleted.forEach((e) => removeConnection(Number(e.id)))
   }
 
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm">
+        Open or create a project to start building your architecture.
+      </div>
+    )
+  }
+
   return (
     <ReactFlowProvider>
       <div className="flex flex-col h-full">
@@ -102,16 +108,7 @@ export default function ArchitectureCanvas(): JSX.Element {
           >
             + Block
           </button>
-          <button
-            onClick={() => setConnectMode((v) => !v)}
-            className={`px-3 py-1.5 text-sm rounded border transition-colors
-              ${connectMode ? 'bg-blue-50 border-blue-400 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-          >
-            {connectMode ? 'Connecting…' : '+ Connect'}
-          </button>
-          {connectMode && (
-            <span className="text-xs text-gray-400">Drag from a block handle to another block</span>
-          )}
+          <span className="text-xs text-gray-400">Drag from a block's edge to connect</span>
         </div>
         <div className="flex-1">
           <ReactFlow

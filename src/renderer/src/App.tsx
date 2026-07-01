@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from './store'
 import ModuleTree from './components/ModuleTree'
 import RequirementsList from './components/RequirementsList'
@@ -9,6 +9,9 @@ import ConnectionPanel from './components/ConnectionPanel'
 
 export default function App(): JSX.Element {
   const { project, activeTab, setActiveTab, loadProject, loadArchitecture, selectedElementId, selectedConnectionId } = useStore()
+  const [showNewDialog, setShowNewDialog] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { loadProject() }, [])
 
@@ -16,11 +19,27 @@ export default function App(): JSX.Element {
     if (activeTab === 'architecture' && project) loadArchitecture()
   }, [activeTab, project?.id])
 
+  useEffect(() => {
+    if (showNewDialog) setTimeout(() => inputRef.current?.focus(), 50)
+  }, [showNewDialog])
+
   async function handleNewProject(): Promise<void> {
-    const name = window.prompt('Project name:')
-    if (!name?.trim()) return
-    const p = await window.api.project.create(name.trim())
-    if (p) loadProject()
+    const name = newProjectName.trim()
+    if (!name) return
+    setShowNewDialog(false)
+    setNewProjectName('')
+    console.log('[renderer] calling project:create with', name)
+    const p = await window.api.project.create(name)
+    console.log('[renderer] project:create returned', p)
+    if (p) {
+      console.log('[renderer] fetching modules for project id', p.id)
+      const modules = await window.api.modules.list(p.id)
+      console.log('[renderer] modules:', modules)
+      useStore.setState({ project: p, modules })
+      console.log('[renderer] store updated')
+    } else {
+      console.error('[renderer] project:create returned null/undefined — check main process terminal for error')
+    }
   }
 
   async function handleOpen(): Promise<void> {
@@ -38,12 +57,43 @@ export default function App(): JSX.Element {
             className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-100">
             Open
           </button>
-          <button onClick={handleNewProject}
+          <button onClick={() => setShowNewDialog(true)}
             className="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700">
             New Project
           </button>
         </div>
       </header>
+
+      {showNewDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-80 flex flex-col gap-4">
+            <h2 className="text-sm font-semibold text-gray-800">New Project</h2>
+            <input
+              ref={inputRef}
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleNewProject(); if (e.key === 'Escape') { setShowNewDialog(false); setNewProjectName('') } }}
+              placeholder="Project name"
+              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setShowNewDialog(false); setNewProjectName('') }}
+                className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleNewProject}
+                disabled={!newProjectName.trim()}
+                className="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex border-b border-gray-200 bg-white shrink-0 px-4">
         {(['requirements', 'architecture'] as const).map((tab) => (

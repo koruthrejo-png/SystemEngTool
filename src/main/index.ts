@@ -24,6 +24,7 @@ function createWindow(): void {
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
+  win.webContents.openDevTools()
 }
 
 app.whenReady().then(() => {
