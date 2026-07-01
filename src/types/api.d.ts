@@ -2,6 +2,7 @@ import type {
   Project, Module, Requirement,
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
+  RequirementCustomField, UpdateCustomFieldInput,
   ElementType, ConnectionType,
   ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, CreateConnectionTypeInput,
@@ -26,11 +27,18 @@ declare global {
       }
       requirements: {
         list(moduleId: number): Promise<Requirement[]>
+        listDeleted(moduleId: number): Promise<Requirement[]>
         listByProject(projectId: number): Promise<Requirement[]>
         create(input: CreateRequirementInput): Promise<Requirement>
         update(id: number, input: UpdateRequirementInput): Promise<Requirement>
         delete(id: number): Promise<void>
         restore(id: number): Promise<void>
+      }
+      customFields: {
+        list(requirementId: number): Promise<RequirementCustomField[]>
+        create(requirementId: number): Promise<RequirementCustomField>
+        update(id: number, patch: UpdateCustomFieldInput): Promise<RequirementCustomField>
+        delete(id: number): Promise<void>
       }
       elementTypes: {
         list(projectId: number): Promise<ElementType[]>

@@ -6,7 +6,8 @@ import type {
   ElementType, ConnectionType,
   ArchitectureElement, ArchitectureConnection,
   CreateElementInput, UpdateElementInput,
-  CreateConnectionInput, UpdateConnectionInput
+  CreateConnectionInput, UpdateConnectionInput,
+  RequirementCustomField, UpdateCustomFieldInput
 } from '../../../../types'
 
 interface Store {
@@ -28,6 +29,9 @@ interface Store {
   selectedElementId: number | null
   selectedConnectionId: number | null
   projectRequirements: Requirement[]
+  customFields: RequirementCustomField[]
+  showDeleted: boolean
+  deletedRequirements: Requirement[]
 
   // actions — shared
   loadProject: () => Promise<void>
@@ -42,6 +46,12 @@ interface Store {
   addRequirement: (input: CreateRequirementInput) => Promise<void>
   updateRequirement: (id: number, input: UpdateRequirementInput) => Promise<void>
   removeRequirement: (id: number) => Promise<void>
+  restoreRequirement: (id: number) => Promise<void>
+  setShowDeleted: (show: boolean) => Promise<void>
+  loadCustomFields: (requirementId: number) => Promise<void>
+  addCustomField: (requirementId: number) => Promise<void>
+  updateCustomField: (id: number, patch: UpdateCustomFieldInput) => Promise<void>
+  removeCustomField: (id: number) => Promise<void>
 
   // actions — architecture
   loadArchitecture: () => Promise<void>
@@ -64,6 +74,7 @@ export const useStore = create<Store>((set, get) => ({
   modules: [], selectedModuleId: null, requirements: [], selectedRequirementId: null,
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
+  customFields: [], showDeleted: false, deletedRequirements: [],
 
   loadProject: async () => {
     const project = await window.api.project.getCurrent()
@@ -75,13 +86,13 @@ export const useStore = create<Store>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   selectModule: async (id) => {
-    set({ selectedModuleId: id, requirements: [], selectedRequirementId: null })
+    set({ selectedModuleId: id, requirements: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [] })
     if (id === null) return
     const requirements = await window.api.requirements.list(id)
     set({ requirements })
   },
 
-  selectRequirement: (id) => set({ selectedRequirementId: id }),
+  selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [] }),
 
   addModule: async (input) => {
     const mod = await window.api.modules.create(input)
@@ -117,6 +128,47 @@ export const useStore = create<Store>((set, get) => ({
       requirements: s.requirements.filter((r) => r.id !== id),
       selectedRequirementId: s.selectedRequirementId === id ? null : s.selectedRequirementId
     }))
+  },
+
+  restoreRequirement: async (id) => {
+    await window.api.requirements.restore(id)
+    const { selectedModuleId } = get()
+    if (!selectedModuleId) return
+    const [requirements, deletedRequirements] = await Promise.all([
+      window.api.requirements.list(selectedModuleId),
+      window.api.requirements.listDeleted(selectedModuleId)
+    ])
+    set({ requirements, deletedRequirements, selectedRequirementId: null, customFields: [] })
+  },
+
+  setShowDeleted: async (show) => {
+    set({ showDeleted: show, selectedRequirementId: null, customFields: [] })
+    if (show) {
+      const { selectedModuleId } = get()
+      if (!selectedModuleId) return
+      const deletedRequirements = await window.api.requirements.listDeleted(selectedModuleId)
+      set({ deletedRequirements })
+    }
+  },
+
+  loadCustomFields: async (requirementId) => {
+    const customFields = await window.api.customFields.list(requirementId)
+    set({ customFields })
+  },
+
+  addCustomField: async (requirementId) => {
+    const field = await window.api.customFields.create(requirementId)
+    set((s) => ({ customFields: [...s.customFields, field] }))
+  },
+
+  updateCustomField: async (id, patch) => {
+    const updated = await window.api.customFields.update(id, patch)
+    set((s) => ({ customFields: s.customFields.map((f) => (f.id === id ? updated : f)) }))
+  },
+
+  removeCustomField: async (id) => {
+    await window.api.customFields.delete(id)
+    set((s) => ({ customFields: s.customFields.filter((f) => f.id !== id) }))
   },
 
   loadArchitecture: async () => {
