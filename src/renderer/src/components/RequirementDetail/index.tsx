@@ -24,6 +24,7 @@ export default function RequirementDetail(): JSX.Element {
     setAc(req.acceptanceCriteria ?? '')
     setSource(req.source ?? '')
     setRationale(req.rationale ?? '')
+    prevCustomFieldCount.current = 0
     loadCustomFields(req.id)
   }, [req?.id])
 
