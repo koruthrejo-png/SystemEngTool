@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useStore } from './index'
-import type { ArchitectureElement, ArchitectureConnection } from '../../../../types'
+import type { ArchitectureElement, ArchitectureConnection } from '../../../types'
 
-const mockProject = { id: 1, name: 'Test', createdAt: '', updatedAt: '' }
+const mockProject = {
+  id: 1, name: 'Test',
+  elemIdPrefix: 'ELEM', elemIdPadding: 4, elemNextCounter: 1,
+  connIdPrefix: 'CONN', connIdPadding: 4, connNextCounter: 1,
+  createdAt: '', updatedAt: ''
+}
 const mockModule = { id: 1, projectId: 1, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockReq = { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'Req text', acceptanceCriteria: null, source: null, rationale: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockElement: ArchitectureElement = {

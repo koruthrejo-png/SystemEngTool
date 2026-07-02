@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Module } from '../../../../../types'
+import type { Module } from '../../../../types'
 
 interface Props {
   module: Module

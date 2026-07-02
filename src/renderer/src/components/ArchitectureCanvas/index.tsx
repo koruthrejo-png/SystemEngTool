@@ -12,7 +12,7 @@ import EdgeLabel from './EdgeLabel'
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
 
-function elementToNode(el: import('../../../../../types').ArchitectureElement, selectedId: number | null): Node {
+function elementToNode(el: import('../../../../types').ArchitectureElement, selectedId: number | null): Node {
   return {
     id: String(el.id),
     type: 'block',
@@ -30,8 +30,8 @@ export default function ArchitectureCanvas(): JSX.Element {
     selectElement, selectConnection
   } = useStore()
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
 
   useEffect(() => {
     setNodes(elements.map((el) => elementToNode(el, selectedElementId)))
@@ -78,7 +78,7 @@ export default function ArchitectureCanvas(): JSX.Element {
     selectConnection(null)
   }
 
-  function onNodeDragStop(_: React.MouseEvent, node: Node): void {
+  function onNodeDragStop(_: unknown, node: Node): void {
     updateElement(Number(node.id), { posX: node.position.x, posY: node.position.y })
   }
 

@@ -5,7 +5,7 @@ import { tmpdir } from 'os'
 import { openDatabase, closeDatabase } from '../db/connection'
 import { createProject } from './projects'
 import { createModule } from './modules'
-import { listRequirements, listRequirementsByProject, createRequirement, updateRequirement, deleteRequirement, restoreRequirement } from './requirements'
+import { listRequirements, createRequirement, updateRequirement, deleteRequirement, restoreRequirement } from './requirements'
 
 describe('requirements handler', () => {
   let tempDir: string

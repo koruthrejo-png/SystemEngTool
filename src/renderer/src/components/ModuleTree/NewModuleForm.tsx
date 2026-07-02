@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { CreateModuleInput } from '../../../../../types'
+import type { CreateModuleInput } from '../../../../types'
 
 interface Props {
   projectId: number

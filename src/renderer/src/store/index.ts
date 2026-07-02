@@ -8,7 +8,7 @@ import type {
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
   RequirementCustomField, UpdateCustomFieldInput
-} from '../../../../types'
+} from '../../../types'
 
 interface Store {
   // shared
