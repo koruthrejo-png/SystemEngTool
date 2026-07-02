@@ -27,7 +27,12 @@ const baseStore = {
   loadProject: vi.fn(),
   loadArchitecture: vi.fn(),
   elements: [], connections: [],
-  selectedElementId: null, selectedConnectionId: null
+  selectedElementId: null, selectedConnectionId: null,
+  customFields: [],
+  loadCustomFields: vi.fn(),
+  addCustomField: vi.fn(),
+  updateCustomField: vi.fn(),
+  removeCustomField: vi.fn()
 }
 
 describe('App', () => {
