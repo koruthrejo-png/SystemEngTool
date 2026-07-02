@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from './store'
+import { Button, Input, Panel } from './components/ui'
 import ModuleTree from './components/ModuleTree'
 import RequirementsList from './components/RequirementsList'
 import RequirementDetail from './components/RequirementDetail'
@@ -48,82 +49,64 @@ export default function App(): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 text-gray-900">
-      <header className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shrink-0">
-        <span className="font-semibold text-sm tracking-wide text-gray-800">ReqArch Suite</span>
-        {project && <span className="text-sm text-gray-400">{project.name}</span>}
-        <div className="flex gap-2">
-          <button onClick={handleOpen}
-            className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-100">
-            Open
-          </button>
-          <button onClick={() => setShowNewDialog(true)}
-            className="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700">
-            New Project
-          </button>
+    <div className="flex flex-col h-screen bg-workspace text-ink">
+      <header className="flex items-center h-14 px-4 gap-6 bg-navy shrink-0">
+        <span className="font-semibold text-lg tracking-tight text-white">ReqArch Suite</span>
+        <nav className="flex h-full">
+          {(['requirements', 'architecture'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 h-full text-sm font-medium border-b-[3px] transition-colors
+                ${activeTab === tab
+                  ? 'border-action-tint text-white'
+                  : 'border-transparent text-white/60 hover:text-white'}`}
+            >
+              {tab === 'requirements' ? 'Requirements' : 'Architecture'}
+            </button>
+          ))}
+        </nav>
+        <div className="ml-auto flex items-center gap-3">
+          {project && <span className="text-sm text-white/50">{project.name}</span>}
+          <Button variant="secondary-on-navy" onClick={handleOpen}>Open</Button>
+          <Button onClick={() => setShowNewDialog(true)}>New Project</Button>
         </div>
       </header>
 
       {showNewDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-80 flex flex-col gap-4">
-            <h2 className="text-sm font-semibold text-gray-800">New Project</h2>
-            <input
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/40">
+          <div className="bg-white rounded shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-line p-6 w-80 flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-ink">New Project</h2>
+            <Input
               ref={inputRef}
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleNewProject(); if (e.key === 'Escape') { setShowNewDialog(false); setNewProjectName('') } }}
               placeholder="Project name"
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
             />
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => { setShowNewDialog(false); setNewProjectName('') }}
-                className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50"
-              >
+              <Button variant="secondary" onClick={() => { setShowNewDialog(false); setNewProjectName('') }}>
                 Cancel
-              </button>
-              <button
-                onClick={handleNewProject}
-                disabled={!newProjectName.trim()}
-                className="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              </Button>
+              <Button onClick={handleNewProject} disabled={!newProjectName.trim()}>
                 Create
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex border-b border-gray-200 bg-white shrink-0 px-4">
-        {(['requirements', 'architecture'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px capitalize transition-colors
-              ${activeTab === tab
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-          >
-            {tab === 'requirements' ? 'Requirements' : 'Architecture'}
-          </button>
-        ))}
-      </div>
-
       {activeTab === 'requirements' ? (
         <div className="flex flex-1 overflow-hidden">
-          <aside data-testid="panel-modules"
-            className="w-56 shrink-0 border-r border-gray-200 bg-white overflow-y-auto">
+          <Panel data-testid="panel-modules" className="w-64 shrink-0 border-r overflow-y-auto">
             <ModuleTree />
-          </aside>
-          <main data-testid="panel-list"
-            className="flex-1 overflow-y-auto border-r border-gray-200 bg-white">
+          </Panel>
+          <Panel data-testid="panel-list" className="flex-1 overflow-y-auto border-r">
             <RequirementsList />
-          </main>
-          <aside data-testid="panel-detail"
-            className="w-80 shrink-0 overflow-y-auto bg-white border-l border-gray-100">
+          </Panel>
+          <Panel data-testid="panel-detail" className="w-96 shrink-0 overflow-y-auto">
             <RequirementDetail />
-          </aside>
+          </Panel>
         </div>
       ) : (
         <div data-testid="panel-architecture" className="flex flex-1 overflow-hidden">
@@ -131,9 +114,9 @@ export default function App(): JSX.Element {
             <ArchitectureCanvas />
           </div>
           {(selectedElementId !== null || selectedConnectionId !== null) && (
-            <aside className="w-80 shrink-0 border-l border-gray-200 bg-white overflow-y-auto">
+            <Panel className="w-96 shrink-0 border-l overflow-y-auto">
               {selectedElementId !== null ? <ElementPanel /> : <ConnectionPanel />}
-            </aside>
+            </Panel>
           )}
         </div>
       )}
