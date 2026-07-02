@@ -30,8 +30,8 @@ describe('RequirementsList', () => {
     expect(mockSelectRequirement).toHaveBeenCalledWith(1)
   })
 
-  it('shows + Requirement button', () => {
+  it('shows + New Requirement button', () => {
     render(<RequirementsList />)
-    expect(screen.getByText('+ Requirement')).toBeInTheDocument()
+    expect(screen.getByText('+ New Requirement')).toBeInTheDocument()
   })
 })
