@@ -8,8 +8,8 @@ The app launches, creates/opens projects, manages modules, and all IPC is wired.
 - `better-sqlite3` replaced with Electron ABI 125 prebuilt binary (`electron-v125-darwin-arm64`)
 - `handleNewProject` in `App.tsx` uses the returned project directly instead of calling `loadProject()` again
 
-### Requirements List Improvements — IN PROGRESS (Tasks 1–6 of 7 complete)
-All committed to `main`. Remaining: Task 7 (build + smoke test).
+### Requirements List Improvements — COMPLETE (all 7 tasks, 2026-07-02)
+All committed to `main`. Task 7 done: typecheck clean, built, smoke-tested end-to-end in the running app (Playwright driver at `.claude/skills/run-app/driver.mjs`). Verified: multi-column table, delete/restore cycle, custom fields add/edit/persist/remove, project auto-reopen on relaunch.
 
 **Task 1 — Types + DB migration** (`723ce8e`)
 - `RequirementCustomField` and `UpdateCustomFieldInput` interfaces in `src/types/index.ts`

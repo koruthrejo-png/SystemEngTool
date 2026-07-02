@@ -1,21 +1,15 @@
-# SDD Progress Ledger — ReqArch Suite Architecture Canvas
+# SDD Progress Ledger — Requirements List Improvements
 
-Plan: docs/superpowers/plans/2026-06-29-architecture-canvas.md
-Base commit: c213025
+Plan: docs/superpowers/plans/2026-07-01-requirements-list-improvements.md
+Base commit: 37b7bf7
 
 ## Tasks
-- [x] Task 13: complete (commits c213025..1489ede, review clean after fix)
-- [x] Task 14: complete (commits 1489ede..90d55f8, review clean)
-- [x] Task 15: complete (commits 90d55f8..5a50fc2, review clean)
-- [x] Task 16: complete (commits 5a50fc2..9e2e6ac, review clean — 4 minor: no soft-delete guard in updateElement, updateElement not transactional, silent no-op on delete of nonexistent ID, list test count-only assertion)
-- [x] Task 17: complete (commits 9e2e6ac..c07a3e9, review clean — IMPORTANT plan-mandated: connId overwritable in updateConnection, no uniqueness check; minor: soft-delete guard missing in update, now() duplicated)
-- [x] Task 18: complete (commits c07a3e9..f6cfe11, review clean — minor: rowToRequirement copy-pasted 3x, redundant dynamic import in test, connectionLinks add-test count-only)
-- [x] Task 19: complete (commits f6cfe11..2a997b1, review clean — minor: report said 8 new groups, actually 6 new groups + 1 new method; code correct)
-- [x] Task 20: complete (commits 2a997b1..952c152, review clean — no findings)
-- [x] Task 21: complete (commits 952c152..5db630c, review clean — no findings)
-- [x] Task 22: complete (commits 5db630c..d775cf0, review clean — minor: unused NodeChange/EdgeChange imports, setNodes unused, canvas state one-shot not re-synced to store, connectMode purely instructional)
-- [x] Task 23: complete (commits d775cf0..ff606f1, review needed fix — stale typeId in onChange corrected; vi.stubGlobal deviation approved)
-- [x] Task 24: complete pending fix — stale typeId bug same as Task 23
-- [x] Task 24: complete (commits 94b6baa..20a211b, review needed fix — same stale typeId bug as Task 23, corrected)
-- [x] Task 25: complete (commits 20a211b..7de236f, review clean — minor: shared vi.fn() mock history across tests, not a blocker)
-- [x] Final fix: complete (commit d436375 — canvas store sync via useEffect, onConnect optimistic edge removed, deleteElement cascades to connections; 81 tests passing)
+- [x] Task 1: complete (commits 37b7bf7..723ce8e, review clean)
+- [x] Task 2: complete (commits 723ce8e..3a93a34, review clean)
+- [x] Task 3: complete (commits 3a93a34..7aa49dc, review clean)
+- [x] Task 4: complete (commits 7aa49dc..8d0fab8, review clean — minor: deletedRequirements not cleared on setShowDeleted(false), not a defect)
+- [x] Task 5: complete (commits 8d0fab8..9209971, review clean — minor: onClick could use undefined instead of short-circuit, aria-label missing on × button, trailing space in class join)
+- [x] Task 6: complete (commits 9209971..09ba54c, review needed fix — spurious auto-focus on req switch; fixed by resetting prevCustomFieldCount.current=0 in [req?.id] effect)
+- [x] Task 7: complete (commits 4998731..edaeda0) — typecheck clean, built, smoke-tested in running app via Playwright driver. Verified: table layout + headers, delete ×, show-deleted toggle, restore, custom fields add/edit/persist/remove. Found+fixed: Task 6 focus "fix" was inverted (reset-to-0 caused focus steal on every requirement switch when fields loaded) → replaced count check with explicit focusNewField intent flag (4998731). Also fixed pre-existing tsc errors: type import paths off by one ../ (b6738b8).
+
+## PLAN COMPLETE
