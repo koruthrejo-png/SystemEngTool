@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { CreateModuleInput } from '../../../../types'
+import { Button, Input } from '../ui'
 
 interface Props {
   projectId: number
@@ -20,18 +21,16 @@ export default function NewModuleForm({ projectId, parentId, onSubmit, onCancel 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-2 space-y-1 bg-gray-50 border-t border-gray-100">
-      <input autoFocus placeholder="Module name" value={name} onChange={(e) => setName(e.target.value)}
-        className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
-      <div className="flex gap-1">
-        <input placeholder="ID prefix (e.g. SRS)" value={prefix} onChange={(e) => setPrefix(e.target.value)}
-          className="flex-1 text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
-        <input type="number" min={1} max={8} value={padding} onChange={(e) => setPadding(Number(e.target.value))}
-          title="ID digit count" className="w-14 text-sm px-2 py-1 border border-gray-300 rounded" />
+    <form onSubmit={handleSubmit} className="p-3 space-y-2 bg-workspace border-t border-line">
+      <Input autoFocus placeholder="Module name" value={name} onChange={(e) => setName(e.target.value)} className="!py-1.5" />
+      <div className="flex gap-2">
+        <Input placeholder="ID prefix (e.g. SRS)" value={prefix} onChange={(e) => setPrefix(e.target.value)} className="flex-1 !py-1.5" />
+        <Input type="number" min={1} max={8} value={padding} onChange={(e) => setPadding(Number(e.target.value))}
+          title="ID digit count" className="!w-16 !py-1.5" />
       </div>
-      <div className="flex gap-1">
-        <button type="submit" className="flex-1 text-sm py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Add</button>
-        <button type="button" onClick={onCancel} className="flex-1 text-sm py-1 border border-gray-300 rounded hover:bg-gray-100">Cancel</button>
+      <div className="flex gap-2">
+        <Button type="submit" className="flex-1 !py-1.5">Add</Button>
+        <Button type="button" variant="secondary" onClick={onCancel} className="flex-1 !py-1.5">Cancel</Button>
       </div>
     </form>
   )

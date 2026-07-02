@@ -34,9 +34,9 @@ describe('ModuleTree', () => {
     expect(mockSelectModule).toHaveBeenCalledWith(1)
   })
 
-  it('shows New Module form when + Module is clicked', async () => {
+  it('shows New Module form when + New Module is clicked', async () => {
     render(<ModuleTree />)
-    await userEvent.click(screen.getByText('+ Module'))
+    await userEvent.click(screen.getByText('+ New Module'))
     expect(screen.getByPlaceholderText(/module name/i)).toBeInTheDocument()
   })
 })
