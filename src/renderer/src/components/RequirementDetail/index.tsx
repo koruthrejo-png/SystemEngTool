@@ -16,7 +16,7 @@ export default function RequirementDetail(): JSX.Element {
   // Local edits for custom fields: keyed by field id
   const [localFields, setLocalFields] = useState<Record<number, { key: string; value: string }>>({})
   const newFieldRef = useRef<HTMLInputElement>(null)
-  const prevCustomFieldCount = useRef(customFields.length)
+  const focusNewField = useRef(false)
 
   useEffect(() => {
     if (!req) return
@@ -24,7 +24,7 @@ export default function RequirementDetail(): JSX.Element {
     setAc(req.acceptanceCriteria ?? '')
     setSource(req.source ?? '')
     setRationale(req.rationale ?? '')
-    prevCustomFieldCount.current = 0
+    focusNewField.current = false
     loadCustomFields(req.id)
   }, [req?.id])
 
@@ -37,11 +37,11 @@ export default function RequirementDetail(): JSX.Element {
       }
       return next
     })
-    // Focus label input on newly added field
-    if (customFields.length > prevCustomFieldCount.current) {
+    // Focus label input only when the user just added a field
+    if (focusNewField.current) {
+      focusNewField.current = false
       setTimeout(() => newFieldRef.current?.focus(), 50)
     }
-    prevCustomFieldCount.current = customFields.length
   }, [customFields])
 
   if (!req) {
@@ -66,6 +66,7 @@ export default function RequirementDetail(): JSX.Element {
   }
 
   async function handleAddField(): Promise<void> {
+    focusNewField.current = true
     await addCustomField(req!.id)
   }
 
@@ -94,7 +95,7 @@ export default function RequirementDetail(): JSX.Element {
 
         {/* Custom fields */}
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-gray-400">Custom Fields</label>
+          <label className="block text-xs font-medium uppercase tracking-wide text-gray-400">Custom Fields</label>
           {customFields.map((field, i) => {
             const local = localFields[field.id] ?? { key: field.key, value: field.value }
             const isNewest = i === customFields.length - 1
