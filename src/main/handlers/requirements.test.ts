@@ -87,4 +87,20 @@ describe('requirements handler', () => {
     expect(all.map((r) => r.text)).toContain('Req B')
     expect(all.map((r) => r.text)).not.toContain('Req A')
   })
+
+  it('new requirements default to Draft / Medium / Functional', () => {
+    const req = createRequirement({ moduleId, text: 'X' })
+    expect(req.status).toBe('Draft')
+    expect(req.priority).toBe('Medium')
+    expect(req.reqType).toBe('Functional')
+  })
+
+  it('updateRequirement changes status, priority, and type without touching other fields', () => {
+    const req = createRequirement({ moduleId, text: 'Keep this text' })
+    const updated = updateRequirement(req.id, { status: 'Approved', priority: 'High', reqType: 'Interface' })
+    expect(updated.status).toBe('Approved')
+    expect(updated.priority).toBe('High')
+    expect(updated.reqType).toBe('Interface')
+    expect(updated.text).toBe('Keep this text')
+  })
 })

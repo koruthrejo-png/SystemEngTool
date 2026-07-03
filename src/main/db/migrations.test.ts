@@ -69,4 +69,18 @@ describe('runMigrations', () => {
     expect(cols).toContain('conn_id_padding')
     expect(cols).toContain('conn_next_counter')
   })
+
+  it('adds metadata columns to requirements table', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
+    db = new Database(join(tempDir, 'test.reqarch'))
+    runMigrations(db)
+
+    const cols = (db
+      .prepare("SELECT name FROM pragma_table_info('requirements')")
+      .all() as any[]).map((r) => r.name)
+
+    expect(cols).toContain('status')
+    expect(cols).toContain('priority')
+    expect(cols).toContain('req_type')
+  })
 })

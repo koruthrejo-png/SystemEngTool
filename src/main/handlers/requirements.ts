@@ -9,6 +9,7 @@ function rowToRequirement(row: any): Requirement {
     id: row.id, moduleId: row.module_id, reqId: row.req_id, text: row.text,
     acceptanceCriteria: row.acceptance_criteria ?? null,
     source: row.source ?? null, rationale: row.rationale ?? null,
+    status: row.status, priority: row.priority, reqType: row.req_type,
     position: row.position, deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at, updatedAt: row.updated_at
   }
@@ -51,12 +52,15 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
   const existing = db.prepare('SELECT * FROM requirements WHERE id = ?').get(id) as any
   if (!existing) throw new Error(`Requirement ${id} not found`)
   db.prepare(`
-    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, updated_at = ? WHERE id = ?
+    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, updated_at = ? WHERE id = ?
   `).run(
     input.text ?? existing.text,
     input.acceptanceCriteria !== undefined ? (input.acceptanceCriteria || null) : existing.acceptance_criteria,
     input.source !== undefined ? (input.source || null) : existing.source,
     input.rationale !== undefined ? (input.rationale || null) : existing.rationale,
+    input.status ?? existing.status,
+    input.priority ?? existing.priority,
+    input.reqType ?? existing.req_type,
     now(), id
   )
   return rowToRequirement(db.prepare('SELECT * FROM requirements WHERE id = ?').get(id))

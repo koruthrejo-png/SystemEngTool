@@ -7,6 +7,7 @@ function rowToRequirement(row: any): Requirement {
     id: row.id, moduleId: row.module_id, reqId: row.req_id, text: row.text,
     acceptanceCriteria: row.acceptance_criteria ?? null,
     source: row.source ?? null, rationale: row.rationale ?? null,
+    status: row.status, priority: row.priority, reqType: row.req_type,
     position: row.position, deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at, updatedAt: row.updated_at
   }

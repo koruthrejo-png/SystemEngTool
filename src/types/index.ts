@@ -25,6 +25,15 @@ export interface Module {
   updatedAt: string
 }
 
+export const REQUIREMENT_STATUSES = ['Draft', 'Review', 'Approved', 'Rejected'] as const
+export type RequirementStatus = (typeof REQUIREMENT_STATUSES)[number]
+
+export const REQUIREMENT_PRIORITIES = ['High', 'Medium', 'Low'] as const
+export type RequirementPriority = (typeof REQUIREMENT_PRIORITIES)[number]
+
+export const REQUIREMENT_TYPES = ['Functional', 'Non-Functional', 'Interface', 'Performance', 'Constraint'] as const
+export type RequirementType = (typeof REQUIREMENT_TYPES)[number]
+
 export interface Requirement {
   id: number
   moduleId: number
@@ -33,6 +42,9 @@ export interface Requirement {
   acceptanceCriteria: string | null
   source: string | null
   rationale: string | null
+  status: RequirementStatus
+  priority: RequirementPriority
+  reqType: RequirementType
   position: number
   deletedAt: string | null
   createdAt: string
@@ -64,6 +76,9 @@ export interface UpdateRequirementInput {
   acceptanceCriteria?: string
   source?: string
   rationale?: string
+  status?: RequirementStatus
+  priority?: RequirementPriority
+  reqType?: RequirementType
 }
 
 export interface RequirementCustomField {
