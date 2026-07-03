@@ -54,7 +54,7 @@ Executed via subagent-driven development; per-task briefs/reports and review dif
 ## Environment Notes
 - Electron 31, Node ABI 125
 - `better-sqlite3` native binary is `electron-v125-darwin-arm64` (in `node_modules/better-sqlite3/build/Release/`)
-- `npm`/`node` NOT in shell PATH — export the Logi node22 PATH (see Commands above) or use `./node_modules/.bin/*` directly
+- `npm`/`node` NOT in shell PATH — export PATH="/Users/rejopckoruth/Library/Application Support/Logi/LogiPluginService/PluginHosts/node22/node/bin:$PATH" — or use `./node_modules/.bin/*` directly
 - Preload must be CJS (`format: 'cjs'` in `electron.vite.config.ts`) — configured already
 - Debug log at `/tmp/reqarch-debug.txt` (written from main process + renderer via `window.api.debugLog`)
 - Stitch MCP server available: `claude mcp add stitch --transport http -H "X-Goog-Api-Key: ..." https://stitch.googleapis.com/mcp`

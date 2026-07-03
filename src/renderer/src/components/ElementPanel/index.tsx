@@ -65,7 +65,7 @@ export default function ElementPanel(): JSX.Element {
           <div className="text-lg font-semibold tracking-tight text-ink">Properties</div>
           <span className="text-xs font-mono text-ink-faint">{el.blockId}</span>
         </div>
-        <Button variant="danger-ghost" className="!px-1 text-xs" onClick={() => removeElement(el.id)}>Delete</Button>
+        <Button variant="danger-ghost" className="!px-1 !text-xs" onClick={() => removeElement(el.id)}>Delete</Button>
       </div>
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         <Field label="Name">
@@ -103,7 +103,7 @@ export default function ElementPanel(): JSX.Element {
                   className={`flex items-start gap-2 px-2 py-1.5 rounded border cursor-pointer text-xs transition-colors
                     ${linked ? 'bg-action-tint/40 border-action/40 text-ink' : 'border-line hover:bg-workspace text-ink-muted'}`}>
                   <span className="font-mono shrink-0">{r.reqId}</span>
-                  <span className="line-clamp-1 text-gray-500">{r.text}</span>
+                  <span className="line-clamp-1 text-ink-muted">{r.text}</span>
                   {linked && <span className="ml-auto shrink-0">✓</span>}
                 </div>
               )
