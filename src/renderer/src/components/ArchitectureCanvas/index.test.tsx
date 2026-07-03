@@ -7,6 +7,7 @@ vi.mock('@xyflow/react', () => ({
   ReactFlow: ({ children }: any) => <div data-testid="react-flow">{children}</div>,
   ReactFlowProvider: ({ children }: any) => <>{children}</>,
   Background: () => null,
+  BackgroundVariant: { Dots: 'dots' },
   Controls: () => null,
   MiniMap: () => null,
   useNodesState: () => [[], vi.fn(), vi.fn()],

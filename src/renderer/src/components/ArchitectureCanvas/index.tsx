@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import {
-  ReactFlow, Background, Controls, ReactFlowProvider,
+  ReactFlow, Background, BackgroundVariant, Controls, ReactFlowProvider,
   useNodesState, useEdgesState,
   type Node, type Edge, type Connection
 } from '@xyflow/react'
@@ -8,6 +8,7 @@ import '@xyflow/react/dist/style.css'
 import { useStore } from '../../store'
 import BlockNode, { type BlockNodeData } from './BlockNode'
 import EdgeLabel from './EdgeLabel'
+import { Button } from '../ui'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -92,7 +93,7 @@ export default function ArchitectureCanvas(): JSX.Element {
 
   if (!project) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm">
+      <div className="flex flex-col items-center justify-center h-full text-ink-faint text-sm">
         Open or create a project to start building your architecture.
       </div>
     )
@@ -101,14 +102,9 @@ export default function ArchitectureCanvas(): JSX.Element {
   return (
     <ReactFlowProvider>
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-200 shrink-0">
-          <button
-            onClick={handleAddBlock}
-            className="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
-          >
-            + Block
-          </button>
-          <span className="text-xs text-gray-400">Drag from a block's edge to connect</span>
+        <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
+          <Button onClick={handleAddBlock}>+ Block</Button>
+          <span className="text-xs text-ink-faint">Drag from a block's edge to connect</span>
         </div>
         <div className="flex-1">
           <ReactFlow
@@ -128,7 +124,7 @@ export default function ArchitectureCanvas(): JSX.Element {
             deleteKeyCode="Delete"
             fitView
           >
-            <Background />
+            <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
             <Controls />
           </ReactFlow>
         </div>
