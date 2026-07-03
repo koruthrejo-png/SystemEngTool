@@ -31,6 +31,25 @@ Executed via subagent-driven development; per-task briefs/reports and review dif
 
 **Next feature queue:** see the Deferred Backlog section in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`.
 
+Post-overhaul wrap-up (2026-07-03, after Task 9):
+- Final whole-branch review (5886086..7706d84) came back "ready to merge with fixes"; fixes applied in `5b8aaaa` (last two `text-gray-500` → `text-ink-muted` in ElementPanel/ConnectionPanel, `text-xs` → `!text-xs` on their Delete buttons, handoff PATH note). Reviewer triage of carried-forward minors is recorded at the bottom of `.superpowers/sdd/progress.md`.
+- `87b209a` updated the design spec: backlog items 16 (component library palette) amended, 17 (zoom-controls restyle) added, plus a "Ratified deviations from the mockups" list (ring-action/60, node names text-sm, default RF controls, native rename input).
+
+## Next Step: Requirement Metadata & Filtering (backlog items 1, 2, 3, 6)
+
+**Where I stopped:** mid-preparation for a NEW implementation plan, using the superpowers:writing-plans skill. Nothing for this feature is written or committed yet — no plan file, no code.
+
+**The chosen slice** (one coherent feature, all shown in the Stitch mockups): status field + colored chips (Approved/Draft/Review/Rejected), priority field + chips (High/Medium/Low), requirement Type field (Functional/Non-Functional/…), and the filter toolbar (status, priority, More Filters). Unlike the overhaul this touches the full stack: DB migration, `src/types`, IPC handler, preload, store, and the RequirementsList/RequirementDetail UI.
+
+**Progress so far (context only, redo cheaply):** confirmed key file sizes — `src/main/db/migrations.ts` 129 lines, `src/types/index.ts` 185, `src/main/handlers/requirements.ts` 93, `src/preload/index.ts` 74, `src/renderer/src/store/index.ts` 242, `RequirementsList/index.tsx` 119. Chip/filter styling reference: `docs/superpowers/specs/assets/2026-07-02-ui/requirements-screen.html` (+ design-system.md).
+
+**To resume:**
+1. Invoke superpowers:writing-plans; read the files above (migration pattern, Requirement type, update-handler field whitelist, preload/store action shapes) and the mockup HTML for chip classes.
+2. Write `docs/superpowers/plans/2026-07-03-requirement-metadata.md` — TDD, bite-sized tasks, exact code per task; follow the existing migration/IPC/store patterns (see how custom fields were added: `src/main/handlers/requirementCustomFields.ts` end-to-end).
+3. Execute via superpowers:subagent-driven-development (ledger: append third section to `.superpowers/sdd/progress.md`; process identical to the UI overhaul — brief → implementer → review-package → reviewer → tick).
+
+Deferred minors to fold into this work when touching the relevant files: `vi.clearAllMocks()` in RequirementDetail test's beforeEach; toolbar-behavior tests for RequirementsList (show-deleted toggle, item count, Restore visibility).
+
 ---
 
 ## Key Files
