@@ -93,6 +93,23 @@ describe('store', () => {
     expect(useStore.getState().modules).toHaveLength(0)
     expect(useStore.getState().selectedModuleId).toBeNull()
   })
+
+  it('filter setters update filter state', () => {
+    useStore.getState().setStatusFilter('Approved')
+    useStore.getState().setPriorityFilter('High')
+    useStore.getState().setTypeFilter('Functional')
+    expect(useStore.getState().statusFilter).toBe('Approved')
+    expect(useStore.getState().priorityFilter).toBe('High')
+    expect(useStore.getState().typeFilter).toBe('Functional')
+  })
+
+  it('selectModule resets filters to All', async () => {
+    useStore.setState({ statusFilter: 'Approved', priorityFilter: 'High', typeFilter: 'Functional' })
+    await useStore.getState().selectModule(1)
+    expect(useStore.getState().statusFilter).toBe('All')
+    expect(useStore.getState().priorityFilter).toBe('All')
+    expect(useStore.getState().typeFilter).toBe('All')
+  })
 })
 
 describe('architecture store', () => {

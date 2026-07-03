@@ -7,7 +7,8 @@ import type {
   ArchitectureElement, ArchitectureConnection,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
-  RequirementCustomField, UpdateCustomFieldInput
+  RequirementCustomField, UpdateCustomFieldInput,
+  RequirementStatus, RequirementPriority, RequirementType
 } from '../../../types'
 
 interface Store {
@@ -32,6 +33,9 @@ interface Store {
   customFields: RequirementCustomField[]
   showDeleted: boolean
   deletedRequirements: Requirement[]
+  statusFilter: RequirementStatus | 'All'
+  priorityFilter: RequirementPriority | 'All'
+  typeFilter: RequirementType | 'All'
 
   // actions — shared
   loadProject: () => Promise<void>
@@ -48,6 +52,9 @@ interface Store {
   removeRequirement: (id: number) => Promise<void>
   restoreRequirement: (id: number) => Promise<void>
   setShowDeleted: (show: boolean) => Promise<void>
+  setStatusFilter: (f: RequirementStatus | 'All') => void
+  setPriorityFilter: (f: RequirementPriority | 'All') => void
+  setTypeFilter: (f: RequirementType | 'All') => void
   loadCustomFields: (requirementId: number) => Promise<void>
   addCustomField: (requirementId: number) => Promise<void>
   updateCustomField: (id: number, patch: UpdateCustomFieldInput) => Promise<void>
@@ -75,6 +82,7 @@ export const useStore = create<Store>((set, get) => ({
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
   customFields: [], showDeleted: false, deletedRequirements: [],
+  statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All',
 
   loadProject: async () => {
     const project = await window.api.project.getCurrent()
@@ -86,7 +94,7 @@ export const useStore = create<Store>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   selectModule: async (id) => {
-    set({ selectedModuleId: id, requirements: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [] })
+    set({ selectedModuleId: id, requirements: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All' })
     if (id === null) return
     const requirements = await window.api.requirements.list(id)
     set({ requirements })
@@ -150,6 +158,10 @@ export const useStore = create<Store>((set, get) => ({
       set({ deletedRequirements })
     }
   },
+
+  setStatusFilter: (f) => set({ statusFilter: f }),
+  setPriorityFilter: (f) => set({ priorityFilter: f }),
+  setTypeFilter: (f) => set({ typeFilter: f }),
 
   loadCustomFields: async (requirementId) => {
     const customFields = await window.api.customFields.list(requirementId)
