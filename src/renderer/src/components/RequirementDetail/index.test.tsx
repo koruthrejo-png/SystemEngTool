@@ -15,7 +15,12 @@ vi.mock('../../store', () => ({
       source: 'Customer spec', rationale: 'Performance SLA',
       position: 0, deletedAt: null, createdAt: '', updatedAt: ''
     }],
-    updateRequirement: mockUpdateRequirement
+    updateRequirement: mockUpdateRequirement,
+    customFields: [],
+    loadCustomFields: vi.fn(),
+    addCustomField: vi.fn(),
+    updateCustomField: vi.fn(),
+    removeCustomField: vi.fn()
   })
 }))
 
