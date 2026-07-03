@@ -15,45 +15,21 @@ Plan: `docs/superpowers/plans/2026-07-01-requirements-list-improvements.md`. All
 - RequirementsList rewritten as 6-column CSS grid table (ID | Requirement | Acceptance Criteria | Source | Rationale | actions)
 - Post-review fixes: auto-focus intent flag (`focusNewField`) replaced fragile count-based check (`4998731`); pre-existing tsc import-path errors fixed (`b6738b8`)
 
-### UI Overhaul (Industrial Precision) — IN PROGRESS (4 of 9 tasks done)
-Plan: `docs/superpowers/plans/2026-07-02-ui-overhaul.md` (base commit `5886086`). Spec: `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`. Mockups + Stitch HTML: `docs/superpowers/specs/assets/2026-07-02-ui/`.
-Executed via subagent-driven development; per-task briefs/reports and review diffs live in `.superpowers/sdd/`, ledger in `.superpowers/sdd/progress.md` (second section).
+### UI Overhaul (Industrial Precision) — COMPLETE
+Plan: `docs/superpowers/plans/2026-07-02-ui-overhaul.md` (base commit `5886086`). Spec: `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`. Design source: Stitch project `9610086237141072081`. Mockups + Stitch HTML: `docs/superpowers/specs/assets/2026-07-02-ui/`.
+Executed via subagent-driven development; per-task briefs/reports and review diffs live in `.superpowers/sdd/`, ledger in `.superpowers/sdd/progress.md` (second section). Visually verified in running app via Playwright driver (Task 9).
 
 - [x] **Task 1 — Fonts, Tailwind tokens, test baseline** (`5886086..1710037`) — bundled Inter + JetBrains Mono woff2, semantic color tokens in `tailwind.config.js`, baseline test failures captured
 - [x] **Task 2 — UI primitives** (`1710037..5a6f6c1`) — `src/renderer/src/components/ui/index.tsx`: Button, Input, Textarea, Select, SectionLabel, Panel + tests
 - [x] **Task 3 — App shell** (`5a6f6c1..3d302ff`) — navy shell bar, tabs, modal, panel wrappers in `App.tsx`; review fix in `3d302ff` added `customFields` to App.test.tsx baseStore mock (recovered 4 pre-existing failures)
-- [x] **Task 4 — Module sidebar / Project Explorer** (`3d302ff..15e89c2`) — ModuleTree index/ModuleNode/NewModuleForm restyled with tokens + primitives; button copy now "+ New Module" (test updated); review approved (minor: rename input intentionally native, could adopt Input primitive later)
+- [x] **Task 4 — Module sidebar / Project Explorer** (`3d302ff..15e89c2`) — ModuleTree index/ModuleNode/NewModuleForm restyled with tokens + primitives; button copy now "+ New Module" (test updated)
+- [x] **Task 5 — Requirements Table + Toolbar** (`15e89c2..d73e913`) — RequirementsList: toolbar with module name/show-deleted/item-count/+ New Requirement, zebra rows, mono IDs, green left-accent selection, label-caps column headers
+- [x] **Task 6 — Requirement Details Drawer** (`f8214f2..1eb7972`) — RequirementDetail: "Requirement Details" heading, label-caps field labels, CUSTOM FIELDS section, auto-focus on new field, blur-save, × remove; fixed OOM render loop (stable store mock in tests)
+- [x] **Task 7 — Architecture View** (`1eb7972..7947812`) — ArchitectureCanvas: dot-grid background, navy header-strip block nodes with mono IDs, palette-colored edges with label
+- [x] **Task 8 — Element & Connection Properties Panels** (`7947812..f2a2894`) — ElementPanel + ConnectionPanel: "Properties" heading, label-caps fields (NAME, TYPE, DESCRIPTION, COLOR, REQUIREMENTS)
+- [x] **Task 9 — Build, visual verification, docs** — typechecks clean (node + web); vitest 45 failed / 40 passed (≤ 52 baseline); 3-target build clean; running-app visual + interaction checks all pass
 
-## Next Step: UI Overhaul Task 5 — Requirements Table + Toolbar
-Pick up at **Task 5** in `docs/superpowers/plans/2026-07-02-ui-overhaul.md` (line ~583). Remaining tasks:
-5. Requirements Table + Toolbar (`RequirementsList/index.tsx`)
-6. Requirement Details Drawer (`RequirementDetail/index.tsx`)
-7. Architecture View (`ArchitectureCanvas/index.tsx`, `BlockNode.tsx`, `EdgeLabel.tsx`)
-8. Element & Connection Properties Panels (`ElementPanel`, `ConnectionPanel`)
-9. Build, visual verification, docs
-
-Process for each task: write brief from plan → implementer subagent → commit → generate `review-<base>..<head>.diff` in `.superpowers/sdd/` → reviewer subagent → fix or approve → tick ledger in `.superpowers/sdd/progress.md`.
-
-### Global Constraints (bind all remaining tasks)
-- **Presentation only:** no changes to `src/main/**`, `src/preload/**`, `src/types/**`, `src/renderer/src/store/**`
-- No new npm deps; fonts bundled locally (CSP is `default-src 'self'`)
-- Tailwind only — no inline styles except existing dynamic values (tree indent, node colors, React Flow)
-- Keep every existing `data-testid`; keep save-on-blur everywhere; no "Save Changes" buttons
-- Test rule: **no NEW failures** vs the Task 1 baseline (stale ArchitectureCanvas tests + main-process NODE_MODULE_VERSION failures are pre-existing)
-
-### Commands
-```bash
-export PATH="/Users/rejopckoruth/Library/Application Support/Logi/LogiPluginService/PluginHosts/node22/node/bin:$PATH"
-# Typecheck (expected: no output)
-node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.web.json --composite false
-# Focused renderer tests
-node_modules/.bin/vitest run <file>
-# Build + launch
-./node_modules/.bin/electron-vite build
-"./node_modules/electron/dist/Electron.app/Contents/MacOS/Electron" "./out/main/index.js"
-```
-
-Design tokens (from `docs/superpowers/specs/assets/2026-07-02-ui/design-system.md`): navy `#1a365d` / deep `#002045`, action green `#42682d` (hover `#365424`, tint `#dcefc8`), workspace `#f8fafc`, border `#e2e8f0`, ink `#0b1c30` / muted `#43474e` / faint `#64748b`, error `#ba1a1a`.
+**Next feature queue:** see the Deferred Backlog section in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`.
 
 ---
 
@@ -84,4 +60,4 @@ Design tokens (from `docs/superpowers/specs/assets/2026-07-02-ui/design-system.m
 - Stitch MCP server available: `claude mcp add stitch --transport http -H "X-Goog-Api-Key: ..." https://stitch.googleapis.com/mcp`
 
 ## Branch
-`main` — all work committed directly to main. Latest commit at handoff: `15e89c2` (UI overhaul Task 4).
+`main` — all work committed directly to main. Latest commit at handoff: `f2a2894` (UI overhaul Task 8 — properties panels); Task 9 doc update is the next commit.
