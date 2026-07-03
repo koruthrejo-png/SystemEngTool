@@ -5,23 +5,25 @@ import RequirementDetail from './index'
 
 const mockUpdateRequirement = vi.fn().mockResolvedValue(undefined)
 
+const storeState = {
+  selectedRequirementId: 1,
+  requirements: [{
+    id: 1, moduleId: 1, reqId: 'SRS-0001',
+    text: 'The system shall respond within 2s',
+    acceptanceCriteria: 'Measured under load',
+    source: 'Customer spec', rationale: 'Performance SLA',
+    position: 0, deletedAt: null, createdAt: '', updatedAt: ''
+  }],
+  updateRequirement: mockUpdateRequirement,
+  customFields: [],
+  loadCustomFields: vi.fn(),
+  addCustomField: vi.fn(),
+  updateCustomField: vi.fn(),
+  removeCustomField: vi.fn()
+}
+
 vi.mock('../../store', () => ({
-  useStore: () => ({
-    selectedRequirementId: 1,
-    requirements: [{
-      id: 1, moduleId: 1, reqId: 'SRS-0001',
-      text: 'The system shall respond within 2s',
-      acceptanceCriteria: 'Measured under load',
-      source: 'Customer spec', rationale: 'Performance SLA',
-      position: 0, deletedAt: null, createdAt: '', updatedAt: ''
-    }],
-    updateRequirement: mockUpdateRequirement,
-    customFields: [],
-    loadCustomFields: vi.fn(),
-    addCustomField: vi.fn(),
-    updateCustomField: vi.fn(),
-    removeCustomField: vi.fn()
-  })
+  useStore: () => storeState
 }))
 
 describe('RequirementDetail', () => {
