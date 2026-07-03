@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
+import { Input, Textarea, Select, SectionLabel, Button } from '../ui'
 
 export default function ElementPanel(): JSX.Element {
   const {
@@ -26,7 +27,7 @@ export default function ElementPanel(): JSX.Element {
 
   if (!el) {
     return (
-      <div className="flex items-center justify-center h-full text-sm text-gray-400">
+      <div className="flex items-center justify-center h-full text-sm text-ink-faint">
         Select a block to view properties.
       </div>
     )
@@ -59,54 +60,48 @@ export default function ElementPanel(): JSX.Element {
 
   return (
     <div className="flex flex-col h-full text-sm">
-      <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between shrink-0">
-        <span className="text-xs font-mono text-gray-400">{el.blockId}</span>
-        <button onClick={() => removeElement(el.id)}
-          className="text-xs text-red-400 hover:text-red-600">Delete</button>
+      <div className="px-5 py-3 border-b border-line flex items-center justify-between shrink-0">
+        <div>
+          <div className="text-lg font-semibold tracking-tight text-ink">Properties</div>
+          <span className="text-xs font-mono text-ink-faint">{el.blockId}</span>
+        </div>
+        <Button variant="danger-ghost" className="!px-1 text-xs" onClick={() => removeElement(el.id)}>Delete</Button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
         <Field label="Name">
-          <input value={name} onChange={(e) => setName(e.target.value)} onBlur={save}
-            className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={save} />
         </Field>
         <Field label="Type">
-          <select
+          <Select
             value={elementTypeId ?? ''}
             onChange={(e) => {
               const newTypeId = e.target.value ? Number(e.target.value) : null
               setElementTypeId(newTypeId)
               updateElement(el!.id, { name, description: description || null, color: color || null, elementTypeId: newTypeId })
             }}
-            className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
           >
             <option value="">— None —</option>
             {elementTypes.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
-          </select>
+          </Select>
         </Field>
         <Field label="Description">
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} onBlur={save} rows={3}
-            className="w-full px-3 py-2 border border-gray-200 rounded resize-none focus:outline-none focus:ring-1 focus:ring-blue-400" />
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onBlur={save} rows={3} />
         </Field>
         <Field label="Color">
           <input type="color" value={color || '#ffffff'} onChange={(e) => setColor(e.target.value)} onBlur={save}
-            className="h-9 w-full rounded border border-gray-200 cursor-pointer" />
+            className="h-9 w-full rounded border border-line cursor-pointer" />
         </Field>
         <Field label="Requirements">
-          <input
-            placeholder="Filter by ID or text…"
-            value={reqSearch}
-            onChange={(e) => setReqSearch(e.target.value)}
-            className="w-full px-3 py-1.5 mb-2 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-          />
+          <Input placeholder="Filter by ID or text…" value={reqSearch} onChange={(e) => setReqSearch(e.target.value)} className="!py-1.5 !text-xs mb-2" />
           <div className="space-y-1 max-h-48 overflow-y-auto">
             {filteredReqs.map((r) => {
               const linked = linkedReqIds.includes(r.id)
               return (
                 <div key={r.id} onClick={() => toggleLink(r.id)}
-                  className={`flex items-start gap-2 px-2 py-1.5 rounded cursor-pointer text-xs
-                    ${linked ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700'}`}>
+                  className={`flex items-start gap-2 px-2 py-1.5 rounded border cursor-pointer text-xs transition-colors
+                    ${linked ? 'bg-action-tint/40 border-action/40 text-ink' : 'border-line hover:bg-workspace text-ink-muted'}`}>
                   <span className="font-mono shrink-0">{r.reqId}</span>
                   <span className="line-clamp-1 text-gray-500">{r.text}</span>
                   {linked && <span className="ml-auto shrink-0">✓</span>}
@@ -114,7 +109,7 @@ export default function ElementPanel(): JSX.Element {
               )
             })}
             {filteredReqs.length === 0 && (
-              <div className="text-gray-400 text-xs px-2">No requirements match.</div>
+              <div className="text-ink-faint text-xs px-2">No requirements match.</div>
             )}
           </div>
         </Field>
@@ -125,8 +120,8 @@ export default function ElementPanel(): JSX.Element {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium uppercase tracking-wide text-gray-400">{label}</label>
+    <div className="space-y-1.5">
+      <SectionLabel className="block">{label}</SectionLabel>
       {children}
     </div>
   )
