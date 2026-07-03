@@ -60,4 +60,4 @@ Executed via subagent-driven development; per-task briefs/reports and review dif
 - Stitch MCP server available: `claude mcp add stitch --transport http -H "X-Goog-Api-Key: ..." https://stitch.googleapis.com/mcp`
 
 ## Branch
-`main` — all work committed directly to main. Latest commit at handoff: `f2a2894` (UI overhaul Task 8 — properties panels); Task 9 doc update is the next commit.
+`main` — all work committed directly to main. Latest commit at handoff: `abef8b9` (feat(ui): complete Industrial Precision overhaul — verified in running app).
