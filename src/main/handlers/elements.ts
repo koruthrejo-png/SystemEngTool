@@ -80,6 +80,18 @@ export function deleteElement(id: number): void {
   const ts = now()
   const db = getDatabase()
   db.transaction(() => {
+    const parent = db.prepare(
+      'SELECT parent_id, pos_x, pos_y FROM architecture_elements WHERE id = ?'
+    ).get(id) as any
+    if (parent) {
+      // children become siblings of the deleted element; positions stay
+      // geometrically fixed because both are relative to the same grandparent
+      db.prepare(`
+        UPDATE architecture_elements
+        SET parent_id = ?, pos_x = pos_x + ?, pos_y = pos_y + ?, updated_at = ?
+        WHERE parent_id = ? AND deleted_at IS NULL
+      `).run(parent.parent_id ?? null, parent.pos_x, parent.pos_y, ts, id)
+    }
     db.prepare(
       'UPDATE architecture_connections SET deleted_at = ?, updated_at = ? WHERE (source_id = ? OR target_id = ?) AND deleted_at IS NULL'
     ).run(ts, ts, id, id)

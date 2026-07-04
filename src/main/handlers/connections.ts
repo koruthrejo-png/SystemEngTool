@@ -8,6 +8,7 @@ function rowToConnection(row: any): ArchitectureConnection {
   return {
     id: row.id, projectId: row.project_id, connId: row.conn_id,
     sourceId: row.source_id, targetId: row.target_id,
+    sourceHandle: row.source_handle ?? null, targetHandle: row.target_handle ?? null,
     name: row.name ?? null, connectionTypeId: row.connection_type_id ?? null,
     description: row.description ?? null, deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at, updatedAt: row.updated_at
@@ -36,10 +37,11 @@ export function createConnection(input: CreateConnectionInput): ArchitectureConn
 
     const r = db.prepare(`
       INSERT INTO architecture_connections
-        (project_id, conn_id, source_id, target_id, name, connection_type_id, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (project_id, conn_id, source_id, target_id, source_handle, target_handle, name, connection_type_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       input.projectId, connId, input.sourceId, input.targetId,
+      input.sourceHandle ?? null, input.targetHandle ?? null,
       input.name ?? null, input.connectionTypeId ?? null, ts, ts
     )
     return db.prepare('SELECT * FROM architecture_connections WHERE id = ?').get(r.lastInsertRowid)

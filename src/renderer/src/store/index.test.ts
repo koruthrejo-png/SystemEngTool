@@ -18,6 +18,7 @@ const mockElement: ArchitectureElement = {
 }
 const mockConn: ArchitectureConnection = {
   id: 1, projectId: 1, connId: 'ICN-0001', sourceId: 1, targetId: 2,
+  sourceHandle: null, targetHandle: null,
   name: null, connectionTypeId: null, description: null,
   deletedAt: null, createdAt: '', updatedAt: ''
 }

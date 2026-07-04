@@ -129,4 +129,6 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'requirements', 'status',   "TEXT NOT NULL DEFAULT 'Draft'")
   addColumnIfMissing(db, 'requirements', 'priority', "TEXT NOT NULL DEFAULT 'Medium'")
   addColumnIfMissing(db, 'requirements', 'req_type', "TEXT NOT NULL DEFAULT 'Functional'")
+  addColumnIfMissing(db, 'architecture_connections', 'source_handle', 'TEXT')
+  addColumnIfMissing(db, 'architecture_connections', 'target_handle', 'TEXT')
 }

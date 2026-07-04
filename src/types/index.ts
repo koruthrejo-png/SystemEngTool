@@ -142,6 +142,8 @@ export interface ArchitectureConnection {
   connId: string
   sourceId: number
   targetId: number
+  sourceHandle: string | null
+  targetHandle: string | null
   name: string | null
   connectionTypeId: number | null
   description: string | null
@@ -188,6 +190,8 @@ export interface CreateConnectionInput {
   projectId: number
   sourceId: number
   targetId: number
+  sourceHandle?: string | null
+  targetHandle?: string | null
   name?: string | null
   connectionTypeId?: number | null
 }
