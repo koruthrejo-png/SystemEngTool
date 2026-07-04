@@ -136,7 +136,7 @@ function CanvasInner(): JSX.Element {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
-        <Button onClick={handleAddBlock}>+ Block</Button>
+        <Button onClick={handleAddBlock}>+ Object</Button>
         <span className="text-xs text-ink-faint">Drag from a block's edge to connect</span>
       </div>
       <div className="flex-1">

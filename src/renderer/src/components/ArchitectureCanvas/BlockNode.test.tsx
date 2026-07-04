@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import BlockNode, { type BlockNodeData } from './BlockNode'
 
 const handleSpy = vi.fn()
@@ -41,10 +41,23 @@ describe('BlockNode', () => {
     expect(resizerSpy.mock.calls[0][0].isVisible).toBe(false)
   })
 
-  it('still renders block id and name', () => {
+  it('shows name and id on the coloured bar when named, nothing in the body', () => {
     render(<BlockNode data={data} {...({} as any)} />)
-    expect(screen.getAllByText('SYS-001').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Engine').length).toBeGreaterThan(0)
+    const header = screen.getByTestId('object-header')
+    expect(within(header).getByText('Engine')).toBeInTheDocument()
+    expect(within(header).getByText('SYS-001')).toBeInTheDocument()
+    expect(within(header).queryByText('Object')).not.toBeInTheDocument()
+    expect(screen.getAllByText('SYS-001')).toHaveLength(1)
+    expect(screen.getAllByText('Engine')).toHaveLength(1)
+  })
+
+  it('shows the Object label on the bar and id/Unnamed in the body when unnamed', () => {
+    render(<BlockNode data={{ ...data, label: '' }} {...({} as any)} />)
+    const header = screen.getByTestId('object-header')
+    expect(within(header).getByText('Object')).toBeInTheDocument()
+    expect(within(header).queryByText('SYS-001')).not.toBeInTheDocument()
+    expect(screen.getByText('SYS-001')).toBeInTheDocument()
+    expect(screen.getByText('Unnamed')).toBeInTheDocument()
   })
 
   it('shows a NESTED tag only when the block is embedded', () => {

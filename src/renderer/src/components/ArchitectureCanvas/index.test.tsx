@@ -53,12 +53,12 @@ describe('ArchitectureCanvas', () => {
 
   it('renders the + Block toolbar button', () => {
     render(<ArchitectureCanvas />)
-    expect(screen.getByRole('button', { name: /\+ block/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /\+ object/i })).toBeInTheDocument()
   })
 
   it('calls addElement when + Block is clicked', async () => {
     render(<ArchitectureCanvas />)
-    await userEvent.click(screen.getByRole('button', { name: /\+ block/i }))
+    await userEvent.click(screen.getByRole('button', { name: /\+ object/i }))
     expect(mockAddElement).toHaveBeenCalledWith({ projectId: 1, posX: expect.any(Number), posY: expect.any(Number) })
   })
 

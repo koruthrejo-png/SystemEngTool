@@ -16,6 +16,7 @@ const NAVY = '#1a365d'
 export default memo(function BlockNode({ data }: NodeProps) {
   const d = data as BlockNodeData
   const headerColor = d.color ?? NAVY
+  const named = d.label.trim() !== ''
   return (
     <div
       style={{ borderColor: headerColor }}
@@ -29,20 +30,30 @@ export default memo(function BlockNode({ data }: NodeProps) {
         onResizeEnd={(_, params) => d.onResizeEnd(params.x, params.y, params.width, params.height)}
       />
       <div
+        data-testid="object-header"
         style={{ background: headerColor }}
         className="px-3 py-1 text-[10px] font-bold uppercase tracking-[0.05em] text-white shrink-0 flex items-center justify-between gap-2"
       >
-        <span>Block</span>
-        <span className="flex items-center gap-2 font-medium normal-case tracking-normal text-white/75">
+        {named ? (
+          <span className="flex items-baseline gap-2 min-w-0 normal-case tracking-normal">
+            <span className="text-[11px] truncate">{d.label}</span>
+            <span className="font-mono font-medium text-white/70 shrink-0">{d.blockId}</span>
+          </span>
+        ) : (
+          <span>Object</span>
+        )}
+        <span className="flex items-center gap-2 font-medium normal-case tracking-normal text-white/75 shrink-0">
           {d.nested && <span className="border border-white/40 rounded px-1 leading-tight">Nested</span>}
           {d.childCount > 0 && <span>Contains {d.childCount}</span>}
         </span>
       </div>
       <div className={`px-3 py-2 flex-1 min-h-0 ${d.childCount > 0 ? 'm-1 rounded border border-dashed border-line bg-workspace/60' : ''}`}>
-        <div className="text-[11px] text-ink-faint font-mono mb-0.5">{d.blockId}</div>
-        <div className="font-medium text-ink truncate">
-          {d.label || <span className="text-ink-faint/50 italic">Unnamed</span>}
-        </div>
+        {!named && (
+          <>
+            <div className="text-[11px] text-ink-faint font-mono mb-0.5">{d.blockId}</div>
+            <div className="text-ink-faint/50 italic font-medium">Unnamed</div>
+          </>
+        )}
       </div>
       <Handle id="left" type="source" position={Position.Left} className="!w-2 !h-2 !bg-action" />
       <Handle id="right" type="source" position={Position.Right} className="!w-2 !h-2 !bg-action" />
