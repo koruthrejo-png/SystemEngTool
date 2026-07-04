@@ -166,6 +166,12 @@ describe('store', () => {
     expect(useStore.getState().checkedIds).toEqual([])
     expect(useStore.getState().selectedRequirementId).toBeNull()
   })
+
+  it('removeRequirement prunes the deleted id from checkedIds', async () => {
+    useStore.setState({ requirements: [mockReq], checkedIds: [1, 2], selectedRequirementId: null })
+    await useStore.getState().removeRequirement(1)
+    expect(useStore.getState().checkedIds).toEqual([2])
+  })
 })
 
 describe('architecture store', () => {

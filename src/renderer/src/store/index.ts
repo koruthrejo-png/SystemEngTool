@@ -139,7 +139,8 @@ export const useStore = create<Store>((set, get) => ({
     await window.api.requirements.delete(id)
     set((s) => ({
       requirements: s.requirements.filter((r) => r.id !== id),
-      selectedRequirementId: s.selectedRequirementId === id ? null : s.selectedRequirementId
+      selectedRequirementId: s.selectedRequirementId === id ? null : s.selectedRequirementId,
+      checkedIds: s.checkedIds.filter((c) => c !== id)
     }))
   },
 
