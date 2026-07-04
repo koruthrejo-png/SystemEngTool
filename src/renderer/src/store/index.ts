@@ -246,8 +246,15 @@ export const useStore = create<Store>((set, get) => ({
 
   removeElement: async (id) => {
     await window.api.elements.delete(id)
+    const { project } = get()
+    if (!project) return
+    const [elements, connections] = await Promise.all([
+      window.api.elements.list(project.id),
+      window.api.connections.list(project.id)
+    ])
     set((s) => ({
-      elements: s.elements.filter((e) => e.id !== id),
+      elements,
+      connections,
       selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
     }))
   },

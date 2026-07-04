@@ -202,6 +202,8 @@ describe('architecture store', () => {
   })
 
   it('removeElement removes from list and clears selection', async () => {
+    ;(window.api.elements.list as any).mockResolvedValueOnce([])
+    ;(window.api.connections.list as any).mockResolvedValueOnce([])
     useStore.setState({ elements: [mockElement], selectedElementId: 1 })
     await useStore.getState().removeElement(1)
     expect(useStore.getState().elements).toHaveLength(0)
@@ -213,5 +215,22 @@ describe('architecture store', () => {
     useStore.getState().selectElement(42)
     expect(useStore.getState().selectedElementId).toBe(42)
     expect(useStore.getState().selectedConnectionId).toBeNull()
+  })
+
+  it('removeElement re-syncs elements and connections from the DB (reparented children)', async () => {
+    const child = { ...mockElement, id: 2, parentId: null, posX: 320, posY: 320 }
+    ;(window.api.elements.list as any).mockResolvedValue([child])
+    ;(window.api.connections.list as any).mockResolvedValue([])
+    useStore.setState({
+      project: { id: 1 } as any,
+      elements: [mockElement, { ...mockElement, id: 2, parentId: mockElement.id, posX: 20, posY: 20 }],
+      connections: [mockConn],
+      selectedElementId: mockElement.id
+    })
+    await useStore.getState().removeElement(mockElement.id)
+    expect(window.api.elements.delete).toHaveBeenCalledWith(mockElement.id)
+    expect(useStore.getState().elements).toEqual([child])
+    expect(useStore.getState().connections).toEqual([])
+    expect(useStore.getState().selectedElementId).toBeNull()
   })
 })
