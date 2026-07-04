@@ -39,7 +39,12 @@ beforeEach(() => {
     setShowDeleted: vi.fn().mockResolvedValue(undefined),
     setStatusFilter: vi.fn(),
     setPriorityFilter: vi.fn(),
-    setTypeFilter: vi.fn()
+    setTypeFilter: vi.fn(),
+    checkedIds: [],
+    toggleChecked: vi.fn(),
+    setChecked: vi.fn(),
+    updateRequirements: vi.fn().mockResolvedValue(undefined),
+    removeRequirements: vi.fn().mockResolvedValue(undefined)
   })
 })
 
@@ -110,5 +115,72 @@ describe('RequirementsList', () => {
     render(<RequirementsList />)
     await userEvent.click(screen.getAllByLabelText('Delete requirement')[0])
     expect(storeState.removeRequirement).toHaveBeenCalledWith(1)
+  })
+
+  it('renders a checkbox per row and a select-all in the header', () => {
+    render(<RequirementsList />)
+    expect(screen.getByLabelText('Select SRS-0001')).toBeInTheDocument()
+    expect(screen.getByLabelText('Select SRS-0002')).toBeInTheDocument()
+    expect(screen.getByLabelText('Select all')).toBeInTheDocument()
+  })
+
+  it('row checkbox calls toggleChecked without selecting the row', async () => {
+    render(<RequirementsList />)
+    await userEvent.click(screen.getByLabelText('Select SRS-0001'))
+    expect(storeState.toggleChecked).toHaveBeenCalledWith(1)
+    expect(storeState.selectRequirement).not.toHaveBeenCalled()
+  })
+
+  it('select-all checks all displayed rows, unchecks when all checked', async () => {
+    render(<RequirementsList />)
+    await userEvent.click(screen.getByLabelText('Select all'))
+    expect(storeState.setChecked).toHaveBeenCalledWith([1, 2])
+
+    storeState.setChecked.mockClear()
+    storeState.checkedIds = [1, 2]
+    render(<RequirementsList />)
+    await userEvent.click(screen.getAllByLabelText('Select all')[1])
+    expect(storeState.setChecked).toHaveBeenCalledWith([])
+  })
+
+  it('bulk bar hidden when nothing checked, shows count when checked', () => {
+    render(<RequirementsList />)
+    expect(screen.queryByText(/selected/)).not.toBeInTheDocument()
+
+    storeState.checkedIds = [1]
+    render(<RequirementsList />)
+    expect(screen.getByText('1 selected')).toBeInTheDocument()
+  })
+
+  it('bulk set-status applies to checked ids', async () => {
+    storeState.checkedIds = [1, 2]
+    render(<RequirementsList />)
+    await userEvent.selectOptions(screen.getByLabelText('Set status'), 'Approved')
+    expect(storeState.updateRequirements).toHaveBeenCalledWith([1, 2], { status: 'Approved' })
+  })
+
+  it('bulk set-priority applies to checked ids', async () => {
+    storeState.checkedIds = [1]
+    render(<RequirementsList />)
+    await userEvent.selectOptions(screen.getByLabelText('Set priority'), 'Low')
+    expect(storeState.updateRequirements).toHaveBeenCalledWith([1], { priority: 'Low' })
+  })
+
+  it('Delete selected and Clear act on the checked set', async () => {
+    storeState.checkedIds = [1, 2]
+    render(<RequirementsList />)
+    await userEvent.click(screen.getByText('Delete selected'))
+    expect(storeState.removeRequirements).toHaveBeenCalledWith([1, 2])
+    await userEvent.click(screen.getByText('Clear'))
+    expect(storeState.setChecked).toHaveBeenCalledWith([])
+  })
+
+  it('no checkboxes or bulk bar in the deleted view', () => {
+    storeState.showDeleted = true
+    storeState.checkedIds = [1]
+    storeState.deletedRequirements = [{ ...req1, id: 9, reqId: 'SRS-0009', deletedAt: '2026-07-04' }]
+    render(<RequirementsList />)
+    expect(screen.queryByLabelText(/Select /)).not.toBeInTheDocument()
+    expect(screen.queryByText(/selected/)).not.toBeInTheDocument()
   })
 })

@@ -2,7 +2,7 @@ import { useStore } from '../../store'
 import { Button, Chip, SectionLabel, Select } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
 
-const GRID = 'grid grid-cols-[90px_1.5fr_1fr_90px_1fr_100px_92px_80px_36px]'
+const GRID = 'grid grid-cols-[28px_90px_1.5fr_1fr_90px_1fr_100px_92px_80px_36px]'
 
 export default function RequirementsList(): JSX.Element {
   const {
@@ -12,7 +12,9 @@ export default function RequirementsList(): JSX.Element {
     priorityFilter, setPriorityFilter,
     typeFilter, setTypeFilter,
     selectedRequirementId, selectRequirement,
-    addRequirement, removeRequirement, restoreRequirement
+    addRequirement, removeRequirement, restoreRequirement,
+    checkedIds, toggleChecked, setChecked,
+    updateRequirements, removeRequirements
   } = useStore()
 
   if (!selectedModuleId) {
@@ -29,6 +31,7 @@ export default function RequirementsList(): JSX.Element {
     (priorityFilter === 'All' || r.priority === priorityFilter) &&
     (typeFilter === 'All' || r.reqType === typeFilter)
   )
+  const allChecked = displayed.length > 0 && displayed.every((r) => checkedIds.includes(r.id))
 
   async function handleAdd(): Promise<void> {
     await addRequirement({ moduleId: selectedModuleId!, text: '' })
@@ -63,8 +66,40 @@ export default function RequirementsList(): JSX.Element {
         <FilterSelect label="Type" value={typeFilter} options={REQUIREMENT_TYPES} onChange={setTypeFilter} />
       </div>
 
+      {/* Bulk actions */}
+      {!showDeleted && checkedIds.length > 0 && (
+        <div className="h-10 px-4 border-b border-line bg-action-tint/30 flex items-center gap-4 shrink-0">
+          <span className="text-xs font-medium text-ink">{checkedIds.length} selected</span>
+          <BulkSelect label="Set status" options={REQUIREMENT_STATUSES} onApply={(v) => updateRequirements(checkedIds, { status: v })} />
+          <BulkSelect label="Set priority" options={REQUIREMENT_PRIORITIES} onApply={(v) => updateRequirements(checkedIds, { priority: v })} />
+          <button
+            onClick={() => removeRequirements(checkedIds)}
+            className="text-xs text-error hover:underline font-medium"
+          >
+            Delete selected
+          </button>
+          <button
+            onClick={() => setChecked([])}
+            className="text-xs text-ink-faint hover:text-ink"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Column headers */}
       <div className={`${GRID} gap-x-3 px-4 py-2 border-b border-line bg-workspace shrink-0`}>
+        <span className="flex items-center">
+          {!showDeleted && (
+            <input
+              type="checkbox"
+              aria-label="Select all"
+              checked={allChecked}
+              onChange={() => setChecked(allChecked ? [] : displayed.map((r) => r.id))}
+              className="w-3.5 h-3.5 rounded accent-action"
+            />
+          )}
+        </span>
         <SectionLabel>ID</SectionLabel>
         <SectionLabel>Requirement</SectionLabel>
         <SectionLabel>Acceptance Criteria</SectionLabel>
@@ -97,6 +132,17 @@ export default function RequirementsList(): JSX.Element {
                 : 'border-l-transparent'
             ].join(' ')}
           >
+            <div className="flex items-start pt-1" onClick={(e) => e.stopPropagation()}>
+              {!showDeleted && (
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${req.reqId}`}
+                  checked={checkedIds.includes(req.id)}
+                  onChange={() => toggleChecked(req.id)}
+                  className="w-3.5 h-3.5 rounded accent-action"
+                />
+              )}
+            </div>
             <span className="text-xs font-mono text-ink-faint pt-0.5 truncate">{req.reqId}</span>
             <span className="text-sm text-ink break-words pr-1">
               {req.text || <span className="text-ink-faint/50 italic">—</span>}
@@ -162,5 +208,27 @@ function FilterSelect<T extends string>({
         ))}
       </Select>
     </label>
+  )
+}
+
+function BulkSelect<T extends string>({
+  label, options, onApply
+}: {
+  label: string
+  options: readonly T[]
+  onApply: (value: T) => void
+}): JSX.Element {
+  return (
+    <Select
+      aria-label={label}
+      value=""
+      onChange={(e) => { if (e.target.value) onApply(e.target.value as T) }}
+      className="!w-auto !py-1 !px-2 !text-xs"
+    >
+      <option value="" disabled>{label}…</option>
+      {options.map((o) => (
+        <option key={o} value={o}>{o}</option>
+      ))}
+    </Select>
   )
 }
