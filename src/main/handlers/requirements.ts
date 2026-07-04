@@ -54,6 +54,7 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
   db.prepare(`
     UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, updated_at = ? WHERE id = ?
   `).run(
+    // nullable text fields coerce '' → null; NOT NULL enum fields have no empty state, so plain ??
     input.text ?? existing.text,
     input.acceptanceCriteria !== undefined ? (input.acceptanceCriteria || null) : existing.acceptance_criteria,
     input.source !== undefined ? (input.source || null) : existing.source,

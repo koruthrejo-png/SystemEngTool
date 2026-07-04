@@ -60,6 +60,7 @@ export function Panel({
   )
 }
 
+// keyed by bare value — relies on status and priority vocabularies never overlapping
 const CHIP_STYLES: Record<string, string> = {
   Approved: 'bg-action-tint text-action-hover',
   Draft: 'bg-workspace text-ink-muted border border-line',
