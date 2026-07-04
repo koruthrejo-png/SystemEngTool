@@ -85,6 +85,24 @@ const COMMANDS = {
       sel || null));
   },
 
+  async resize(arg) {
+    if (!app) return console.log('ERROR: launch first');
+    const [w, h] = (arg || '1400x900').split('x').map(Number);
+    const info = await app.evaluate(({ BrowserWindow, screen }, { w, h }) => {
+      const win = BrowserWindow.getAllWindows().find(x => !x.webContents.getURL().startsWith('devtools://'));
+      const area = screen.getPrimaryDisplay().workAreaSize;
+      if (win) {
+        win.webContents.closeDevTools();
+        win.setResizable(true);
+        win.useContentSize = true;
+        win.setContentSize(w, h);
+      }
+      return { area, bounds: win ? win.getBounds() : null, contentSize: win ? win.getContentSize() : null };
+    }, { w, h });
+    await new Promise(r => setTimeout(r, 300));
+    console.log('resized to', w, h, JSON.stringify(info));
+  },
+
   async windows() {
     if (!app) return console.log('ERROR: launch first');
     for (const w of app.windows()) console.log(' ', w.url());
