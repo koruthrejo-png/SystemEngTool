@@ -9,7 +9,7 @@ const mockProject = {
   createdAt: '', updatedAt: ''
 }
 const mockModule = { id: 1, projectId: 1, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
-const mockReq = { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'Req text', acceptanceCriteria: null, source: null, rationale: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
+const mockReq = { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'Req text', acceptanceCriteria: null, source: null, rationale: null, status: 'Draft' as const, priority: 'High' as const, reqType: 'Functional' as const, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockElement: ArchitectureElement = {
   id: 1, projectId: 1, parentId: null, blockId: 'SYS-001', name: '',
   elementTypeId: null, description: null, color: null,
@@ -109,6 +109,62 @@ describe('store', () => {
     expect(useStore.getState().statusFilter).toBe('All')
     expect(useStore.getState().priorityFilter).toBe('All')
     expect(useStore.getState().typeFilter).toBe('All')
+  })
+
+  it('toggleChecked adds then removes an id', () => {
+    useStore.setState({ checkedIds: [] })
+    useStore.getState().toggleChecked(1)
+    expect(useStore.getState().checkedIds).toEqual([1])
+    useStore.getState().toggleChecked(2)
+    expect(useStore.getState().checkedIds).toEqual([1, 2])
+    useStore.getState().toggleChecked(1)
+    expect(useStore.getState().checkedIds).toEqual([2])
+  })
+
+  it('setChecked replaces the checked set', () => {
+    useStore.setState({ checkedIds: [1] })
+    useStore.getState().setChecked([2, 3])
+    expect(useStore.getState().checkedIds).toEqual([2, 3])
+    useStore.getState().setChecked([])
+    expect(useStore.getState().checkedIds).toEqual([])
+  })
+
+  it('filter setters and selectModule clear checkedIds', async () => {
+    useStore.setState({ checkedIds: [1] })
+    useStore.getState().setStatusFilter('Approved')
+    expect(useStore.getState().checkedIds).toEqual([])
+
+    useStore.setState({ checkedIds: [1] })
+    useStore.getState().setPriorityFilter('High')
+    expect(useStore.getState().checkedIds).toEqual([])
+
+    useStore.setState({ checkedIds: [1] })
+    useStore.getState().setTypeFilter('Functional')
+    expect(useStore.getState().checkedIds).toEqual([])
+
+    useStore.setState({ checkedIds: [1] })
+    await useStore.getState().selectModule(1)
+    expect(useStore.getState().checkedIds).toEqual([])
+  })
+
+  it('updateRequirements patches each id, reloads the list, clears checked', async () => {
+    useStore.setState({ selectedModuleId: 1, checkedIds: [1], requirements: [mockReq] })
+    await useStore.getState().updateRequirements([1], { status: 'Approved' })
+    expect(window.api.requirements.update).toHaveBeenCalledWith(1, { status: 'Approved' })
+    expect(window.api.requirements.list).toHaveBeenCalledWith(1)
+    expect(useStore.getState().checkedIds).toEqual([])
+  })
+
+  it('removeRequirements deletes each id, removes rows locally, clears checked and selection', async () => {
+    useStore.setState({
+      selectedModuleId: 1, checkedIds: [1],
+      requirements: [mockReq], selectedRequirementId: 1
+    })
+    await useStore.getState().removeRequirements([1])
+    expect(window.api.requirements.delete).toHaveBeenCalledWith(1)
+    expect(useStore.getState().requirements).toEqual([])
+    expect(useStore.getState().checkedIds).toEqual([])
+    expect(useStore.getState().selectedRequirementId).toBeNull()
   })
 })
 
