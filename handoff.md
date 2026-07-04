@@ -51,6 +51,19 @@ Plan: `docs/superpowers/plans/2026-07-04-bulk-actions.md` (commits `96da68a..cec
 - Driver tooling (unrelated commit `083febd`): `resize` command in `.claude/skills/run-app/driver.mjs` (closes DevTools, sets content size) for usable screenshots
 - Test baseline is now 48 failed / 69 passed (failures: 47 sqlite ABI + 1 pre-existing ArchitectureCanvas; every renderer file passes)
 
+### Requirements-tab layout fixes (controller hotfix, outside SDD)
+Commit `6f5f8f0`. Root cause of "can't restore deleted requirements": the always-open detail panel + fixed grid pushed the actions column off-screen with no horizontal scroll — restore worked, the button was unreachable. Delivered: detail panel renders only when a requirement is selected; header+rows share one `overflow-auto` container (sticky header); draggable column widths (min 48px, persisted to localStorage key `reqarch.reqTable.colWidths.v1`).
+
+### Canvas Resize, Nesting & 4-Side Handles — COMPLETE
+Plan: `docs/superpowers/plans/2026-07-04-canvas-resize-nesting-handles.md` (commits `8cef5b3..d021616`). Fifth ledger section in `.superpowers/sdd/progress.md`; final whole-branch review (opus): with fixes, both applied and live-verified (`e45f819` store re-sync on element delete — the Critical; `d021616` top/left resize position persistence). Delivered:
+- Blocks resize via NodeResizer (selected only, min 140x60); position AND size persisted on resize end (top/left handles included)
+- Drag-to-nest: pure geometry module `ArchitectureCanvas/nodes.ts` (`buildNodes` parents-first + orphan guard, `resolveDrop` center-point innermost-candidate + descendant exclusion, `absolutePosition`); child positions stored parent-relative; un-nest by dragging out (no `extent`); deleting an element reparents children to grandparent with position compensation (SQL in `deleteElement`), and `removeElement` re-syncs elements+connections from DB after delete — do NOT regress this to a local filter
+- 4 source-type handles (left/right/top/bottom) + `ConnectionMode.Loose`; `source_handle`/`target_handle` columns persist the chosen sides; legacy NULL rows render right→left via edge-mapping defaults
+- Driver gained a real-mouse `mouse` command (`4a20f20`) — drags in the running app are now scriptable
+- Test baseline: 48 failed (unchanged composition) / 87 passed
+- Known deferrals (ledger): ConnectionPanel test fixture needs sourceHandle/targetHandle when that panel consumes them; absolutePosition cycle guard; 3-level nesting test; resolveDrop equal-area tiebreak
+- Note: SmokeTest dev project contains some leftover scratch blocks/connections from driver verification
+
 ## Next Step: pick the next backlog slice
 
 Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 7 (structured acceptance-criteria checklist), 8 (Trace to Architecture linking UI), 4 (global search), 16/17 (component library + RF controls restyle). Follow the same flow: superpowers:writing-plans → subagent-driven-development (append fifth ledger section).
@@ -86,7 +99,7 @@ Known deferrals from final reviews (all triaged non-blocking, recorded in the le
 - Stitch MCP server available: `claude mcp add stitch --transport http -H "X-Goog-Api-Key: ..." https://stitch.googleapis.com/mcp`
 
 ## Branch
-`main` — all work committed directly to main. Latest commit at handoff: `cec91c7` (fix(store): prune deleted id from checkedIds on single-row delete — bulk actions complete).
+`main` — all work committed directly to main. Latest commit at handoff: `d021616` (fix(canvas): persist position from top/left resize handles — canvas resize/nesting/handles complete).
 
 ## Environment gotcha found this session
 The `npm` shim in the Logi node22 distribution is broken (`npm-cli.js: No such file or directory`). Use `./node_modules/.bin/*` binaries directly (`vitest`, `tsc`, `electron-vite`) — `node` itself works fine from that PATH.
