@@ -13,6 +13,7 @@ vi.mock('@xyflow/react', () => ({
 
 const data: BlockNodeData = {
   label: 'Engine', blockId: 'SYS-001', color: null, selected: true,
+  nested: false, childCount: 0,
   onResizeEnd: vi.fn()
 }
 
@@ -44,5 +45,22 @@ describe('BlockNode', () => {
     render(<BlockNode data={data} {...({} as any)} />)
     expect(screen.getAllByText('SYS-001').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Engine').length).toBeGreaterThan(0)
+  })
+
+  it('shows a NESTED tag only when the block is embedded', () => {
+    render(<BlockNode data={data} {...({} as any)} />)
+    expect(screen.queryByText('Nested')).not.toBeInTheDocument()
+    render(<BlockNode data={{ ...data, nested: true }} {...({} as any)} />)
+    expect(screen.getByText('Nested')).toBeInTheDocument()
+  })
+
+  it('shows a contains-count and container styling only when it has children', () => {
+    const { container: plain } = render(<BlockNode data={data} {...({} as any)} />)
+    expect(screen.queryByText(/Contains/)).not.toBeInTheDocument()
+    expect(plain.querySelector('.border-dashed')).toBeNull()
+
+    const { container: parent } = render(<BlockNode data={{ ...data, childCount: 2 }} {...({} as any)} />)
+    expect(screen.getByText('Contains 2')).toBeInTheDocument()
+    expect(parent.querySelector('.border-dashed')).not.toBeNull()
   })
 })

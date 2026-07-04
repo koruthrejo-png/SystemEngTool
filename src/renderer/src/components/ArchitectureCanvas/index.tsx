@@ -9,7 +9,7 @@ import { useStore } from '../../store'
 import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
 import { Button } from '../ui'
-import { buildNodes, resolveDrop } from './nodes'
+import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -44,7 +44,20 @@ function CanvasInner(): JSX.Element {
   const { getInternalNode } = useReactFlow()
 
   useEffect(() => {
-    setNodes(buildNodes(elements, selectedElementId, (id, x, y, width, height) => updateElement(id, { posX: x, posY: y, width, height })))
+    setNodes(buildNodes(elements, selectedElementId, (id, x, y, width, height) => {
+      const el = elements.find((e) => e.id === id)
+      const parent = el?.parentId != null ? elements.find((e) => e.id === el.parentId) : undefined
+      if (parent) {
+        // resized inside a container: keep the child snug, grow the parent if needed
+        const fit = fitChildInParent(parent, { posX: x, posY: y, width, height })
+        updateElement(id, { posX: fit.childX, posY: fit.childY, width, height })
+        if (fit.parentWidth !== parent.width || fit.parentHeight !== parent.height) {
+          updateElement(parent.id, { width: fit.parentWidth, height: fit.parentHeight })
+        }
+        return
+      }
+      updateElement(id, { posX: x, posY: y, width, height })
+    }))
   }, [elements, selectedElementId])
 
   useEffect(() => {
@@ -97,7 +110,15 @@ function CanvasInner(): JSX.Element {
     const id = Number(node.id)
     const el = elements.find((e) => e.id === id)
     const drop = resolveDrop(id, abs, elements)
-    if (el && drop.parentId !== el.parentId) {
+    if (el && drop.parentId !== null) {
+      // nesting (or moving within a container): snug-fit the child, grow the parent if needed
+      const parent = elements.find((e) => e.id === drop.parentId)!
+      const fit = fitChildInParent(parent, { posX: drop.posX, posY: drop.posY, width: el.width, height: el.height })
+      updateElement(id, { parentId: drop.parentId, posX: fit.childX, posY: fit.childY })
+      if (fit.parentWidth !== parent.width || fit.parentHeight !== parent.height) {
+        updateElement(parent.id, { width: fit.parentWidth, height: fit.parentHeight })
+      }
+    } else if (el && drop.parentId !== el.parentId) {
       updateElement(id, drop)
     } else {
       updateElement(id, { posX: node.position.x, posY: node.position.y })

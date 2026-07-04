@@ -32,6 +32,27 @@ function descendantIds(rootId: number, elements: ArchitectureElement[]): Set<num
   return ids
 }
 
+export const NEST_PADDING = 12
+export const HEADER_HEIGHT = 24
+
+// Snug-fit a child inside its parent's content area (below the header band):
+// clamp the child's position, and grow the parent when the child doesn't fit.
+// All coordinates are the child's parent-relative frame.
+export function fitChildInParent(
+  parent: { width: number; height: number },
+  child: { posX: number; posY: number; width: number; height: number }
+): { childX: number; childY: number; parentWidth: number; parentHeight: number } {
+  const parentWidth = Math.max(parent.width, child.width + 2 * NEST_PADDING)
+  const parentHeight = Math.max(parent.height, HEADER_HEIGHT + child.height + 2 * NEST_PADDING)
+  const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi)
+  return {
+    childX: clamp(child.posX, NEST_PADDING, parentWidth - child.width - NEST_PADDING),
+    childY: clamp(child.posY, HEADER_HEIGHT + NEST_PADDING, parentHeight - child.height - NEST_PADDING),
+    parentWidth,
+    parentHeight
+  }
+}
+
 // React Flow requires parents before children in the nodes array.
 export function buildNodes(
   elements: ArchitectureElement[],
@@ -66,6 +87,8 @@ export function buildNodes(
       blockId: el.blockId,
       color: el.color,
       selected: el.id === selectedId,
+      nested: hasParent(el),
+      childCount: elements.filter((c) => c.parentId === el.id).length,
       onResizeEnd: (x: number, y: number, w: number, h: number) => onResizeEnd(el.id, x, y, w, h)
     } satisfies BlockNodeData,
     style: { width: el.width, height: el.height }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { buildNodes, resolveDrop } from './nodes'
+import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
 import type { ArchitectureElement } from '../../../../types'
 
 function el(partial: Partial<ArchitectureElement> & { id: number }): ArchitectureElement {
@@ -37,6 +37,45 @@ describe('buildNodes', () => {
     const nodes = buildNodes([el({ id: 7 })], null, spy)
     ;(nodes[0].data as { onResizeEnd: (x: number, y: number, w: number, h: number) => void }).onResizeEnd(10, 20, 300, 200)
     expect(spy).toHaveBeenCalledWith(7, 10, 20, 300, 200)
+  })
+
+  it('marks nested blocks and counts direct children in node data', () => {
+    const nodes = buildNodes(
+      [el({ id: 1 }), el({ id: 2, parentId: 1 }), el({ id: 3, parentId: 1 }), el({ id: 4 })],
+      null,
+      vi.fn()
+    )
+    const byId = Object.fromEntries(nodes.map((n) => [n.id, n.data as { nested: boolean; childCount: number }]))
+    expect(byId['1']).toMatchObject({ nested: false, childCount: 2 })
+    expect(byId['2']).toMatchObject({ nested: true, childCount: 0 })
+    expect(byId['4']).toMatchObject({ nested: false, childCount: 0 })
+  })
+})
+
+describe('fitChildInParent', () => {
+  it('keeps a child that already fits, clamped below the header', () => {
+    const r = fitChildInParent(
+      { width: 400, height: 300 },
+      { posX: 100, posY: 100, width: 160, height: 80 }
+    )
+    expect(r).toEqual({ childX: 100, childY: 100, parentWidth: 400, parentHeight: 300 })
+  })
+
+  it('clamps a child dropped over the header/edges into the content area', () => {
+    const r = fitChildInParent(
+      { width: 400, height: 300 },
+      { posX: 0, posY: 0, width: 160, height: 80 }
+    )
+    expect(r).toEqual({ childX: 12, childY: 36, parentWidth: 400, parentHeight: 300 })
+  })
+
+  it('grows the parent when the child does not fit', () => {
+    const r = fitChildInParent(
+      { width: 150, height: 60 },
+      { posX: 5, posY: 5, width: 200, height: 100 }
+    )
+    // parent grows to child + padding (and header room); child sits at the padding origin
+    expect(r).toEqual({ childX: 12, childY: 36, parentWidth: 224, parentHeight: 148 })
   })
 })
 

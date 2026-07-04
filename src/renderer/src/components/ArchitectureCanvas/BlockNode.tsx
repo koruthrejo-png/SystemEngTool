@@ -6,6 +6,8 @@ export type BlockNodeData = {
   blockId: string
   color: string | null
   selected: boolean
+  nested: boolean
+  childCount: number
   onResizeEnd: (x: number, y: number, width: number, height: number) => void
 }
 
@@ -28,11 +30,15 @@ export default memo(function BlockNode({ data }: NodeProps) {
       />
       <div
         style={{ background: headerColor }}
-        className="px-3 py-1 text-[10px] font-bold uppercase tracking-[0.05em] text-white shrink-0"
+        className="px-3 py-1 text-[10px] font-bold uppercase tracking-[0.05em] text-white shrink-0 flex items-center justify-between gap-2"
       >
-        Block
+        <span>Block</span>
+        <span className="flex items-center gap-2 font-medium normal-case tracking-normal text-white/75">
+          {d.nested && <span className="border border-white/40 rounded px-1 leading-tight">Nested</span>}
+          {d.childCount > 0 && <span>Contains {d.childCount}</span>}
+        </span>
       </div>
-      <div className="px-3 py-2 flex-1 min-h-0">
+      <div className={`px-3 py-2 flex-1 min-h-0 ${d.childCount > 0 ? 'm-1 rounded border border-dashed border-line bg-workspace/60' : ''}`}>
         <div className="text-[11px] text-ink-faint font-mono mb-0.5">{d.blockId}</div>
         <div className="font-medium text-ink truncate">
           {d.label || <span className="text-ink-faint/50 italic">Unnamed</span>}
