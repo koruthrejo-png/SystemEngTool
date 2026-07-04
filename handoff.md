@@ -1,6 +1,6 @@
 # Handoff: ReqArch2 — Current State
 
-## What's Been Built (as of 2026-07-02)
+## What's Been Built (as of 2026-07-04)
 
 ### Core App — Working
 The app launches, creates/opens projects, manages modules, and all IPC is wired. Key fixes that unblocked everything:
@@ -35,20 +35,20 @@ Post-overhaul wrap-up (2026-07-03, after Task 9):
 - Final whole-branch review (5886086..7706d84) came back "ready to merge with fixes"; fixes applied in `5b8aaaa` (last two `text-gray-500` → `text-ink-muted` in ElementPanel/ConnectionPanel, `text-xs` → `!text-xs` on their Delete buttons, handoff PATH note). Reviewer triage of carried-forward minors is recorded at the bottom of `.superpowers/sdd/progress.md`.
 - `87b209a` updated the design spec: backlog items 16 (component library palette) amended, 17 (zoom-controls restyle) added, plus a "Ratified deviations from the mockups" list (ring-action/60, node names text-sm, default RF controls, native rename input).
 
-## Next Step: Requirement Metadata & Filtering (backlog items 1, 2, 3, 6)
+### Requirement Metadata & Filtering — COMPLETE (backlog items 1, 2, 3, 6)
+Plan: `docs/superpowers/plans/2026-07-03-requirement-metadata.md` (commits `546f4d7..a6eb0c8`). Executed via subagent-driven development (third ledger section in `.superpowers/sdd/progress.md`); final whole-branch review: ready to merge, no Critical/Important findings. Verified end-to-end in the running app (migration defaults on legacy rows, chips, filters, persistence across relaunch, filter reset on module switch — screenshots in task-6 report). Delivered:
+- DB: `status`/`priority`/`req_type` TEXT NOT NULL columns (defaults Draft/Medium/Functional) via `addColumnIfMissing`; no new IPC — edits flow through `requirements:update`
+- Types: `REQUIREMENT_STATUSES`/`REQUIREMENT_PRIORITIES`/`REQUIREMENT_TYPES` const arrays + derived unions in `src/types/index.ts`; `Requirement.status/priority/reqType`
+- Store: `statusFilter`/`priorityFilter`/`typeFilter` (+setters), reset to 'All' on module switch
+- UI: `Chip` primitive (token-colored, shared value-key namespace — statuses and priorities must never overlap); RequirementsList 9-column grid with Type text + Status/Priority chips + filter-select toolbar; RequirementDetail Type/Status/Priority selects saving on change
+- Deferred minors folded in: `vi.clearAllMocks()` in RequirementDetail tests; RequirementsList toolbar-behavior tests
+- Test baseline is now 48 failed / 55 passed — all failures are the sqlite ABI mismatch (see Environment Notes) + 1 pre-existing ArchitectureCanvas test; every renderer file passes
 
-**Where I stopped:** mid-preparation for a NEW implementation plan, using the superpowers:writing-plans skill. Nothing for this feature is written or committed yet — no plan file, no code.
+## Next Step: pick the next backlog slice
 
-**The chosen slice** (one coherent feature, all shown in the Stitch mockups): status field + colored chips (Approved/Draft/Review/Rejected), priority field + chips (High/Medium/Low), requirement Type field (Functional/Non-Functional/…), and the filter toolbar (status, priority, More Filters). Unlike the overhaul this touches the full stack: DB migration, `src/types`, IPC handler, preload, store, and the RequirementsList/RequirementDetail UI.
+Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 5 (row checkboxes + bulk actions), 7 (structured acceptance-criteria checklist), 8 (Trace to Architecture linking UI), 4 (global search), 16/17 (component library + RF controls restyle). Follow the same flow: superpowers:writing-plans → subagent-driven-development (append fourth ledger section).
 
-**Progress so far (context only, redo cheaply):** confirmed key file sizes — `src/main/db/migrations.ts` 129 lines, `src/types/index.ts` 185, `src/main/handlers/requirements.ts` 93, `src/preload/index.ts` 74, `src/renderer/src/store/index.ts` 242, `RequirementsList/index.tsx` 119. Chip/filter styling reference: `docs/superpowers/specs/assets/2026-07-02-ui/requirements-screen.html` (+ design-system.md).
-
-**To resume:**
-1. Invoke superpowers:writing-plans; read the files above (migration pattern, Requirement type, update-handler field whitelist, preload/store action shapes) and the mockup HTML for chip classes.
-2. Write `docs/superpowers/plans/2026-07-03-requirement-metadata.md` — TDD, bite-sized tasks, exact code per task; follow the existing migration/IPC/store patterns (see how custom fields were added: `src/main/handlers/requirementCustomFields.ts` end-to-end).
-3. Execute via superpowers:subagent-driven-development (ledger: append third section to `.superpowers/sdd/progress.md`; process identical to the UI overhaul — brief → implementer → review-package → reviewer → tick).
-
-Deferred minors to fold into this work when touching the relevant files: `vi.clearAllMocks()` in RequirementDetail test's beforeEach; toolbar-behavior tests for RequirementsList (show-deleted toggle, item count, Restore visibility).
+Known deferrals from the final review (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply.
 
 ---
 
@@ -79,4 +79,7 @@ Deferred minors to fold into this work when touching the relevant files: `vi.cle
 - Stitch MCP server available: `claude mcp add stitch --transport http -H "X-Goog-Api-Key: ..." https://stitch.googleapis.com/mcp`
 
 ## Branch
-`main` — all work committed directly to main. Latest commit at handoff: `abef8b9` (feat(ui): complete Industrial Precision overhaul — verified in running app).
+`main` — all work committed directly to main. Latest commit at handoff: `a6eb0c8` (docs(code): comments from final review — requirement metadata & filtering complete).
+
+## Environment gotcha found this session
+The `npm` shim in the Logi node22 distribution is broken (`npm-cli.js: No such file or directory`). Use `./node_modules/.bin/*` binaries directly (`vitest`, `tsc`, `electron-vite`) — `node` itself works fine from that PATH.
