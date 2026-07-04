@@ -103,6 +103,21 @@ const COMMANDS = {
     console.log('resized to', w, h, JSON.stringify(info));
   },
 
+  // real OS-level input via Playwright — needed for drag interactions (React Flow)
+  async mouse(arg) {
+    if (!page) return console.log('ERROR: launch first');
+    const [action, x, y] = arg.split(/\s+/);
+    const px = Number(x), py = Number(y);
+    if (action === 'move') await page.mouse.move(px, py, { steps: 10 });
+    else if (action === 'down') await page.mouse.down();
+    else if (action === 'up') await page.mouse.up();
+    else if (action === 'drag') { // drag CURRENT→x,y: usage: mouse drag 500 300
+      await page.mouse.down(); await page.mouse.move(px, py, { steps: 15 }); await page.mouse.up();
+    }
+    else return console.log('unknown mouse action:', action);
+    console.log('mouse', action, px, py, 'OK');
+  },
+
   async windows() {
     if (!app) return console.log('ERROR: launch first');
     for (const w of app.windows()) console.log(' ', w.url());
