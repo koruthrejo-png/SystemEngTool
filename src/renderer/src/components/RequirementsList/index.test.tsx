@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RequirementsList from './index'
 
@@ -24,6 +24,7 @@ const req2 = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
   Object.assign(storeState, {
     selectedModuleId: 1,
     modules: [{ id: 1, projectId: 1, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 3, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }],
@@ -182,5 +183,42 @@ describe('RequirementsList', () => {
     render(<RequirementsList />)
     expect(screen.queryByLabelText(/Select /)).not.toBeInTheDocument()
     expect(screen.queryByText(/selected/)).not.toBeInTheDocument()
+  })
+
+  it('table scrolls horizontally instead of clipping columns', () => {
+    render(<RequirementsList />)
+    expect(screen.getByTestId('req-table-scroll').className).toContain('overflow-auto')
+  })
+
+  it('renders resize handles on data column headers only', () => {
+    render(<RequirementsList />)
+    expect(screen.getByLabelText('Resize ID column')).toBeInTheDocument()
+    expect(screen.getByLabelText('Resize Requirement column')).toBeInTheDocument()
+    expect(screen.getByLabelText('Resize Priority column')).toBeInTheDocument()
+    expect(screen.queryAllByLabelText(/Resize .* column/)).toHaveLength(8)
+  })
+
+  it('dragging a handle resizes the column and persists the widths', () => {
+    render(<RequirementsList />)
+    const header = screen.getByTestId('req-grid-header')
+    const idBefore = header.style.gridTemplateColumns.split(' ')[1]
+    const handle = screen.getByLabelText('Resize ID column')
+    fireEvent.mouseDown(handle, { clientX: 100 })
+    fireEvent.mouseMove(window, { clientX: 160 })
+    fireEvent.mouseUp(window)
+    const cols = header.style.gridTemplateColumns.split(' ')
+    expect(cols[1]).toBe(`${parseInt(idBefore) + 60}px`)
+    const saved = JSON.parse(localStorage.getItem('reqarch.reqTable.colWidths.v1')!)
+    expect(saved[1]).toBe(parseInt(idBefore) + 60)
+  })
+
+  it('a resize never shrinks a column below the minimum', () => {
+    render(<RequirementsList />)
+    const handle = screen.getByLabelText('Resize ID column')
+    fireEvent.mouseDown(handle, { clientX: 500 })
+    fireEvent.mouseMove(window, { clientX: 0 })
+    fireEvent.mouseUp(window)
+    const header = screen.getByTestId('req-grid-header')
+    expect(header.style.gridTemplateColumns.split(' ')[1]).toBe('48px')
   })
 })

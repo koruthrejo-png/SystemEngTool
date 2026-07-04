@@ -9,7 +9,7 @@ import ElementPanel from './components/ElementPanel'
 import ConnectionPanel from './components/ConnectionPanel'
 
 export default function App(): JSX.Element {
-  const { project, activeTab, setActiveTab, loadProject, loadArchitecture, selectedElementId, selectedConnectionId } = useStore()
+  const { project, activeTab, setActiveTab, loadProject, loadArchitecture, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -104,9 +104,11 @@ export default function App(): JSX.Element {
           <Panel data-testid="panel-list" className="flex-1 overflow-y-auto border-r">
             <RequirementsList />
           </Panel>
-          <Panel data-testid="panel-detail" className="w-96 shrink-0 overflow-y-auto">
-            <RequirementDetail />
-          </Panel>
+          {selectedRequirementId !== null && (
+            <Panel data-testid="panel-detail" className="w-96 shrink-0 overflow-y-auto">
+              <RequirementDetail />
+            </Panel>
+          )}
         </div>
       ) : (
         <div data-testid="panel-architecture" className="flex flex-1 overflow-hidden">

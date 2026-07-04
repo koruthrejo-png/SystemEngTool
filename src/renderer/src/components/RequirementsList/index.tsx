@@ -1,8 +1,36 @@
+import { useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useStore } from '../../store'
 import { Button, Chip, SectionLabel, Select } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
 
-const GRID = 'grid grid-cols-[28px_90px_1.5fr_1fr_90px_1fr_100px_92px_80px_36px]'
+// label '' = structural column (checkbox / actions), not resizable
+const COLUMNS = [
+  { label: '', width: 28 },
+  { label: 'ID', width: 90 },
+  { label: 'Requirement', width: 280 },
+  { label: 'Acceptance Criteria', width: 200 },
+  { label: 'Source', width: 110 },
+  { label: 'Rationale', width: 180 },
+  { label: 'Type', width: 100 },
+  { label: 'Status', width: 92 },
+  { label: 'Priority', width: 80 },
+  { label: '', width: 56 }
+] as const
+
+const MIN_COL_WIDTH = 48
+const WIDTHS_STORAGE_KEY = 'reqarch.reqTable.colWidths.v1'
+
+function loadWidths(): number[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(WIDTHS_STORAGE_KEY) ?? '')
+    if (Array.isArray(saved) && saved.length === COLUMNS.length && saved.every((n) => typeof n === 'number')) {
+      return saved
+    }
+  } catch {
+    /* fall through to defaults */
+  }
+  return COLUMNS.map((c) => c.width)
+}
 
 export default function RequirementsList(): JSX.Element {
   const {
@@ -16,6 +44,29 @@ export default function RequirementsList(): JSX.Element {
     checkedIds, toggleChecked, setChecked,
     updateRequirements, removeRequirements
   } = useStore()
+  const [colWidths, setColWidths] = useState<number[]>(loadWidths)
+
+  function startResize(e: ReactMouseEvent, index: number): void {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = colWidths[index]
+    const onMove = (ev: MouseEvent): void => {
+      setColWidths((prev) => {
+        const next = [...prev]
+        next[index] = Math.max(MIN_COL_WIDTH, Math.round(startWidth + ev.clientX - startX))
+        localStorage.setItem(WIDTHS_STORAGE_KEY, JSON.stringify(next))
+        return next
+      })
+    }
+    const onUp = (): void => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  const gridStyle = { gridTemplateColumns: colWidths.map((w) => `${w}px`).join(' ') }
 
   if (!selectedModuleId) {
     return (
@@ -87,43 +138,57 @@ export default function RequirementsList(): JSX.Element {
         </div>
       )}
 
-      {/* Column headers */}
-      <div className={`${GRID} gap-x-3 px-4 py-2 border-b border-line bg-workspace shrink-0`}>
-        <span className="flex items-center">
-          {!showDeleted && (
-            <input
-              type="checkbox"
-              aria-label="Select all"
-              checked={allChecked}
-              onChange={() => setChecked(allChecked ? [] : displayed.map((r) => r.id))}
-              className="w-3.5 h-3.5 rounded accent-action"
-            />
-          )}
-        </span>
-        <SectionLabel>ID</SectionLabel>
-        <SectionLabel>Requirement</SectionLabel>
-        <SectionLabel>Acceptance Criteria</SectionLabel>
-        <SectionLabel>Source</SectionLabel>
-        <SectionLabel>Rationale</SectionLabel>
-        <SectionLabel>Type</SectionLabel>
-        <SectionLabel>Status</SectionLabel>
-        <SectionLabel>Priority</SectionLabel>
-        <span />
-      </div>
-
-      {/* Rows */}
-      <div className="flex-1 overflow-y-auto">
-        {displayed.length === 0 && (
-          <div className="p-4 text-sm text-ink-faint">
-            {showDeleted ? 'No deleted requirements.' : 'No requirements match.'}
+      {/* Table (shared horizontal scroll for header + rows) */}
+      <div data-testid="req-table-scroll" className="flex-1 overflow-auto">
+        <div className="w-max min-w-full">
+          {/* Column headers */}
+          <div
+            data-testid="req-grid-header"
+            style={gridStyle}
+            className="grid gap-x-3 px-4 py-2 border-b border-line bg-workspace sticky top-0 z-10"
+          >
+            {COLUMNS.map((col, i) =>
+              col.label === '' ? (
+                <span key={i} className="flex items-center">
+                  {i === 0 && !showDeleted && (
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={allChecked}
+                      onChange={() => setChecked(allChecked ? [] : displayed.map((r) => r.id))}
+                      className="w-3.5 h-3.5 rounded accent-action"
+                    />
+                  )}
+                </span>
+              ) : (
+                <span key={i} className="relative flex items-center min-w-0">
+                  <SectionLabel>{col.label}</SectionLabel>
+                  <span
+                    role="separator"
+                    aria-label={`Resize ${col.label} column`}
+                    onMouseDown={(e) => startResize(e, i)}
+                    className="absolute -right-2.5 -top-2 -bottom-2 w-2.5 cursor-col-resize flex justify-center group/handle"
+                  >
+                    <span className="w-px h-full bg-transparent group-hover/handle:bg-action" />
+                  </span>
+                </span>
+              )
+            )}
           </div>
-        )}
-        {displayed.map((req, i) => (
+
+          {/* Rows */}
+          {displayed.length === 0 && (
+            <div className="p-4 text-sm text-ink-faint">
+              {showDeleted ? 'No deleted requirements.' : 'No requirements match.'}
+            </div>
+          )}
+          {displayed.map((req, i) => (
           <div
             key={req.id}
             onClick={() => !showDeleted && selectRequirement(req.id)}
+            style={gridStyle}
             className={[
-              GRID,
+              'grid',
               'gap-x-3 items-start px-4 py-3 border-b border-line/60 group border-l-2',
               i % 2 === 1 ? 'bg-workspace/50' : 'bg-white',
               showDeleted ? 'opacity-60 border-l-transparent' : 'cursor-pointer hover:bg-action-tint/20',
@@ -179,7 +244,8 @@ export default function RequirementsList(): JSX.Element {
               )}
             </div>
           </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )

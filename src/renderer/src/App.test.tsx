@@ -40,11 +40,17 @@ describe('App', () => {
     mockUseStore.mockReturnValue({ ...baseStore, activeTab: 'requirements' as const })
   })
 
-  it('renders 3-panel layout with header', () => {
+  it('renders modules and list panels with header; detail hidden when nothing selected', () => {
     render(<App />)
     expect(screen.getByText('ReqArch Suite')).toBeInTheDocument()
     expect(screen.getByTestId('panel-modules')).toBeInTheDocument()
     expect(screen.getByTestId('panel-list')).toBeInTheDocument()
+    expect(screen.queryByTestId('panel-detail')).not.toBeInTheDocument()
+  })
+
+  it('renders the detail panel when a requirement is selected', () => {
+    mockUseStore.mockReturnValue({ ...baseStore, activeTab: 'requirements' as const, selectedRequirementId: 1 })
+    render(<App />)
     expect(screen.getByTestId('panel-detail')).toBeInTheDocument()
   })
 
