@@ -1,12 +1,16 @@
 import { useStore } from '../../store'
-import { Button, SectionLabel } from '../ui'
+import { Button, Chip, SectionLabel, Select } from '../ui'
+import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
 
-const GRID = 'grid grid-cols-[90px_1fr_1fr_120px_1fr_36px]'
+const GRID = 'grid grid-cols-[90px_1.5fr_1fr_90px_1fr_100px_92px_80px_36px]'
 
 export default function RequirementsList(): JSX.Element {
   const {
     selectedModuleId, modules, requirements, deletedRequirements,
     showDeleted, setShowDeleted,
+    statusFilter, setStatusFilter,
+    priorityFilter, setPriorityFilter,
+    typeFilter, setTypeFilter,
     selectedRequirementId, selectRequirement,
     addRequirement, removeRequirement, restoreRequirement
   } = useStore()
@@ -20,7 +24,11 @@ export default function RequirementsList(): JSX.Element {
   }
 
   const module = modules.find((m) => m.id === selectedModuleId)
-  const displayed = showDeleted ? deletedRequirements : requirements
+  const displayed = (showDeleted ? deletedRequirements : requirements).filter((r) =>
+    (statusFilter === 'All' || r.status === statusFilter) &&
+    (priorityFilter === 'All' || r.priority === priorityFilter) &&
+    (typeFilter === 'All' || r.reqType === typeFilter)
+  )
 
   async function handleAdd(): Promise<void> {
     await addRequirement({ moduleId: selectedModuleId!, text: '' })
@@ -48,6 +56,13 @@ export default function RequirementsList(): JSX.Element {
         </div>
       </div>
 
+      {/* Filter toolbar */}
+      <div className="h-10 px-4 border-b border-line bg-white flex items-center gap-5 shrink-0">
+        <FilterSelect label="Status" value={statusFilter} options={REQUIREMENT_STATUSES} onChange={setStatusFilter} />
+        <FilterSelect label="Priority" value={priorityFilter} options={REQUIREMENT_PRIORITIES} onChange={setPriorityFilter} />
+        <FilterSelect label="Type" value={typeFilter} options={REQUIREMENT_TYPES} onChange={setTypeFilter} />
+      </div>
+
       {/* Column headers */}
       <div className={`${GRID} gap-x-3 px-4 py-2 border-b border-line bg-workspace shrink-0`}>
         <SectionLabel>ID</SectionLabel>
@@ -55,6 +70,9 @@ export default function RequirementsList(): JSX.Element {
         <SectionLabel>Acceptance Criteria</SectionLabel>
         <SectionLabel>Source</SectionLabel>
         <SectionLabel>Rationale</SectionLabel>
+        <SectionLabel>Type</SectionLabel>
+        <SectionLabel>Status</SectionLabel>
+        <SectionLabel>Priority</SectionLabel>
         <span />
       </div>
 
@@ -62,7 +80,7 @@ export default function RequirementsList(): JSX.Element {
       <div className="flex-1 overflow-y-auto">
         {displayed.length === 0 && (
           <div className="p-4 text-sm text-ink-faint">
-            {showDeleted ? 'No deleted requirements.' : 'No requirements yet.'}
+            {showDeleted ? 'No deleted requirements.' : 'No requirements match.'}
           </div>
         )}
         {displayed.map((req, i) => (
@@ -92,6 +110,9 @@ export default function RequirementsList(): JSX.Element {
             <span className="text-sm text-ink-muted break-words pr-1">
               {req.rationale || <span className="text-ink-faint/50">—</span>}
             </span>
+            <span className="text-xs text-ink-muted pt-0.5 truncate">{req.reqType}</span>
+            <div className="pt-0.5"><Chip value={req.status} /></div>
+            <div className="pt-0.5"><Chip value={req.priority} /></div>
             <div className="flex items-start justify-center pt-0.5">
               {showDeleted ? (
                 <button
@@ -115,5 +136,31 @@ export default function RequirementsList(): JSX.Element {
         ))}
       </div>
     </div>
+  )
+}
+
+function FilterSelect<T extends string>({
+  label, value, options, onChange
+}: {
+  label: string
+  value: T | 'All'
+  options: readonly T[]
+  onChange: (value: T | 'All') => void
+}): JSX.Element {
+  return (
+    <label className="flex items-center gap-1.5">
+      <SectionLabel>{label}</SectionLabel>
+      <Select
+        aria-label={`Filter by ${label.toLowerCase()}`}
+        value={value}
+        onChange={(e) => onChange(e.target.value as T | 'All')}
+        className="!w-auto !py-1 !px-2 !text-xs"
+      >
+        <option value="All">All</option>
+        {options.map((o) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </Select>
+    </label>
   )
 }
