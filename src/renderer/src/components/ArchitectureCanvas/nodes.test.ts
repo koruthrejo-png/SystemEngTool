@@ -1,0 +1,74 @@
+import { describe, it, expect, vi } from 'vitest'
+import { buildNodes, resolveDrop } from './nodes'
+import type { ArchitectureElement } from '../../../../types'
+
+function el(partial: Partial<ArchitectureElement> & { id: number }): ArchitectureElement {
+  return {
+    projectId: 1, parentId: null, blockId: `SYS-${partial.id}`, name: `E${partial.id}`,
+    elementTypeId: null, description: null, color: null,
+    posX: 0, posY: 0, width: 160, height: 80,
+    deletedAt: null, createdAt: '', updatedAt: '',
+    ...partial
+  }
+}
+
+describe('buildNodes', () => {
+  it('orders parents before children regardless of input order', () => {
+    const els = [el({ id: 3, parentId: 2 }), el({ id: 2, parentId: 1 }), el({ id: 1 })]
+    const ids = buildNodes(els, null, vi.fn()).map((n) => n.id)
+    expect(ids).toEqual(['1', '2', '3'])
+  })
+
+  it('sets parentId without extent so children can be dragged out', () => {
+    const nodes = buildNodes([el({ id: 1 }), el({ id: 2, parentId: 1 })], null, vi.fn())
+    const child = nodes.find((n) => n.id === '2')!
+    expect(child.parentId).toBe('1')
+    expect(child.extent).toBeUndefined()
+  })
+
+  it('renders an element whose parent is missing as a root (orphan guard)', () => {
+    const nodes = buildNodes([el({ id: 2, parentId: 99 })], null, vi.fn())
+    expect(nodes).toHaveLength(1)
+    expect(nodes[0].parentId).toBeUndefined()
+  })
+
+  it('wires onResizeEnd through node data with the element id', () => {
+    const spy = vi.fn()
+    const nodes = buildNodes([el({ id: 7 })], null, spy)
+    ;(nodes[0].data as { onResizeEnd: (w: number, h: number) => void }).onResizeEnd(300, 200)
+    expect(spy).toHaveBeenCalledWith(7, 300, 200)
+  })
+})
+
+describe('resolveDrop', () => {
+  const container = el({ id: 1, posX: 100, posY: 100, width: 400, height: 300 })
+  const small = el({ id: 2, posX: 600, posY: 600 })
+
+  it('nests when the dragged center lands inside another block, storing parent-relative position', () => {
+    // dragged abs (150,150), size 160x80 → center (230,190) inside container (100..500, 100..400)
+    const r = resolveDrop(2, { x: 150, y: 150 }, [container, small])
+    expect(r).toEqual({ parentId: 1, posX: 50, posY: 50 })
+  })
+
+  it('clears parent when dropped outside every candidate', () => {
+    const nested = { ...small, parentId: 1, posX: 50, posY: 50 }
+    const r = resolveDrop(2, { x: 900, y: 900 }, [container, nested])
+    expect(r).toEqual({ parentId: null, posX: 900, posY: 900 })
+  })
+
+  it('picks the innermost (smallest) candidate when containers overlap', () => {
+    const outer = el({ id: 1, posX: 0, posY: 0, width: 800, height: 600 })
+    const inner = el({ id: 2, parentId: 1, posX: 100, posY: 100, width: 300, height: 200 })
+    // dragged center (230,190) is inside both; inner wins; pos relative to inner's abs (100,100)
+    const r = resolveDrop(3, { x: 150, y: 150 }, [outer, inner, el({ id: 3 })])
+    expect(r).toEqual({ parentId: 2, posX: 50, posY: 50 })
+  })
+
+  it('never nests a node into itself or its own descendants', () => {
+    const parent = el({ id: 1, posX: 0, posY: 0, width: 800, height: 600 })
+    const child = { ...el({ id: 2, posX: 10, posY: 10, width: 700, height: 500 }), parentId: 1 }
+    // dragging the PARENT over its child's area must not nest into the child
+    const r = resolveDrop(1, { x: 50, y: 50 }, [parent, child])
+    expect(r).toEqual({ parentId: null, posX: 50, posY: 50 })
+  })
+})

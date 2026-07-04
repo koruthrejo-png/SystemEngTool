@@ -1,30 +1,38 @@
 import { useCallback, useEffect } from 'react'
 import {
   ReactFlow, Background, BackgroundVariant, Controls, ReactFlowProvider,
-  useNodesState, useEdgesState,
+  useNodesState, useEdgesState, useReactFlow,
   type Node, type Edge, type Connection
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useStore } from '../../store'
-import BlockNode, { type BlockNodeData } from './BlockNode'
+import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
 import { Button } from '../ui'
+import { buildNodes, resolveDrop } from './nodes'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
 
-function elementToNode(el: import('../../../../types').ArchitectureElement, selectedId: number | null): Node {
-  return {
-    id: String(el.id),
-    type: 'block',
-    position: { x: el.posX, y: el.posY },
-    ...(el.parentId ? { parentId: String(el.parentId), extent: 'parent' as const } : {}),
-    data: { label: el.name, blockId: el.blockId, color: el.color, selected: el.id === selectedId } satisfies BlockNodeData,
-    style: { width: el.width, height: el.height }
+export default function ArchitectureCanvas(): JSX.Element {
+  const { project } = useStore()
+
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-ink-faint text-sm">
+        Open or create a project to start building your architecture.
+      </div>
+    )
   }
+
+  return (
+    <ReactFlowProvider>
+      <CanvasInner />
+    </ReactFlowProvider>
+  )
 }
 
-export default function ArchitectureCanvas(): JSX.Element {
+function CanvasInner(): JSX.Element {
   const {
     project, elements, connections, selectedElementId, selectedConnectionId,
     addElement, updateElement, removeElement, addConnection, removeConnection,
@@ -33,9 +41,10 @@ export default function ArchitectureCanvas(): JSX.Element {
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const { getInternalNode } = useReactFlow()
 
   useEffect(() => {
-    setNodes(elements.map((el) => elementToNode(el, selectedElementId)))
+    setNodes(buildNodes(elements, selectedElementId, (id, width, height) => updateElement(id, { width, height })))
   }, [elements, selectedElementId])
 
   useEffect(() => {
@@ -80,7 +89,15 @@ export default function ArchitectureCanvas(): JSX.Element {
   }
 
   function onNodeDragStop(_: unknown, node: Node): void {
-    updateElement(Number(node.id), { posX: node.position.x, posY: node.position.y })
+    const abs = getInternalNode(node.id)?.internals.positionAbsolute ?? node.position
+    const id = Number(node.id)
+    const el = elements.find((e) => e.id === id)
+    const drop = resolveDrop(id, abs, elements)
+    if (el && drop.parentId !== el.parentId) {
+      updateElement(id, drop)
+    } else {
+      updateElement(id, { posX: node.position.x, posY: node.position.y })
+    }
   }
 
   function onNodesDelete(deleted: Node[]): void {
@@ -91,44 +108,34 @@ export default function ArchitectureCanvas(): JSX.Element {
     deleted.forEach((e) => removeConnection(Number(e.id)))
   }
 
-  if (!project) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-ink-faint text-sm">
-        Open or create a project to start building your architecture.
-      </div>
-    )
-  }
-
   return (
-    <ReactFlowProvider>
-      <div className="flex flex-col h-full">
-        <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
-          <Button onClick={handleAddBlock}>+ Block</Button>
-          <span className="text-xs text-ink-faint">Drag from a block's edge to connect</span>
-        </div>
-        <div className="flex-1">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            onEdgeClick={onEdgeClick}
-            onPaneClick={onPaneClick}
-            onNodeDragStop={onNodeDragStop}
-            onNodesDelete={onNodesDelete}
-            onEdgesDelete={onEdgesDelete}
-            deleteKeyCode="Delete"
-            fitView
-          >
-            <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
-            <Controls />
-          </ReactFlow>
-        </div>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
+        <Button onClick={handleAddBlock}>+ Block</Button>
+        <span className="text-xs text-ink-faint">Drag from a block's edge to connect</span>
       </div>
-    </ReactFlowProvider>
+      <div className="flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          onEdgeClick={onEdgeClick}
+          onPaneClick={onPaneClick}
+          onNodeDragStop={onNodeDragStop}
+          onNodesDelete={onNodesDelete}
+          onEdgesDelete={onEdgesDelete}
+          deleteKeyCode="Delete"
+          fitView
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
+          <Controls />
+        </ReactFlow>
+      </div>
+    </div>
   )
 }

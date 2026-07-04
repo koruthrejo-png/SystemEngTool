@@ -6,6 +6,7 @@ export type BlockNodeData = {
   blockId: string
   color: string | null
   selected: boolean
+  onResizeEnd: (width: number, height: number) => void
 }
 
 const NAVY = '#1a365d'
