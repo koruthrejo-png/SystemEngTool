@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import {
   ReactFlow, Background, BackgroundVariant, Controls, ReactFlowProvider,
-  useNodesState, useEdgesState, useReactFlow,
+  useNodesState, useEdgesState, useReactFlow, ConnectionMode,
   type Node, type Edge, type Connection
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -53,6 +53,8 @@ function CanvasInner(): JSX.Element {
         id: String(c.id),
         source: String(c.sourceId),
         target: String(c.targetId),
+        sourceHandle: c.sourceHandle ?? 'right',
+        targetHandle: c.targetHandle ?? 'left',
         type: 'labeled' as const,
         data: { label: c.name ?? '' },
         selected: c.id === selectedConnectionId
@@ -65,7 +67,9 @@ function CanvasInner(): JSX.Element {
     addConnection({
       projectId: project.id,
       sourceId: Number(params.source),
-      targetId: Number(params.target)
+      targetId: Number(params.target),
+      sourceHandle: params.sourceHandle ?? null,
+      targetHandle: params.targetHandle ?? null
     })
     // edges are re-derived from store via useEffect — no manual setEdges needed
   }, [project, addConnection])
@@ -130,6 +134,7 @@ function CanvasInner(): JSX.Element {
           onNodesDelete={onNodesDelete}
           onEdgesDelete={onEdgesDelete}
           deleteKeyCode="Delete"
+          connectionMode={ConnectionMode.Loose}
           fitView
         >
           <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
