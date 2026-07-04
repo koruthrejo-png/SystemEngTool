@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { Button, Input, SectionLabel } from './index'
+import { Button, Input, SectionLabel, Chip } from './index'
 
 describe('ui primitives', () => {
   it('Button defaults to primary variant (solid green)', () => {
@@ -27,5 +27,22 @@ describe('ui primitives', () => {
     const el = screen.getByText('Modules')
     expect(el.className).toContain('uppercase')
     expect(el.className).toContain('text-[11px]')
+  })
+})
+
+describe('Chip', () => {
+  it('renders the value text', () => {
+    render(<Chip value="Approved" />)
+    expect(screen.getByText('Approved')).toBeInTheDocument()
+  })
+
+  it('applies error styling for Rejected and High', () => {
+    render(<Chip value="Rejected" />)
+    expect(screen.getByText('Rejected').className).toContain('text-error')
+  })
+
+  it('falls back to neutral styling for unknown values', () => {
+    render(<Chip value="Whatever" />)
+    expect(screen.getByText('Whatever').className).toContain('text-ink-muted')
   })
 })

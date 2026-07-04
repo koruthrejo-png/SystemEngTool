@@ -59,3 +59,25 @@ export function Panel({
     </div>
   )
 }
+
+const CHIP_STYLES: Record<string, string> = {
+  Approved: 'bg-action-tint text-action-hover',
+  Draft: 'bg-workspace text-ink-muted border border-line',
+  Review: 'bg-navy/10 text-navy',
+  Rejected: 'bg-error/10 text-error',
+  High: 'bg-error/10 text-error',
+  Medium: 'bg-workspace text-ink-muted border border-line',
+  Low: 'bg-workspace text-ink-faint border border-line'
+}
+
+export function Chip({ value, className = '' }: { value: string; className?: string }): JSX.Element {
+  return (
+    <span
+      className={`inline-block w-fit px-2 py-0.5 rounded-full text-[11px] font-bold leading-4 whitespace-nowrap ${
+        CHIP_STYLES[value] ?? 'bg-workspace text-ink-muted border border-line'
+      } ${className}`}
+    >
+      {value}
+    </span>
+  )
+}
