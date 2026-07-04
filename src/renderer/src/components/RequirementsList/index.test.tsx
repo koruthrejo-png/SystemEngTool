@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RequirementsList from './index'
 
@@ -61,11 +61,12 @@ describe('RequirementsList', () => {
     expect(screen.getByText('+ New Requirement')).toBeInTheDocument()
   })
 
-  it('renders status and priority chips and type text', () => {
+  it('renders status and priority chips and type text in the row', () => {
     render(<RequirementsList />)
-    expect(screen.getAllByText('Approved').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('High').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Functional').length).toBeGreaterThan(0)
+    const row = screen.getByText('SRS-0001').closest('.grid') as HTMLElement
+    expect(within(row).getByText('Approved')).toBeInTheDocument()
+    expect(within(row).getByText('High')).toBeInTheDocument()
+    expect(within(row).getByText('Functional')).toBeInTheDocument()
   })
 
   it('filters rows by status', () => {
