@@ -44,7 +44,7 @@ function CanvasInner(): JSX.Element {
   const { getInternalNode } = useReactFlow()
 
   useEffect(() => {
-    setNodes(buildNodes(elements, selectedElementId, (id, width, height) => updateElement(id, { width, height })))
+    setNodes(buildNodes(elements, selectedElementId, (id, x, y, width, height) => updateElement(id, { posX: x, posY: y, width, height })))
   }, [elements, selectedElementId])
 
   useEffect(() => {

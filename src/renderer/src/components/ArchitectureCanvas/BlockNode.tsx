@@ -6,7 +6,7 @@ export type BlockNodeData = {
   blockId: string
   color: string | null
   selected: boolean
-  onResizeEnd: (width: number, height: number) => void
+  onResizeEnd: (x: number, y: number, width: number, height: number) => void
 }
 
 const NAVY = '#1a365d'
@@ -24,7 +24,7 @@ export default memo(function BlockNode({ data }: NodeProps) {
         isVisible={d.selected}
         minWidth={140}
         minHeight={60}
-        onResizeEnd={(_, params) => d.onResizeEnd(params.width, params.height)}
+        onResizeEnd={(_, params) => d.onResizeEnd(params.x, params.y, params.width, params.height)}
       />
       <div
         style={{ background: headerColor }}

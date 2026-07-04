@@ -36,7 +36,7 @@ function descendantIds(rootId: number, elements: ArchitectureElement[]): Set<num
 export function buildNodes(
   elements: ArchitectureElement[],
   selectedId: number | null,
-  onResizeEnd: (id: number, width: number, height: number) => void
+  onResizeEnd: (id: number, x: number, y: number, width: number, height: number) => void
 ): Node[] {
   const byId = new Map(elements.map((e) => [e.id, e]))
   const ordered: ArchitectureElement[] = []
@@ -66,7 +66,7 @@ export function buildNodes(
       blockId: el.blockId,
       color: el.color,
       selected: el.id === selectedId,
-      onResizeEnd: (w: number, h: number) => onResizeEnd(el.id, w, h)
+      onResizeEnd: (x: number, y: number, w: number, h: number) => onResizeEnd(el.id, x, y, w, h)
     } satisfies BlockNodeData,
     style: { width: el.width, height: el.height }
   }))

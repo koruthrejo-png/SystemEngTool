@@ -32,8 +32,8 @@ describe('BlockNode', () => {
     expect(props.isVisible).toBe(true)
     expect(props.minWidth).toBe(140)
     expect(props.minHeight).toBe(60)
-    props.onResizeEnd(null, { width: 320, height: 180 })
-    expect(data.onResizeEnd).toHaveBeenCalledWith(320, 180)
+    props.onResizeEnd(null, { x: 10, y: 20, width: 320, height: 180 })
+    expect(data.onResizeEnd).toHaveBeenCalledWith(10, 20, 320, 180)
 
     resizerSpy.mockClear()
     render(<BlockNode data={{ ...data, selected: false }} {...({} as any)} />)

@@ -35,8 +35,8 @@ describe('buildNodes', () => {
   it('wires onResizeEnd through node data with the element id', () => {
     const spy = vi.fn()
     const nodes = buildNodes([el({ id: 7 })], null, spy)
-    ;(nodes[0].data as { onResizeEnd: (w: number, h: number) => void }).onResizeEnd(300, 200)
-    expect(spy).toHaveBeenCalledWith(7, 300, 200)
+    ;(nodes[0].data as { onResizeEnd: (x: number, y: number, w: number, h: number) => void }).onResizeEnd(10, 20, 300, 200)
+    expect(spy).toHaveBeenCalledWith(7, 10, 20, 300, 200)
   })
 })
 
