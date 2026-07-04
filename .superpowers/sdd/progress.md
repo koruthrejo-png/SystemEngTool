@@ -48,3 +48,16 @@ Base commit: 546f4d7 (plan doc); code base 546f4d7
 - [x] Final whole-branch review (546f4d7..b8e7093, opus): READY TO MERGE — no Critical/Important; optional comments applied in a6eb0c8 (coalescing rationale in updateRequirement, CHIP_STYLES no-overlap invariant); all 4 carried-forward minors triaged DEFER
 
 ## PLAN COMPLETE — 6 tasks + final review; final commit a6eb0c8
+
+# SDD Progress Ledger — Row Checkboxes & Bulk Actions
+
+Plan: docs/superpowers/plans/2026-07-04-bulk-actions.md
+Base commit: 96da68a (plan commit)
+
+## Tasks
+- [x] Task 1: complete (commits 96da68a..51f3676, review clean — spec compliant, approved; controller resolved ⚠️ removeRequirements/removeRequirement parity by direct inspection [both filter local array + clear selection]; minor noted: updateRequirements early-returns before clearing checkedIds when selectedModuleId falsy — mirrors plan code, latent edge case only)
+- [x] Task 2: complete (commits 51f3676..ad64697, review clean — spec compliant, approved; 18/18 tests, grid math 10/10/10 verified, tokens verified against tailwind.config.js; minors for final-review triage: [a] stale checkedIds when a CHECKED row is deleted via the single-row × [removeRequirement doesn't prune checkedIds → wrong count, bulk op could hit soft-deleted row — not plan-mandated, cross-task gap], [b] bulk-action promises fired unawaited without .catch — inherited codebase convention; ⚠️ full-renderer-suite evidence deferred to Task 3 Step 1 by design)
+- [x] Task 3: complete (verification only, no app-source changes: suite 48 failed/68 passed — identical failure composition to baseline [47 sqlite-ABI + 1 pre-existing ArchitectureCanvas], +13 passed matches new renderer tests; typecheck clean both configs; 3-target build clean; 6/6 running-app checks pass — checkboxes/select-all present and absent-in-deleted-view, single-check bulk bar, select-all count match, bulk status update clears selection, delete→show-deleted→restore round-trip preserves other fields, filter-change clears checked set. See .superpowers/sdd/task-3-report.md)
+- [x] Final whole-branch review (96da68a..ad64697, opus): READY TO MERGE WITH FIXES — no Critical/Important; carried-forward minor triage: #1 updateRequirements early-return DEFER (unreachable from UI — bulk bar only renders with a module selected), #2 stale checkedIds on single-row × FIX BEFORE MERGE → fixed in cec91c7 (one-line prune in removeRequirement + TDD test, 17/17, typecheck clean), #3 unawaited bulk promises DEFER (matches codebase convention; belongs to a codebase-wide error-surfacing pass, ticketed as follow-up). Reviewer minors noted, no fix required: component tests verify wiring not reducer semantics (store tests cover those); allChecked tolerates a checkedIds superset — safe only while every scope change clears checkedIds
+
+## PLAN COMPLETE — 3 tasks + final review; final commit cec91c7 (083febd is unrelated driver tooling)
