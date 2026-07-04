@@ -12,6 +12,7 @@ const storeState = {
     text: 'The system shall respond within 2s',
     acceptanceCriteria: 'Measured under load',
     source: 'Customer spec', rationale: 'Performance SLA',
+    status: 'Draft', priority: 'Medium', reqType: 'Functional',
     position: 0, deletedAt: null, createdAt: '', updatedAt: ''
   }],
   updateRequirement: mockUpdateRequirement,
@@ -27,7 +28,9 @@ vi.mock('../../store', () => ({
 }))
 
 describe('RequirementDetail', () => {
-  beforeEach(() => mockUpdateRequirement.mockClear())
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
   it('renders all 4 fields with current values', () => {
     render(<RequirementDetail />)
@@ -51,5 +54,24 @@ describe('RequirementDetail', () => {
     await waitFor(() => {
       expect(mockUpdateRequirement).toHaveBeenCalledWith(1, expect.objectContaining({ text: 'New requirement text' }))
     })
+  })
+
+  it('renders metadata selects with current values', () => {
+    render(<RequirementDetail />)
+    expect(screen.getByLabelText('Type')).toHaveValue('Functional')
+    expect(screen.getByLabelText('Status')).toHaveValue('Draft')
+    expect(screen.getByLabelText('Priority')).toHaveValue('Medium')
+  })
+
+  it('changing status saves immediately', async () => {
+    render(<RequirementDetail />)
+    await userEvent.selectOptions(screen.getByLabelText('Status'), 'Approved')
+    expect(mockUpdateRequirement).toHaveBeenCalledWith(1, { status: 'Approved' })
+  })
+
+  it('changing priority saves immediately', async () => {
+    render(<RequirementDetail />)
+    await userEvent.selectOptions(screen.getByLabelText('Priority'), 'High')
+    expect(mockUpdateRequirement).toHaveBeenCalledWith(1, { priority: 'High' })
   })
 })

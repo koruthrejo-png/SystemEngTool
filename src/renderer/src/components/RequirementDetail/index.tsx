@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../store'
-import { Button, Input, Textarea, SectionLabel } from '../ui'
+import { Button, Input, Select, Textarea, SectionLabel } from '../ui'
+import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
+import type { RequirementStatus, RequirementPriority, RequirementType } from '../../../../types'
 
 export default function RequirementDetail(): JSX.Element {
   const {
@@ -78,6 +80,41 @@ export default function RequirementDetail(): JSX.Element {
         <span className="text-xs font-mono text-ink-faint">{req.reqId}</span>
       </div>
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Type">
+            <Select
+              aria-label="Type"
+              value={req.reqType}
+              onChange={(e) => updateRequirement(req.id, { reqType: e.target.value as RequirementType })}
+            >
+              {REQUIREMENT_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Status">
+            <Select
+              aria-label="Status"
+              value={req.status}
+              onChange={(e) => updateRequirement(req.id, { status: e.target.value as RequirementStatus })}
+            >
+              {REQUIREMENT_STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Priority">
+            <Select
+              aria-label="Priority"
+              value={req.priority}
+              onChange={(e) => updateRequirement(req.id, { priority: e.target.value as RequirementPriority })}
+            >
+              {REQUIREMENT_PRIORITIES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </Select>
+          </Field>
+        </div>
         <Field label="Requirement">
           <Textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} rows={4} />
         </Field>
