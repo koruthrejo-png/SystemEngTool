@@ -8,7 +8,8 @@ import type {
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
   RequirementCustomField, UpdateCustomFieldInput,
-  RequirementStatus, RequirementPriority, RequirementType
+  RequirementStatus, RequirementPriority, RequirementType,
+  ReqHeading, CreateHeadingInput
 } from '../../../types'
 
 interface Store {
@@ -21,6 +22,8 @@ interface Store {
   selectedModuleId: number | null
   requirements: Requirement[]
   selectedRequirementId: number | null
+  headings: ReqHeading[]
+  collapsedHeadingIds: number[]
 
   // architecture tab
   elements: ArchitectureElement[]
@@ -52,6 +55,11 @@ interface Store {
   updateRequirement: (id: number, input: UpdateRequirementInput) => Promise<void>
   removeRequirement: (id: number) => Promise<void>
   restoreRequirement: (id: number) => Promise<void>
+  addHeading: (input: CreateHeadingInput) => Promise<void>
+  renameHeading: (id: number, title: string) => Promise<void>
+  moveHeading: (id: number, direction: 'up' | 'down') => Promise<void>
+  removeHeading: (id: number) => Promise<void>
+  toggleHeadingCollapsed: (id: number) => void
   setShowDeleted: (show: boolean) => Promise<void>
   setStatusFilter: (f: RequirementStatus | 'All') => void
   setPriorityFilter: (f: RequirementPriority | 'All') => void
@@ -84,6 +92,7 @@ interface Store {
 export const useStore = create<Store>((set, get) => ({
   project: null, activeTab: 'requirements',
   modules: [], selectedModuleId: null, requirements: [], selectedRequirementId: null,
+  headings: [], collapsedHeadingIds: [],
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
   customFields: [], showDeleted: false, deletedRequirements: [],
@@ -99,10 +108,13 @@ export const useStore = create<Store>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   selectModule: async (id) => {
-    set({ selectedModuleId: id, requirements: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [] })
+    set({ selectedModuleId: id, requirements: [], headings: [], collapsedHeadingIds: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [] })
     if (id === null) return
-    const requirements = await window.api.requirements.list(id)
-    set({ requirements })
+    const [requirements, headings] = await Promise.all([
+      window.api.requirements.list(id),
+      window.api.headings.list(id)
+    ])
+    set({ requirements, headings })
   },
 
   selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [] }),
@@ -154,6 +166,41 @@ export const useStore = create<Store>((set, get) => ({
     ])
     set({ requirements, deletedRequirements, selectedRequirementId: null, customFields: [] })
   },
+
+  addHeading: async (input) => {
+    const heading = await window.api.headings.create(input)
+    set((s) => ({ headings: [...s.headings, heading] }))
+  },
+
+  renameHeading: async (id, title) => {
+    const updated = await window.api.headings.update(id, { title })
+    set((s) => ({ headings: s.headings.map((h) => (h.id === id ? updated : h)) }))
+  },
+
+  moveHeading: async (id, direction) => {
+    await window.api.headings.move(id, direction)
+    const { selectedModuleId } = get()
+    if (!selectedModuleId) return
+    set({ headings: await window.api.headings.list(selectedModuleId) })
+  },
+
+  removeHeading: async (id) => {
+    await window.api.headings.delete(id)
+    const { selectedModuleId } = get()
+    if (!selectedModuleId) return
+    // requirements re-fetched too: their heading_id was reassigned in the DB
+    const [headings, requirements] = await Promise.all([
+      window.api.headings.list(selectedModuleId),
+      window.api.requirements.list(selectedModuleId)
+    ])
+    set((s) => ({ headings, requirements, collapsedHeadingIds: s.collapsedHeadingIds.filter((c) => c !== id) }))
+  },
+
+  toggleHeadingCollapsed: (id) => set((s) => ({
+    collapsedHeadingIds: s.collapsedHeadingIds.includes(id)
+      ? s.collapsedHeadingIds.filter((c) => c !== id)
+      : [...s.collapsedHeadingIds, id]
+  })),
 
   setShowDeleted: async (show) => {
     set({ showDeleted: show, selectedRequirementId: null, customFields: [], checkedIds: [] })

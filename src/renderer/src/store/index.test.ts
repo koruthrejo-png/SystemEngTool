@@ -39,6 +39,7 @@ vi.stubGlobal('window', {
       delete: vi.fn().mockResolvedValue(undefined),
       listByProject: vi.fn().mockResolvedValue([mockReq])
     },
+    headings: { list: vi.fn().mockResolvedValue([]) },
     elementTypes: { list: vi.fn().mockResolvedValue([]) },
     connectionTypes: { list: vi.fn().mockResolvedValue([]) },
     elements: {

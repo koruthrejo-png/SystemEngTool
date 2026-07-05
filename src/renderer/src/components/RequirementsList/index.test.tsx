@@ -45,7 +45,14 @@ beforeEach(() => {
     toggleChecked: vi.fn(),
     setChecked: vi.fn(),
     updateRequirements: vi.fn().mockResolvedValue(undefined),
-    removeRequirements: vi.fn().mockResolvedValue(undefined)
+    removeRequirements: vi.fn().mockResolvedValue(undefined),
+    headings: [],
+    collapsedHeadingIds: [],
+    toggleHeadingCollapsed: vi.fn(),
+    addHeading: vi.fn().mockResolvedValue(undefined),
+    renameHeading: vi.fn().mockResolvedValue(undefined),
+    moveHeading: vi.fn().mockResolvedValue(undefined),
+    removeHeading: vi.fn().mockResolvedValue(undefined)
   })
 })
 
@@ -220,5 +227,73 @@ describe('RequirementsList', () => {
     fireEvent.mouseUp(window)
     const header = screen.getByTestId('req-grid-header')
     expect(header.style.gridTemplateColumns.split(' ')[1]).toBe('48px')
+  })
+
+  const headingFixture = {
+    id: 5, moduleId: 1, parentId: null, title: 'Power', position: 0,
+    deletedAt: null, createdAt: '', updatedAt: ''
+  }
+
+  it('renders a numbered heading row with requirements grouped under it', () => {
+    Object.assign(storeState, {
+      headings: [headingFixture],
+      requirements: [req1, { ...req2, headingId: 5 }]
+    })
+    render(<RequirementsList />)
+    const headingRow = screen.getByTestId('heading-row-5')
+    expect(within(headingRow).getByText('1')).toBeInTheDocument()
+    expect(within(headingRow).getByDisplayValue('Power')).toBeInTheDocument()
+    // grouped: ungrouped req1 first, then heading, then req2
+    // (heading title lives in an <input>'s value, which textContent can't see —
+    // compare real DOM position instead of substring-searching textContent)
+    const isBefore = (a: Element, b: Element): boolean =>
+      !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+    const req1Row = screen.getByText('SRS-0001')
+    const req2Row = screen.getByText('SRS-0002')
+    expect(isBefore(req1Row, headingRow)).toBe(true)
+    expect(isBefore(headingRow, req2Row)).toBe(true)
+  })
+
+  it('adds a top-level heading from the toolbar', async () => {
+    render(<RequirementsList />)
+    await userEvent.click(screen.getByText('+ Heading'))
+    expect(storeState.addHeading).toHaveBeenCalledWith({ moduleId: 1 })
+  })
+
+  it('adds a requirement scoped to a heading via the row button', async () => {
+    Object.assign(storeState, { headings: [headingFixture] })
+    render(<RequirementsList />)
+    await userEvent.click(screen.getByLabelText('Add requirement to section'))
+    expect(storeState.addRequirement).toHaveBeenCalledWith({ moduleId: 1, text: '', headingId: 5 })
+  })
+
+  it('adds a subheading, renames on blur, moves and deletes a heading', async () => {
+    Object.assign(storeState, { headings: [headingFixture] })
+    render(<RequirementsList />)
+    await userEvent.click(screen.getByLabelText('Add subheading'))
+    expect(storeState.addHeading).toHaveBeenCalledWith({ moduleId: 1, parentId: 5 })
+
+    const title = screen.getByLabelText('Heading title')
+    fireEvent.change(title, { target: { value: 'Thermal' } })
+    fireEvent.blur(title)
+    expect(storeState.renameHeading).toHaveBeenCalledWith(5, 'Thermal')
+
+    await userEvent.click(screen.getByLabelText('Move section down'))
+    expect(storeState.moveHeading).toHaveBeenCalledWith(5, 'down')
+
+    await userEvent.click(screen.getByLabelText('Delete section'))
+    expect(storeState.removeHeading).toHaveBeenCalledWith(5)
+  })
+
+  it('collapse toggle calls the store and collapsed heading hides its requirements', () => {
+    Object.assign(storeState, {
+      headings: [headingFixture],
+      requirements: [{ ...req2, headingId: 5 }],
+      collapsedHeadingIds: [5]
+    })
+    render(<RequirementsList />)
+    expect(screen.queryByText('SRS-0002')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Expand section'))
+    expect(storeState.toggleHeadingCollapsed).toHaveBeenCalledWith(5)
   })
 })

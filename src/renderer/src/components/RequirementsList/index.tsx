@@ -2,6 +2,7 @@ import { useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useStore } from '../../store'
 import { Button, Chip, SectionLabel, Select } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
+import { buildOutline, visibleRows, type OutlineRow } from './outline'
 
 // label '' = structural column (checkbox / actions), not resizable
 const COLUMNS = [
@@ -42,7 +43,9 @@ export default function RequirementsList(): JSX.Element {
     selectedRequirementId, selectRequirement,
     addRequirement, removeRequirement, restoreRequirement,
     checkedIds, toggleChecked, setChecked,
-    updateRequirements, removeRequirements
+    updateRequirements, removeRequirements,
+    headings, collapsedHeadingIds, toggleHeadingCollapsed,
+    addHeading, renameHeading, moveHeading, removeHeading
   } = useStore()
   const [colWidths, setColWidths] = useState<number[]>(loadWidths)
 
@@ -83,6 +86,9 @@ export default function RequirementsList(): JSX.Element {
     (typeFilter === 'All' || r.reqType === typeFilter)
   )
   const allChecked = displayed.length > 0 && displayed.every((r) => checkedIds.includes(r.id))
+  const rows: OutlineRow[] = showDeleted
+    ? displayed.map((r) => ({ kind: 'requirement' as const, requirement: r }))
+    : visibleRows(buildOutline(headings, displayed), new Set(collapsedHeadingIds))
 
   async function handleAdd(): Promise<void> {
     await addRequirement({ moduleId: selectedModuleId!, text: '' })
@@ -106,7 +112,12 @@ export default function RequirementsList(): JSX.Element {
           <span className="text-xs text-ink-faint">
             {displayed.length} item{displayed.length !== 1 ? 's' : ''}
           </span>
-          {!showDeleted && <Button onClick={handleAdd}>+ New Requirement</Button>}
+          {!showDeleted && (
+            <>
+              <Button variant="secondary" onClick={() => addHeading({ moduleId: selectedModuleId! })}>+ Heading</Button>
+              <Button onClick={handleAdd}>+ New Requirement</Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -177,74 +188,121 @@ export default function RequirementsList(): JSX.Element {
           </div>
 
           {/* Rows */}
-          {displayed.length === 0 && (
+          {rows.length === 0 && (
             <div className="p-4 text-sm text-ink-faint">
               {showDeleted ? 'No deleted requirements.' : 'No requirements match.'}
             </div>
           )}
-          {displayed.map((req, i) => (
-          <div
-            key={req.id}
-            onClick={() => !showDeleted && selectRequirement(req.id)}
-            style={gridStyle}
-            className={[
-              'grid',
-              'gap-x-3 items-start px-4 py-3 border-b border-line/60 group border-l-2',
-              i % 2 === 1 ? 'bg-workspace/50' : 'bg-white',
-              showDeleted ? 'opacity-60 border-l-transparent' : 'cursor-pointer hover:bg-action-tint/20',
-              !showDeleted && selectedRequirementId === req.id
-                ? '!bg-action-tint/40 border-l-action'
-                : 'border-l-transparent'
-            ].join(' ')}
-          >
-            <div className="flex items-start pt-1" onClick={(e) => e.stopPropagation()}>
-              {!showDeleted && (
+          {rows.map((row, i) =>
+            row.kind === 'heading' ? (
+              <div
+                key={`h-${row.heading.id}`}
+                data-testid={`heading-row-${row.heading.id}`}
+                className={`flex items-center gap-2 px-4 py-2 border-b border-line bg-workspace group/h ${row.depth === 1 ? 'pl-10' : ''}`}
+              >
+                <button
+                  aria-label={collapsedHeadingIds.includes(row.heading.id) ? 'Expand section' : 'Collapse section'}
+                  onClick={() => toggleHeadingCollapsed(row.heading.id)}
+                  className="w-4 text-ink-faint hover:text-ink"
+                >
+                  {collapsedHeadingIds.includes(row.heading.id) ? '▸' : '▾'}
+                </button>
+                <span className="text-xs font-mono text-ink-faint">{row.number}</span>
                 <input
-                  type="checkbox"
-                  aria-label={`Select ${req.reqId}`}
-                  checked={checkedIds.includes(req.id)}
-                  onChange={() => toggleChecked(req.id)}
-                  className="w-3.5 h-3.5 rounded accent-action"
+                  key={`${row.heading.id}:${row.heading.title}`}
+                  aria-label="Heading title"
+                  defaultValue={row.heading.title}
+                  placeholder="Untitled section"
+                  onBlur={(e) => { if (e.target.value !== row.heading.title) renameHeading(row.heading.id, e.target.value) }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                  className={`flex-1 min-w-0 bg-transparent outline-none font-semibold text-ink text-sm ${row.depth === 0 ? 'uppercase tracking-wide' : ''}`}
                 />
-              )}
-            </div>
-            <span className="text-xs font-mono text-ink-faint pt-0.5 truncate">{req.reqId}</span>
-            <span className="text-sm text-ink break-words pr-1">
-              {req.text || <span className="text-ink-faint/50 italic">—</span>}
-            </span>
-            <span className="text-sm text-ink-muted break-words pr-1">
-              {req.acceptanceCriteria || <span className="text-ink-faint/50">—</span>}
-            </span>
-            <span className="text-xs text-ink-muted truncate">
-              {req.source || <span className="text-ink-faint/50">—</span>}
-            </span>
-            <span className="text-sm text-ink-muted break-words pr-1">
-              {req.rationale || <span className="text-ink-faint/50">—</span>}
-            </span>
-            <span className="text-xs text-ink-muted pt-0.5 truncate">{req.reqType}</span>
-            <div className="pt-0.5"><Chip value={req.status} /></div>
-            <div className="pt-0.5"><Chip value={req.priority} /></div>
-            <div className="flex items-start justify-center pt-0.5">
-              {showDeleted ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); restoreRequirement(req.id) }}
-                  className="text-xs text-action hover:text-action-hover font-medium whitespace-nowrap"
-                >
-                  Restore
-                </button>
-              ) : (
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeRequirement(req.id) }}
-                  aria-label="Delete requirement"
-                  title="Delete requirement"
-                  className="opacity-0 group-hover:opacity-100 text-ink-faint hover:text-error transition-opacity text-base leading-none"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          </div>
-          ))}
+                <span className="flex items-center gap-3 text-xs opacity-0 group-hover/h:opacity-100 transition-opacity shrink-0">
+                  <button aria-label="Move section up" onClick={() => moveHeading(row.heading.id, 'up')} className="text-ink-faint hover:text-ink">↑</button>
+                  <button aria-label="Move section down" onClick={() => moveHeading(row.heading.id, 'down')} className="text-ink-faint hover:text-ink">↓</button>
+                  <button
+                    aria-label="Add requirement to section"
+                    onClick={() => addRequirement({ moduleId: selectedModuleId!, text: '', headingId: row.heading.id })}
+                    className="text-action hover:text-action-hover font-medium whitespace-nowrap"
+                  >
+                    + Req
+                  </button>
+                  {row.depth === 0 && (
+                    <button
+                      aria-label="Add subheading"
+                      onClick={() => addHeading({ moduleId: selectedModuleId!, parentId: row.heading.id })}
+                      className="text-action hover:text-action-hover font-medium whitespace-nowrap"
+                    >
+                      + Sub
+                    </button>
+                  )}
+                  <button aria-label="Delete section" onClick={() => removeHeading(row.heading.id)} className="text-ink-faint hover:text-error text-base leading-none">×</button>
+                </span>
+              </div>
+            ) : (
+              (() => {
+                const req = row.requirement
+                return (
+                  <div key={req.id} onClick={() => !showDeleted && selectRequirement(req.id)} style={gridStyle} className={[
+                    'grid',
+                    'gap-x-3 items-start px-4 py-3 border-b border-line/60 group border-l-2',
+                    i % 2 === 1 ? 'bg-workspace/50' : 'bg-white',
+                    showDeleted ? 'opacity-60 border-l-transparent' : 'cursor-pointer hover:bg-action-tint/20',
+                    !showDeleted && selectedRequirementId === req.id
+                      ? '!bg-action-tint/40 border-l-action'
+                      : 'border-l-transparent'
+                  ].join(' ')}>
+                    <div className="flex items-start pt-1" onClick={(e) => e.stopPropagation()}>
+                      {!showDeleted && (
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${req.reqId}`}
+                          checked={checkedIds.includes(req.id)}
+                          onChange={() => toggleChecked(req.id)}
+                          className="w-3.5 h-3.5 rounded accent-action"
+                        />
+                      )}
+                    </div>
+                    <span className="text-xs font-mono text-ink-faint pt-0.5 truncate">{req.reqId}</span>
+                    <span className="text-sm text-ink break-words pr-1">
+                      {req.text || <span className="text-ink-faint/50 italic">—</span>}
+                    </span>
+                    <span className="text-sm text-ink-muted break-words pr-1">
+                      {req.acceptanceCriteria || <span className="text-ink-faint/50">—</span>}
+                    </span>
+                    <span className="text-xs text-ink-muted truncate">
+                      {req.source || <span className="text-ink-faint/50">—</span>}
+                    </span>
+                    <span className="text-sm text-ink-muted break-words pr-1">
+                      {req.rationale || <span className="text-ink-faint/50">—</span>}
+                    </span>
+                    <span className="text-xs text-ink-muted pt-0.5 truncate">{req.reqType}</span>
+                    <div className="pt-0.5"><Chip value={req.status} /></div>
+                    <div className="pt-0.5"><Chip value={req.priority} /></div>
+                    <div className="flex items-start justify-center pt-0.5">
+                      {showDeleted ? (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); restoreRequirement(req.id) }}
+                          className="text-xs text-action hover:text-action-hover font-medium whitespace-nowrap"
+                        >
+                          Restore
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeRequirement(req.id) }}
+                          aria-label="Delete requirement"
+                          title="Delete requirement"
+                          className="opacity-0 group-hover:opacity-100 text-ink-faint hover:text-error transition-opacity text-base leading-none"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()
+            )
+          )}
         </div>
       </div>
     </div>
