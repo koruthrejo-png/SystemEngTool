@@ -20,7 +20,8 @@ const storeState = {
   loadCustomFields: vi.fn(),
   addCustomField: vi.fn(),
   updateCustomField: vi.fn(),
-  removeCustomField: vi.fn()
+  removeCustomField: vi.fn(),
+  headings: []
 }
 
 vi.mock('../../store', () => ({
@@ -73,5 +74,29 @@ describe('RequirementDetail', () => {
     render(<RequirementDetail />)
     await userEvent.selectOptions(screen.getByLabelText('Priority'), 'High')
     expect(mockUpdateRequirement).toHaveBeenCalledWith(1, { priority: 'High' })
+  })
+
+  it('shows the section select with numbered heading options and (none)', () => {
+    Object.assign(storeState, {
+      headings: [
+        { id: 5, moduleId: 1, parentId: null, title: 'Power', position: 0, deletedAt: null, createdAt: '', updatedAt: '' },
+        { id: 6, moduleId: 1, parentId: 5, title: 'Battery', position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
+      ]
+    })
+    render(<RequirementDetail />)
+    const select = screen.getByLabelText('Section') as HTMLSelectElement
+    const labels = Array.from(select.options).map((o) => o.textContent)
+    expect(labels).toEqual(['(none)', '1 Power', '1.1 Battery'])
+  })
+
+  it('assigns and clears the requirement section', () => {
+    Object.assign(storeState, {
+      headings: [{ id: 5, moduleId: 1, parentId: null, title: 'Power', position: 0, deletedAt: null, createdAt: '', updatedAt: '' }]
+    })
+    render(<RequirementDetail />)
+    fireEvent.change(screen.getByLabelText('Section'), { target: { value: '5' } })
+    expect(storeState.updateRequirement).toHaveBeenCalledWith(expect.any(Number), { headingId: 5 })
+    fireEvent.change(screen.getByLabelText('Section'), { target: { value: '' } })
+    expect(storeState.updateRequirement).toHaveBeenCalledWith(expect.any(Number), { headingId: null })
   })
 })

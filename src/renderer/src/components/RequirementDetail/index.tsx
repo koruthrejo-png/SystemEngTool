@@ -3,11 +3,13 @@ import { useStore } from '../../store'
 import { Button, Input, Select, Textarea, SectionLabel } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
 import type { RequirementStatus, RequirementPriority, RequirementType } from '../../../../types'
+import { buildOutline } from '../RequirementsList/outline'
 
 export default function RequirementDetail(): JSX.Element {
   const {
     selectedRequirementId, requirements, updateRequirement,
-    customFields, loadCustomFields, addCustomField, updateCustomField, removeCustomField
+    customFields, loadCustomFields, addCustomField, updateCustomField, removeCustomField,
+    headings
   } = useStore()
   const req = requirements.find((r) => r.id === selectedRequirementId) ?? null
 
@@ -115,6 +117,22 @@ export default function RequirementDetail(): JSX.Element {
             </Select>
           </Field>
         </div>
+        <Field label="Section">
+          <Select
+            aria-label="Section"
+            value={req.headingId ?? ''}
+            onChange={(e) => updateRequirement(req.id, { headingId: e.target.value === '' ? null : Number(e.target.value) })}
+          >
+            <option value="">(none)</option>
+            {buildOutline(headings, []).map((row) =>
+              row.kind === 'heading' ? (
+                <option key={row.heading.id} value={row.heading.id}>
+                  {row.number} {row.heading.title || 'Untitled section'}
+                </option>
+              ) : null
+            )}
+          </Select>
+        </Field>
         <Field label="Requirement">
           <Textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} rows={4} />
         </Field>
