@@ -10,6 +10,7 @@ function rowToRequirement(row: any): Requirement {
     acceptanceCriteria: row.acceptance_criteria ?? null,
     source: row.source ?? null, rationale: row.rationale ?? null,
     status: row.status, priority: row.priority, reqType: row.req_type,
+    headingId: row.heading_id ?? null,
     position: row.position, deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at, updatedAt: row.updated_at
   }
@@ -38,9 +39,9 @@ export function createRequirement(input: CreateRequirementInput): Requirement {
     db.prepare('UPDATE modules SET next_counter = ?, updated_at = ? WHERE id = ?')
       .run(mod.next_counter + 1, ts, input.moduleId)
     const r = db.prepare(`
-      INSERT INTO requirements (module_id, req_id, text, acceptance_criteria, source, rationale, position, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
-    `).run(input.moduleId, reqId, input.text, input.acceptanceCriteria ?? null, input.source ?? null, input.rationale ?? null, ts, ts)
+      INSERT INTO requirements (module_id, req_id, text, acceptance_criteria, source, rationale, heading_id, position, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    `).run(input.moduleId, reqId, input.text, input.acceptanceCriteria ?? null, input.source ?? null, input.rationale ?? null, input.headingId ?? null, ts, ts)
     return db.prepare('SELECT * FROM requirements WHERE id = ?').get(r.lastInsertRowid)
   })()
 
@@ -52,7 +53,7 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
   const existing = db.prepare('SELECT * FROM requirements WHERE id = ?').get(id) as any
   if (!existing) throw new Error(`Requirement ${id} not found`)
   db.prepare(`
-    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, updated_at = ? WHERE id = ?
+    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, heading_id = ?, updated_at = ? WHERE id = ?
   `).run(
     // nullable text fields coerce '' → null; NOT NULL enum fields have no empty state, so plain ??
     input.text ?? existing.text,
@@ -62,6 +63,7 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
     input.status ?? existing.status,
     input.priority ?? existing.priority,
     input.reqType ?? existing.req_type,
+    input.headingId !== undefined ? input.headingId : existing.heading_id,
     now(), id
   )
   return rowToRequirement(db.prepare('SELECT * FROM requirements WHERE id = ?').get(id))

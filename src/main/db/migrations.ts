@@ -118,6 +118,17 @@ export function runMigrations(db: Database.Database): void {
       created_at     TEXT    NOT NULL,
       updated_at     TEXT    NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS req_headings (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      module_id  INTEGER NOT NULL REFERENCES modules(id),
+      parent_id  INTEGER REFERENCES req_headings(id),
+      title      TEXT    NOT NULL DEFAULT '',
+      position   INTEGER NOT NULL DEFAULT 0,
+      deleted_at TEXT,
+      created_at TEXT    NOT NULL,
+      updated_at TEXT    NOT NULL
+    );
   `)
 
   addColumnIfMissing(db, 'projects', 'elem_id_prefix',    "TEXT NOT NULL DEFAULT 'SYS'")
@@ -131,4 +142,5 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'requirements', 'req_type', "TEXT NOT NULL DEFAULT 'Functional'")
   addColumnIfMissing(db, 'architecture_connections', 'source_handle', 'TEXT')
   addColumnIfMissing(db, 'architecture_connections', 'target_handle', 'TEXT')
+  addColumnIfMissing(db, 'requirements', 'heading_id', 'INTEGER REFERENCES req_headings(id)')
 }

@@ -25,7 +25,7 @@ vi.mock('../../store', () => ({
       { id: 1, projectId: 1, name: 'System', color: null, isBuiltIn: true, deletedAt: null, createdAt: '', updatedAt: '' }
     ],
     projectRequirements: [
-      { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'The system shall thrust', acceptanceCriteria: null, source: null, rationale: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
+      { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'The system shall thrust', acceptanceCriteria: null, source: null, rationale: null, status: 'Draft', priority: 'Medium', reqType: 'Functional', headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
     ],
     updateElement: mockUpdateElement,
     removeElement: mockRemoveElement,

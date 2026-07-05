@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   Project, Module, Requirement,
+  ReqHeading, CreateHeadingInput, UpdateHeadingInput,
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
   RequirementCustomField, UpdateCustomFieldInput,
@@ -32,6 +33,13 @@ contextBridge.exposeInMainWorld('api', {
     update: (id: number, input: UpdateRequirementInput): Promise<Requirement> => ipcRenderer.invoke('requirements:update', id, input),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('requirements:delete', id),
     restore: (id: number): Promise<void> => ipcRenderer.invoke('requirements:restore', id)
+  },
+  headings: {
+    list: (moduleId: number): Promise<ReqHeading[]> => ipcRenderer.invoke('headings:list', moduleId),
+    create: (input: CreateHeadingInput): Promise<ReqHeading> => ipcRenderer.invoke('headings:create', input),
+    update: (id: number, input: UpdateHeadingInput): Promise<ReqHeading> => ipcRenderer.invoke('headings:update', id, input),
+    move: (id: number, direction: 'up' | 'down'): Promise<void> => ipcRenderer.invoke('headings:move', id, direction),
+    delete: (id: number): Promise<void> => ipcRenderer.invoke('headings:delete', id)
   },
   customFields: {
     list: (requirementId: number): Promise<RequirementCustomField[]> => ipcRenderer.invoke('customFields:list', requirementId),

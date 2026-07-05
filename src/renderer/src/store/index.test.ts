@@ -9,7 +9,7 @@ const mockProject = {
   createdAt: '', updatedAt: ''
 }
 const mockModule = { id: 1, projectId: 1, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
-const mockReq = { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'Req text', acceptanceCriteria: null, source: null, rationale: null, status: 'Draft' as const, priority: 'High' as const, reqType: 'Functional' as const, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
+const mockReq = { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'Req text', acceptanceCriteria: null, source: null, rationale: null, status: 'Draft' as const, priority: 'High' as const, reqType: 'Functional' as const, headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockElement: ArchitectureElement = {
   id: 1, projectId: 1, parentId: null, blockId: 'SYS-001', name: '',
   elementTypeId: null, description: null, color: null,

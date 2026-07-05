@@ -3,6 +3,7 @@ import { join } from 'path'
 import { registerProjectHandlers } from './handlers/projects'
 import { registerModuleHandlers } from './handlers/modules'
 import { registerRequirementHandlers } from './handlers/requirements'
+import { registerHeadingHandlers } from './handlers/headings'
 import { registerCustomFieldHandlers } from './handlers/requirementCustomFields'
 import { registerElementTypeHandlers } from './handlers/elementTypes'
 import { registerConnectionTypeHandlers } from './handlers/connectionTypes'
@@ -32,6 +33,7 @@ app.whenReady().then(() => {
   registerProjectHandlers()
   registerModuleHandlers()
   registerRequirementHandlers()
+  registerHeadingHandlers()
   registerCustomFieldHandlers()
   registerElementTypeHandlers()
   registerConnectionTypeHandlers()

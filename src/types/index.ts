@@ -45,10 +45,32 @@ export interface Requirement {
   status: RequirementStatus
   priority: RequirementPriority
   reqType: RequirementType
+  headingId: number | null
   position: number
   deletedAt: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface ReqHeading {
+  id: number
+  moduleId: number
+  parentId: number | null
+  title: string
+  position: number
+  deletedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateHeadingInput {
+  moduleId: number
+  parentId?: number | null
+  title?: string
+}
+
+export interface UpdateHeadingInput {
+  title?: string
 }
 
 export interface CreateModuleInput {
@@ -69,6 +91,7 @@ export interface CreateRequirementInput {
   acceptanceCriteria?: string
   source?: string
   rationale?: string
+  headingId?: number | null
 }
 
 export interface UpdateRequirementInput {
@@ -79,6 +102,7 @@ export interface UpdateRequirementInput {
   status?: RequirementStatus
   priority?: RequirementPriority
   reqType?: RequirementType
+  headingId?: number | null
 }
 
 export interface RequirementCustomField {

@@ -12,7 +12,7 @@ const storeState = {
     text: 'The system shall respond within 2s',
     acceptanceCriteria: 'Measured under load',
     source: 'Customer spec', rationale: 'Performance SLA',
-    status: 'Draft', priority: 'Medium', reqType: 'Functional',
+    status: 'Draft', priority: 'Medium', reqType: 'Functional', headingId: null,
     position: 0, deletedAt: null, createdAt: '', updatedAt: ''
   }],
   updateRequirement: mockUpdateRequirement,

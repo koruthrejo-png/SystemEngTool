@@ -1,5 +1,6 @@
 import type {
   Project, Module, Requirement,
+  ReqHeading, CreateHeadingInput, UpdateHeadingInput,
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
   RequirementCustomField, UpdateCustomFieldInput,
@@ -33,6 +34,13 @@ declare global {
         update(id: number, input: UpdateRequirementInput): Promise<Requirement>
         delete(id: number): Promise<void>
         restore(id: number): Promise<void>
+      }
+      headings: {
+        list(moduleId: number): Promise<ReqHeading[]>
+        create(input: CreateHeadingInput): Promise<ReqHeading>
+        update(id: number, input: UpdateHeadingInput): Promise<ReqHeading>
+        move(id: number, direction: 'up' | 'down'): Promise<void>
+        delete(id: number): Promise<void>
       }
       customFields: {
         list(requirementId: number): Promise<RequirementCustomField[]>
