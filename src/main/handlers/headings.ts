@@ -21,6 +21,14 @@ export function listHeadings(moduleId: number): ReqHeading[] {
 export function createHeading(input: CreateHeadingInput): ReqHeading {
   const db = getDatabase()
   const ts = now()
+  // Enforce 2-level depth limit: parentId must be either null (top-level) or a top-level heading's id
+  if (input.parentId != null) {
+    const parent = db.prepare(
+      'SELECT parent_id FROM req_headings WHERE id = ? AND deleted_at IS NULL'
+    ).get(input.parentId) as any
+    if (!parent) throw new Error(`Heading ${input.parentId} not found`)
+    if (parent.parent_id != null) throw new Error('Subheadings cannot have their own subheadings')
+  }
   const max = db.prepare(
     'SELECT COALESCE(MAX(position), -1) AS p FROM req_headings WHERE module_id = ? AND deleted_at IS NULL AND parent_id IS ?'
   ).get(input.moduleId, input.parentId ?? null) as any
