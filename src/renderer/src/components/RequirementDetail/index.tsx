@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../store'
 import { Button, Input, Select, Textarea, SectionLabel } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
-import type { RequirementStatus, RequirementPriority, RequirementType } from '../../../../types'
+import type { RequirementStatus, RequirementPriority, RequirementType, Requirement } from '../../../../types'
 import { buildOutline } from '../RequirementsList/outline'
+import { flattenTree } from '../ModuleTree/moduleTree'
 
 export default function RequirementDetail(): JSX.Element {
   const {
@@ -182,6 +183,8 @@ export default function RequirementDetail(): JSX.Element {
           })}
           <Button variant="ghost" onClick={handleAddField} className="!px-2">+ Add Field</Button>
         </div>
+
+        <TraceabilitySection req={req} />
       </div>
     </div>
   )
@@ -192,6 +195,94 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <SectionLabel className="block">{label}</SectionLabel>
       {children}
+    </div>
+  )
+}
+
+function TraceabilitySection({ req }: { req: Requirement }): JSX.Element {
+  const {
+    modules, projectRequirements, reqLinks,
+    loadTraceability, addReqLink, removeReqLink, openRequirement
+  } = useStore()
+  const [pickModuleId, setPickModuleId] = useState<string>('')
+  const [pickReqId, setPickReqId] = useState<string>('')
+
+  useEffect(() => { loadTraceability() }, [req.id])
+
+  const byId = new Map(projectRequirements.map((r) => [r.id, r]))
+  const parents = reqLinks.filter((l) => l.childReqId === req.id)
+    .map((l) => byId.get(l.parentReqId)).filter((r): r is Requirement => r !== undefined)
+  const children = reqLinks.filter((l) => l.parentReqId === req.id)
+    .map((l) => byId.get(l.childReqId)).filter((r): r is Requirement => r !== undefined)
+  const linkedIds = new Set([req.id, ...parents.map((r) => r.id), ...children.map((r) => r.id)])
+  const candidates = pickModuleId === ''
+    ? []
+    : projectRequirements.filter((r) => r.moduleId === Number(pickModuleId) && !linkedIds.has(r.id))
+  const picked = pickReqId === '' ? null : byId.get(Number(pickReqId)) ?? null
+
+  function LinkList({ title, reqs, testId, removeAs }: {
+    title: string
+    reqs: Requirement[]
+    testId: string
+    removeAs: 'parent' | 'child'
+  }): JSX.Element {
+    return (
+      <div data-testid={testId} className="space-y-1">
+        <div className="text-xs font-medium text-ink-muted">{title}</div>
+        {reqs.length === 0 && <div className="text-xs text-ink-faint">None.</div>}
+        {reqs.map((r) => (
+          <div key={r.id} className="flex items-center gap-2">
+            <button onClick={() => openRequirement(r)}
+              className="flex-1 min-w-0 text-left flex gap-2 items-baseline hover:bg-action-tint/20 rounded px-1 py-0.5">
+              <span className="text-xs font-mono text-ink-faint shrink-0">{r.reqId}</span>
+              <span className="text-xs text-ink truncate">{r.text || '—'}</span>
+            </button>
+            <button
+              aria-label={`Remove link to ${r.reqId}`}
+              onClick={() => removeAs === 'parent' ? removeReqLink(r.id, req.id) : removeReqLink(req.id, r.id)}
+              className="text-ink-faint hover:text-error text-lg leading-none px-1"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div data-testid="traceability-section" className="space-y-3 pt-2 border-t border-line">
+      <SectionLabel className="block pt-2">Traceability</SectionLabel>
+      <LinkList title="Derives from" reqs={parents} testId="derives-from" removeAs="parent" />
+      <LinkList title="Derived by" reqs={children} testId="derived-by" removeAs="child" />
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <Select aria-label="Link module" value={pickModuleId}
+            onChange={(e) => { setPickModuleId(e.target.value); setPickReqId('') }} className="flex-1">
+            <option value="">Pick module…</option>
+            {flattenTree(modules).map(({ module: m, depth }) => (
+              <option key={m.id} value={m.id}>{' '.repeat(depth * 2)}{m.name}</option>
+            ))}
+          </Select>
+          <Select aria-label="Link requirement" value={pickReqId}
+            onChange={(e) => setPickReqId(e.target.value)} className="flex-1">
+            <option value="">Pick requirement…</option>
+            {candidates.map((r) => (
+              <option key={r.id} value={r.id}>{r.reqId} {r.text.slice(0, 40)}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="ghost" className="!px-2 !py-1 !text-xs" disabled={!picked}
+            onClick={() => { if (picked) addReqLink(picked.id, req.id) }}>
+            Add as parent
+          </Button>
+          <Button variant="ghost" className="!px-2 !py-1 !text-xs" disabled={!picked}
+            onClick={() => { if (picked) addReqLink(req.id, picked.id) }}>
+            Add as child
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

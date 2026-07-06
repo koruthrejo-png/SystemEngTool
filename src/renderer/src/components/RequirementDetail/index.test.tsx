@@ -21,7 +21,14 @@ const storeState = {
   addCustomField: vi.fn(),
   updateCustomField: vi.fn(),
   removeCustomField: vi.fn(),
-  headings: []
+  headings: [],
+  reqLinks: [],
+  projectRequirements: [],
+  modules: [],
+  loadTraceability: vi.fn(),
+  addReqLink: vi.fn(),
+  removeReqLink: vi.fn(),
+  openRequirement: vi.fn()
 }
 
 vi.mock('../../store', () => ({
