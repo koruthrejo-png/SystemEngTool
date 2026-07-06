@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeStats } from './stats'
+import { computeStats, timeAgo } from './stats'
 import type { Requirement } from '../../../../types'
 
 function req(partial: Partial<Requirement> & { id: number }): Requirement {
@@ -48,5 +48,65 @@ describe('computeStats', () => {
     expect(s.recent).toHaveLength(8)
     expect(s.recent[0].id).toBe(10)
     expect(s.recent[7].id).toBe(3)
+  })
+
+  it('counts requirements created within the last 7 days', () => {
+    const now = new Date('2026-07-06T12:00:00Z')
+    const s = computeStats(
+      [
+        req({ id: 1, createdAt: '2026-07-05T12:00:00Z' }), // 1 day ago → in
+        req({ id: 2, createdAt: '2026-06-29T13:00:00Z' }), // 6.96 days ago → in
+        req({ id: 3, createdAt: '2026-06-28T12:00:00Z' }) // 8 days ago → out
+      ],
+      [], [], [], now
+    )
+    expect(s.createdThisWeek).toBe(2)
+  })
+
+  it('computes per-module coverage and omits requirement-less modules', () => {
+    const modules = [
+      { id: 1, name: 'SRS', position: 0 } as any,
+      { id: 2, name: 'HW', position: 1 } as any,
+      { id: 3, name: 'Empty', position: 2 } as any
+    ]
+    const s = computeStats(
+      [req({ id: 1, moduleId: 1 }), req({ id: 2, moduleId: 1 }), req({ id: 3, moduleId: 2 })],
+      [el],
+      [{ elementId: 1, requirementId: 1 }],
+      modules
+    )
+    expect(s.perModule).toEqual([
+      { moduleId: 1, name: 'SRS', total: 2, linked: 1, pct: 50 },
+      { moduleId: 2, name: 'HW', total: 1, linked: 0, pct: 0 }
+    ])
+  })
+
+  it('collects high-priority unallocated requirements as critical gaps', () => {
+    const s = computeStats(
+      [
+        req({ id: 1, priority: 'High' }), // linked → not a gap
+        req({ id: 2, priority: 'High' }), // unallocated High → gap
+        req({ id: 3, priority: 'Medium' }) // unallocated but Medium → not a gap
+      ],
+      [el],
+      [{ elementId: 1, requirementId: 1 }]
+    )
+    expect(s.criticalGaps.map((r) => r.id)).toEqual([2])
+  })
+
+  it('counts top-level elements as subsystems', () => {
+    const s = computeStats([], [el, { ...el, id: 2, parentId: 1 }], [])
+    expect(s.totalObjects).toBe(2)
+    expect(s.subsystemCount).toBe(1)
+  })
+})
+
+describe('timeAgo', () => {
+  const now = new Date('2026-07-06T12:00:00Z')
+  it('formats minutes, hours, days and just-now', () => {
+    expect(timeAgo('2026-07-06T11:59:40Z', now)).toBe('just now')
+    expect(timeAgo('2026-07-06T11:15:00Z', now)).toBe('45m ago')
+    expect(timeAgo('2026-07-06T09:00:00Z', now)).toBe('3h ago')
+    expect(timeAgo('2026-07-03T12:00:00Z', now)).toBe('3d ago')
   })
 })

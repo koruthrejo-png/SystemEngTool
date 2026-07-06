@@ -1,4 +1,12 @@
-import type { Requirement, ArchitectureElement, ElementRequirementLink } from '../../../../types'
+import type { Requirement, ArchitectureElement, ElementRequirementLink, Module } from '../../../../types'
+
+export interface ModuleCoverage {
+  moduleId: number
+  name: string
+  total: number
+  linked: number
+  pct: number
+}
 
 export interface DashboardStats {
   totalRequirements: number
@@ -9,6 +17,10 @@ export interface DashboardStats {
   byPriority: [string, number][]
   byType: [string, number][]
   recent: Requirement[]
+  createdThisWeek: number
+  subsystemCount: number
+  perModule: ModuleCoverage[]
+  criticalGaps: Requirement[]
 }
 
 function tally(reqs: Requirement[], key: (r: Requirement) => string): [string, number][] {
@@ -17,13 +29,25 @@ function tally(reqs: Requirement[], key: (r: Requirement) => string): [string, n
   return [...counts.entries()].sort((a, b) => b[1] - a[1])
 }
 
+export function timeAgo(iso: string, now: Date = new Date()): string {
+  const m = Math.floor((now.getTime() - new Date(iso).getTime()) / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
+
 export function computeStats(
   requirements: Requirement[],
   elements: ArchitectureElement[],
-  links: ElementRequirementLink[]
+  links: ElementRequirementLink[],
+  modules: Module[] = [],
+  now: Date = new Date()
 ): DashboardStats {
   const linkedIds = new Set(links.map((l) => l.requirementId))
   const unallocated = requirements.filter((r) => !linkedIds.has(r.id))
+  const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000
   return {
     totalRequirements: requirements.length,
     totalObjects: elements.length,
@@ -34,6 +58,22 @@ export function computeStats(
     byStatus: tally(requirements, (r) => r.status),
     byPriority: tally(requirements, (r) => r.priority),
     byType: tally(requirements, (r) => r.reqType),
-    recent: [...requirements].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 8)
+    recent: [...requirements].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 8),
+    createdThisWeek: requirements.filter((r) => new Date(r.createdAt).getTime() >= weekAgo).length,
+    subsystemCount: elements.filter((e) => e.parentId === null).length,
+    perModule: modules
+      .map((m) => {
+        const reqs = requirements.filter((r) => r.moduleId === m.id)
+        const linked = reqs.filter((r) => linkedIds.has(r.id)).length
+        return {
+          moduleId: m.id,
+          name: m.name,
+          total: reqs.length,
+          linked,
+          pct: reqs.length === 0 ? 0 : Math.round((linked / reqs.length) * 100)
+        }
+      })
+      .filter((m) => m.total > 0),
+    criticalGaps: unallocated.filter((r) => r.priority === 'High')
   }
 }
