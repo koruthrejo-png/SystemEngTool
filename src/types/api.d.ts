@@ -9,7 +9,7 @@ import type {
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
-  ElementRequirementLink
+  ElementRequirementLink, RequirementLink
 } from './index'
 
 declare global {
@@ -82,6 +82,11 @@ declare global {
         list(connectionId: number): Promise<Requirement[]>
         add(connectionId: number, requirementId: number): Promise<void>
         remove(connectionId: number, requirementId: number): Promise<void>
+      }
+      reqLinks: {
+        add(parentReqId: number, childReqId: number): Promise<void>
+        remove(parentReqId: number, childReqId: number): Promise<void>
+        listByProject(projectId: number): Promise<RequirementLink[]>
       }
     }
   }

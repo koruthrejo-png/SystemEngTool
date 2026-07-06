@@ -231,3 +231,9 @@ export interface ElementRequirementLink {
   elementId: number
   requirementId: number
 }
+
+// Derivation link: child requirement derives from parent requirement.
+export interface RequirementLink {
+  parentReqId: number
+  childReqId: number
+}

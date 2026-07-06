@@ -10,7 +10,7 @@ import type {
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
-  ElementRequirementLink
+  ElementRequirementLink, RequirementLink
 } from '../types'
 
 contextBridge.exposeInMainWorld('api', {
@@ -81,5 +81,10 @@ contextBridge.exposeInMainWorld('api', {
     list: (connectionId: number): Promise<Requirement[]> => ipcRenderer.invoke('connectionLinks:list', connectionId),
     add: (connectionId: number, requirementId: number): Promise<void> => ipcRenderer.invoke('connectionLinks:add', connectionId, requirementId),
     remove: (connectionId: number, requirementId: number): Promise<void> => ipcRenderer.invoke('connectionLinks:remove', connectionId, requirementId)
+  },
+  reqLinks: {
+    add: (parentReqId: number, childReqId: number): Promise<void> => ipcRenderer.invoke('reqLinks:add', parentReqId, childReqId),
+    remove: (parentReqId: number, childReqId: number): Promise<void> => ipcRenderer.invoke('reqLinks:remove', parentReqId, childReqId),
+    listByProject: (projectId: number): Promise<RequirementLink[]> => ipcRenderer.invoke('reqLinks:listByProject', projectId)
   }
 })

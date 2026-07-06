@@ -129,6 +129,12 @@ export function runMigrations(db: Database.Database): void {
       created_at TEXT    NOT NULL,
       updated_at TEXT    NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS requirement_links (
+      parent_req_id INTEGER NOT NULL REFERENCES requirements(id),
+      child_req_id  INTEGER NOT NULL REFERENCES requirements(id),
+      PRIMARY KEY (parent_req_id, child_req_id)
+    );
   `)
 
   addColumnIfMissing(db, 'projects', 'elem_id_prefix',    "TEXT NOT NULL DEFAULT 'SYS'")
