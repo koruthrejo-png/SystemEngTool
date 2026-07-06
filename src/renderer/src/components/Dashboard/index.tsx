@@ -74,7 +74,7 @@ export default function Dashboard(): JSX.Element {
               ? <span className="text-action font-medium">↗ +{stats.createdThisWeek} this week</span>
               : undefined}
           />
-          <KpiCard label="Objects" value={String(stats.totalObjects)} icon={boxIcon} sub={`${stats.subsystemCount} subsystems`} />
+          <KpiCard label="Objects" value={String(stats.totalObjects)} icon={boxIcon} sub={`${stats.subsystemCount} subsystem${stats.subsystemCount === 1 ? '' : 's'}`} />
           <KpiCard
             label="Allocation Coverage"
             value={`${stats.coveragePct}%`}
@@ -166,10 +166,10 @@ function DonutCard({ byStatus, total }: { byStatus: [string, number][]; total: n
               />
             )
           })}
-          <text x="21" y="20.5" textAnchor="middle" className="fill-ink" style={{ font: '700 8px Inter, sans-serif' }}>
+          <text x="21" y="20.5" textAnchor="middle" className="fill-ink font-sans text-[8px] font-bold">
             {total}
           </text>
-          <text x="21" y="26" textAnchor="middle" className="fill-ink-faint" style={{ font: '600 3px Inter, sans-serif', letterSpacing: '0.5px' }}>
+          <text x="21" y="26" textAnchor="middle" className="fill-ink-faint font-sans text-[3px] font-semibold tracking-[0.5px]">
             ACTIVE
           </text>
         </svg>

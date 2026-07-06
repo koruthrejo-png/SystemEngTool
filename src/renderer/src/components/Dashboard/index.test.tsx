@@ -46,7 +46,7 @@ describe('Dashboard (executive layout)', () => {
     expect(within(kpis).getByText('Trace Gaps')).toBeInTheDocument()
     // SRS-2 is High priority and unallocated → 1 gap
     expect(within(within(kpis).getByText('Trace Gaps').closest('div')!.parentElement!).getByText('1')).toBeInTheDocument()
-    expect(within(kpis).getByText('1 subsystems')).toBeInTheDocument()
+    expect(within(kpis).getByText('1 subsystem')).toBeInTheDocument()
   })
 
   it('renders the status donut with a legend entry per status', () => {
