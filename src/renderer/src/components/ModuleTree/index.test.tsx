@@ -65,4 +65,16 @@ describe('ModuleTree hierarchy', () => {
     fireEvent.change(screen.getByLabelText('Move Software to'), { target: { value: '' } })
     expect(storeState.moveModule).toHaveBeenCalledWith(2, null)
   })
+
+  it('calls selectModule when a module row is clicked', () => {
+    render(<ModuleTree />)
+    fireEvent.click(screen.getByText('System'))
+    expect(storeState.selectModule).toHaveBeenCalledWith(1)
+  })
+
+  it('shows New Module form when + New Module is clicked', () => {
+    render(<ModuleTree />)
+    fireEvent.click(screen.getByText('+ New Module'))
+    expect(screen.getByPlaceholderText('Module name')).toBeInTheDocument()
+  })
 })
