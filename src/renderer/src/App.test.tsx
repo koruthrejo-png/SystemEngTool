@@ -15,6 +15,9 @@ vi.mock('./components/ConnectionPanel', () => ({
 vi.mock('./components/TraceabilityMatrix', () => ({
   default: () => <div data-testid="traceability-matrix" />
 }))
+vi.mock('./components/Dashboard', () => ({
+  default: () => <div data-testid="dashboard" />
+}))
 
 // mockUseStore is hoisted above vi.mock by Vitest (mock* prefix rule)
 const mockUseStore = vi.fn()
@@ -91,5 +94,13 @@ describe('App — traceability tab', () => {
     mockUseStore.mockReturnValue({ ...baseStore, activeTab: 'traceability' as const })
     render(<App />)
     expect(screen.getByTestId('panel-traceability')).toBeInTheDocument()
+  })
+})
+
+describe('App — dashboard tab', () => {
+  it('shows the dashboard tab and renders it when selected', () => {
+    mockUseStore.mockReturnValue({ ...baseStore, activeTab: 'dashboard' as const })
+    render(<App />)
+    expect(screen.getByTestId('panel-dashboard')).toBeInTheDocument()
   })
 })

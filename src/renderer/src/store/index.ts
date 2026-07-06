@@ -52,6 +52,7 @@ interface Store {
   // actions — requirements
   selectModule: (id: number | null) => Promise<void>
   selectRequirement: (id: number | null) => void
+  openRequirement: (req: Requirement) => Promise<void>
   addModule: (input: CreateModuleInput) => Promise<void>
   updateModule: (id: number, input: UpdateModuleInput) => Promise<void>
   removeModule: (id: number) => Promise<void>
@@ -123,6 +124,12 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [] }),
+
+  openRequirement: async (req) => {
+    set({ activeTab: 'requirements' })
+    await get().selectModule(req.moduleId)
+    set({ selectedRequirementId: req.id })
+  },
 
   addModule: async (input) => {
     const mod = await window.api.modules.create(input)
