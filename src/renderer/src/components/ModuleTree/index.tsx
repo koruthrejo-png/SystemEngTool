@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useStore } from '../../store'
 import ModuleNode from './ModuleNode'
 import NewModuleForm from './NewModuleForm'
+import { topLevelModules } from './moduleTree'
 import { Button, SectionLabel } from '../ui'
 
 export default function ModuleTree(): JSX.Element {
-  const { project, modules, selectedModuleId, selectModule, addModule, updateModule, removeModule } = useStore()
+  const { project, modules, selectedModuleId, selectModule, addModule, updateModule, removeModule, moveModule } = useStore()
   const [showForm, setShowForm] = useState(false)
-  const topLevel = modules.filter((m) => m.parentId === null)
+  const topLevel = topLevelModules(modules)
 
   if (!project) {
     return <div className="p-4 text-sm text-ink-faint">Open or create a project to begin.</div>
@@ -27,9 +28,12 @@ export default function ModuleTree(): JSX.Element {
         )}
         {topLevel.map((mod) => (
           <ModuleNode key={mod.id} module={mod} allModules={modules} depth={0}
+            projectId={project.id}
             selectedModuleId={selectedModuleId} onSelect={selectModule}
             onDelete={removeModule}
-            onRename={(id, name) => updateModule(id, { name })} />
+            onRename={(id, name) => updateModule(id, { name })}
+            onAddChild={addModule}
+            onMove={moveModule} />
         ))}
       </div>
       {showForm ? (
