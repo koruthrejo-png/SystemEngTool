@@ -16,6 +16,19 @@ const electronBin = path.join(APP_DIR, 'node_modules/electron/dist/Electron.app/
 let app = null;
 let page = null;
 
+const ts = () => new Date().toISOString().slice(11, 23);
+function hook(w, label) {
+  w.on('close', () => console.log(`[${ts()}] [PAGE CLOSED] ${label}`));
+  w.on('crash', () => console.log(`[${ts()}] [PAGE CRASHED] ${label}`));
+  w.on('load', () => console.log(`[${ts()}] [PAGE LOAD] ${label} ${w.url()}`));
+  w.on('framenavigated', (f) => console.log(`[${ts()}] [NAVIGATED] ${label} ${f.url()}`));
+  w.on('console', (m) => {
+    if (m.type() === 'error' || m.type() === 'warning')
+      console.log(`[${ts()}] [console.${m.type()}] ${m.text().slice(0, 300)}`);
+  });
+  w.on('pageerror', (e) => console.log(`[${ts()}] [pageerror] ${String(e).slice(0, 300)}`));
+}
+
 const COMMANDS = {
   async launch() {
     if (app) return console.log('already launched');
@@ -26,8 +39,18 @@ const COMMANDS = {
       timeout: 30_000,
     });
     await new Promise(r => setTimeout(r, 5_000));
+    const proc = app.process();
+    proc.stderr?.on('data', (d) => console.log(`[${ts()}] [app-stderr]`, String(d).trim().slice(0, 500)));
+    proc.stdout?.on('data', (d) => console.log(`[${ts()}] [app-stdout]`, String(d).trim().slice(0, 500)));
+    proc.on('exit', (code, sig) => console.log(`[${ts()}] [app-exit]`, code, sig));
+    app.on('window', (w) => {
+      console.log(`[${ts()}] [NEW WINDOW]`, w.url());
+      hook(w, 'late');
+      if (!w.url().startsWith('devtools://')) page = w; // re-point at recreated window
+    });
     page = app.windows().find(w => !w.url().startsWith('devtools://'))
         ?? await app.firstWindow();
+    for (const w of app.windows()) hook(w, w.url().startsWith('devtools://') ? 'devtools' : 'main');
     console.log('launched.', app.windows().length, 'windows:');
     for (const w of app.windows()) console.log(' ', w.url());
   },
