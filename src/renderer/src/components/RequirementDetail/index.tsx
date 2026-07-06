@@ -274,11 +274,11 @@ function TraceabilitySection({ req }: { req: Requirement }): JSX.Element {
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" className="!px-2 !py-1 !text-xs" disabled={!picked}
-            onClick={() => { if (picked) addReqLink(picked.id, req.id) }}>
+            onClick={() => { if (picked) { addReqLink(picked.id, req.id); setPickReqId('') } }}>
             Add as parent
           </Button>
           <Button variant="ghost" className="!px-2 !py-1 !text-xs" disabled={!picked}
-            onClick={() => { if (picked) addReqLink(req.id, picked.id) }}>
+            onClick={() => { if (picked) { addReqLink(req.id, picked.id); setPickReqId('') } }}>
             Add as child
           </Button>
         </div>

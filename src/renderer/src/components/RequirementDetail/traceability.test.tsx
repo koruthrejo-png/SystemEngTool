@@ -59,6 +59,8 @@ describe('RequirementDetail traceability section', () => {
     fireEvent.change(within(section).getByLabelText('Link requirement'), { target: { value: '3' } })
     fireEvent.click(within(section).getByText('Add as parent'))
     expect(storeState.addReqLink).toHaveBeenCalledWith(3, 2) // parent = picked req, child = current
+    // picker resets after add — re-pick before adding as child (mocked addReqLink doesn't refetch, so R-3 stays a candidate)
+    fireEvent.change(within(section).getByLabelText('Link requirement'), { target: { value: '3' } })
     fireEvent.click(within(section).getByText('Add as child'))
     expect(storeState.addReqLink).toHaveBeenCalledWith(2, 3) // parent = current, child = picked
   })
