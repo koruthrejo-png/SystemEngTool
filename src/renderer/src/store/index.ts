@@ -9,13 +9,14 @@ import type {
   CreateConnectionInput, UpdateConnectionInput,
   RequirementCustomField, UpdateCustomFieldInput,
   RequirementStatus, RequirementPriority, RequirementType,
-  ReqHeading, CreateHeadingInput
+  ReqHeading, CreateHeadingInput,
+  ElementRequirementLink
 } from '../../../types'
 
 interface Store {
   // shared
   project: Project | null
-  activeTab: 'requirements' | 'architecture'
+  activeTab: 'requirements' | 'architecture' | 'traceability' | 'dashboard'
 
   // requirements tab
   modules: Module[]
@@ -40,10 +41,13 @@ interface Store {
   priorityFilter: RequirementPriority | 'All'
   typeFilter: RequirementType | 'All'
   checkedIds: number[]
+  traceLinks: ElementRequirementLink[]
 
   // actions — shared
   loadProject: () => Promise<void>
-  setActiveTab: (tab: 'requirements' | 'architecture') => void
+  setActiveTab: (tab: 'requirements' | 'architecture' | 'traceability' | 'dashboard') => void
+  loadTraceability: () => Promise<void>
+  toggleTraceLink: (elementId: number, requirementId: number) => Promise<void>
 
   // actions — requirements
   selectModule: (id: number | null) => Promise<void>
@@ -97,6 +101,7 @@ export const useStore = create<Store>((set, get) => ({
   selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
   customFields: [], showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
+  traceLinks: [],
 
   loadProject: async () => {
     const project = await window.api.project.getCurrent()
@@ -275,6 +280,26 @@ export const useStore = create<Store>((set, get) => ({
       window.api.requirements.listByProject(project.id)
     ])
     set({ elements, connections, elementTypes, connectionTypes, projectRequirements })
+  },
+
+  loadTraceability: async () => {
+    const { project } = get()
+    if (!project) return
+    const [projectRequirements, elements, traceLinks] = await Promise.all([
+      window.api.requirements.listByProject(project.id),
+      window.api.elements.list(project.id),
+      window.api.elementLinks.listByProject(project.id)
+    ])
+    set({ projectRequirements, elements, traceLinks })
+  },
+
+  toggleTraceLink: async (elementId, requirementId) => {
+    const { traceLinks, project } = get()
+    const exists = traceLinks.some((l) => l.elementId === elementId && l.requirementId === requirementId)
+    if (exists) await window.api.elementLinks.remove(elementId, requirementId)
+    else await window.api.elementLinks.add(elementId, requirementId)
+    if (!project) return
+    set({ traceLinks: await window.api.elementLinks.listByProject(project.id) })
   },
 
   selectElement: (id) => set({ selectedElementId: id, selectedConnectionId: null }),

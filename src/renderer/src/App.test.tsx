@@ -12,6 +12,9 @@ vi.mock('./components/ElementPanel', () => ({
 vi.mock('./components/ConnectionPanel', () => ({
   default: () => <div data-testid="connection-panel" />
 }))
+vi.mock('./components/TraceabilityMatrix', () => ({
+  default: () => <div data-testid="traceability-matrix" />
+}))
 
 // mockUseStore is hoisted above vi.mock by Vitest (mock* prefix rule)
 const mockUseStore = vi.fn()
@@ -80,5 +83,13 @@ describe('App — architecture tab', () => {
   it('renders architecture panel when tab is architecture', () => {
     render(<App />)
     expect(screen.getByTestId('panel-architecture')).toBeInTheDocument()
+  })
+})
+
+describe('App — traceability tab', () => {
+  it('shows the traceability tab and renders the matrix when selected', () => {
+    mockUseStore.mockReturnValue({ ...baseStore, activeTab: 'traceability' as const })
+    render(<App />)
+    expect(screen.getByTestId('panel-traceability')).toBeInTheDocument()
   })
 })

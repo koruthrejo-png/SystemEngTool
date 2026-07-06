@@ -7,6 +7,7 @@ import RequirementDetail from './components/RequirementDetail'
 import ArchitectureCanvas from './components/ArchitectureCanvas'
 import ElementPanel from './components/ElementPanel'
 import ConnectionPanel from './components/ConnectionPanel'
+import TraceabilityMatrix from './components/TraceabilityMatrix'
 
 export default function App(): JSX.Element {
   const { project, activeTab, setActiveTab, loadProject, loadArchitecture, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
@@ -53,7 +54,7 @@ export default function App(): JSX.Element {
       <header className="flex items-center h-14 px-4 gap-6 bg-navy shrink-0">
         <span className="font-semibold text-lg tracking-tight text-white">ReqArch Suite</span>
         <nav className="flex h-full">
-          {(['requirements', 'architecture'] as const).map((tab) => (
+          {([['requirements', 'Requirements'], ['architecture', 'Architecture'], ['traceability', 'Traceability']] as const).map(([tab, label]) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -62,7 +63,7 @@ export default function App(): JSX.Element {
                   ? 'border-action-tint text-white'
                   : 'border-transparent text-white/60 hover:text-white'}`}
             >
-              {tab === 'requirements' ? 'Requirements' : 'Architecture'}
+              {label}
             </button>
           ))}
         </nav>
@@ -109,6 +110,10 @@ export default function App(): JSX.Element {
               <RequirementDetail />
             </Panel>
           )}
+        </div>
+      ) : activeTab === 'traceability' ? (
+        <div data-testid="panel-traceability" className="flex-1 overflow-hidden">
+          <TraceabilityMatrix />
         </div>
       ) : (
         <div data-testid="panel-architecture" className="flex flex-1 overflow-hidden">

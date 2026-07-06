@@ -8,7 +8,8 @@ import type {
   ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
-  CreateConnectionInput, UpdateConnectionInput
+  CreateConnectionInput, UpdateConnectionInput,
+  ElementRequirementLink
 } from './index'
 
 declare global {
@@ -74,6 +75,7 @@ declare global {
         list(elementId: number): Promise<Requirement[]>
         add(elementId: number, requirementId: number): Promise<void>
         remove(elementId: number, requirementId: number): Promise<void>
+        listByProject(projectId: number): Promise<ElementRequirementLink[]>
       }
       connectionLinks: {
         list(connectionId: number): Promise<Requirement[]>

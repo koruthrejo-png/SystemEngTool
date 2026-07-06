@@ -226,3 +226,8 @@ export interface UpdateConnectionInput {
   connectionTypeId?: number | null
   description?: string | null
 }
+
+export interface ElementRequirementLink {
+  elementId: number
+  requirementId: number
+}
