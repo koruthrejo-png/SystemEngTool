@@ -147,9 +147,9 @@ export const useStore = create<Store>((set, get) => ({
 
   removeModule: async (id) => {
     await window.api.modules.delete(id)
-    const { project, selectedModuleId } = get()
+    const { project } = get()
     const modules = project ? await window.api.modules.list(project.id) : []
-    set({ modules, selectedModuleId: selectedModuleId === id ? null : selectedModuleId })
+    set((s) => ({ modules, selectedModuleId: s.selectedModuleId === id ? null : s.selectedModuleId }))
   },
 
   moveModule: async (id, newParentId) => {
