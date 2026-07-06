@@ -24,7 +24,8 @@ contextBridge.exposeInMainWorld('api', {
     create: (input: CreateModuleInput): Promise<Module> => ipcRenderer.invoke('modules:create', input),
     update: (id: number, input: UpdateModuleInput): Promise<Module> => ipcRenderer.invoke('modules:update', id, input),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('modules:delete', id),
-    restore: (id: number): Promise<void> => ipcRenderer.invoke('modules:restore', id)
+    restore: (id: number): Promise<void> => ipcRenderer.invoke('modules:restore', id),
+    move: (id: number, newParentId: number | null): Promise<Module> => ipcRenderer.invoke('modules:move', id, newParentId)
   },
   requirements: {
     list: (moduleId: number): Promise<Requirement[]> => ipcRenderer.invoke('requirements:list', moduleId),

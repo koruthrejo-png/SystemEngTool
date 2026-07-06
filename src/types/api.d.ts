@@ -26,6 +26,7 @@ declare global {
         update(id: number, input: UpdateModuleInput): Promise<Module>
         delete(id: number): Promise<void>
         restore(id: number): Promise<void>
+        move(id: number, newParentId: number | null): Promise<Module>
       }
       requirements: {
         list(moduleId: number): Promise<Requirement[]>

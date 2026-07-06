@@ -35,9 +35,31 @@ export function updateModule(id: number, input: UpdateModuleInput): Module {
   return rowToModule(db.prepare('SELECT * FROM modules WHERE id = ?').get(id))
 }
 
+export function moveModule(id: number, newParentId: number | null): Module {
+  const db = getDatabase()
+  if (newParentId != null) {
+    // Cycle guard: walk up from the target; hitting `id` means target is self or a descendant.
+    let cur: number | null = newParentId
+    while (cur != null) {
+      if (cur === id) throw new Error('Cannot move a module into itself or its descendants')
+      const row = db.prepare('SELECT parent_id FROM modules WHERE id = ?').get(cur) as any
+      if (!row) throw new Error(`Module ${cur} not found`)
+      cur = row.parent_id ?? null
+    }
+  }
+  db.prepare('UPDATE modules SET parent_id = ?, updated_at = ? WHERE id = ?').run(newParentId, now(), id)
+  return rowToModule(db.prepare('SELECT * FROM modules WHERE id = ?').get(id))
+}
+
 export function deleteModule(id: number): void {
-  const ts = now()
-  getDatabase().prepare('UPDATE modules SET deleted_at = ?, updated_at = ? WHERE id = ?').run(ts, ts, id)
+  const db = getDatabase()
+  db.transaction(() => {
+    const mod = db.prepare('SELECT parent_id FROM modules WHERE id = ?').get(id) as any
+    const ts = now()
+    db.prepare('UPDATE modules SET parent_id = ?, updated_at = ? WHERE parent_id = ? AND deleted_at IS NULL')
+      .run(mod?.parent_id ?? null, ts, id)
+    db.prepare('UPDATE modules SET deleted_at = ?, updated_at = ? WHERE id = ?').run(ts, ts, id)
+  })()
 }
 
 export function restoreModule(id: number): void {
@@ -50,4 +72,5 @@ export function registerModuleHandlers(): void {
   ipcMain.handle('modules:update', (_e, id: number, input: UpdateModuleInput) => updateModule(id, input))
   ipcMain.handle('modules:delete', (_e, id: number) => deleteModule(id))
   ipcMain.handle('modules:restore', (_e, id: number) => restoreModule(id))
+  ipcMain.handle('modules:move', (_e, id: number, newParentId: number | null) => moveModule(id, newParentId))
 }
