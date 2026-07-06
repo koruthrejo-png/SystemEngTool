@@ -10,7 +10,7 @@ import type {
   RequirementCustomField, UpdateCustomFieldInput,
   RequirementStatus, RequirementPriority, RequirementType,
   ReqHeading, CreateHeadingInput,
-  ElementRequirementLink
+  ElementRequirementLink, RequirementLink
 } from '../../../types'
 
 interface Store {
@@ -42,12 +42,15 @@ interface Store {
   typeFilter: RequirementType | 'All'
   checkedIds: number[]
   traceLinks: ElementRequirementLink[]
+  reqLinks: RequirementLink[]
 
   // actions — shared
   loadProject: () => Promise<void>
   setActiveTab: (tab: 'requirements' | 'architecture' | 'traceability' | 'dashboard') => void
   loadTraceability: () => Promise<void>
   toggleTraceLink: (elementId: number, requirementId: number) => Promise<void>
+  addReqLink: (parentReqId: number, childReqId: number) => Promise<void>
+  removeReqLink: (parentReqId: number, childReqId: number) => Promise<void>
 
   // actions — requirements
   selectModule: (id: number | null) => Promise<void>
@@ -56,6 +59,7 @@ interface Store {
   addModule: (input: CreateModuleInput) => Promise<void>
   updateModule: (id: number, input: UpdateModuleInput) => Promise<void>
   removeModule: (id: number) => Promise<void>
+  moveModule: (id: number, newParentId: number | null) => Promise<void>
   addRequirement: (input: CreateRequirementInput) => Promise<void>
   updateRequirement: (id: number, input: UpdateRequirementInput) => Promise<void>
   removeRequirement: (id: number) => Promise<void>
@@ -102,7 +106,7 @@ export const useStore = create<Store>((set, get) => ({
   selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
   customFields: [], showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
-  traceLinks: [],
+  traceLinks: [], reqLinks: [],
 
   loadProject: async () => {
     const project = await window.api.project.getCurrent()
@@ -143,10 +147,16 @@ export const useStore = create<Store>((set, get) => ({
 
   removeModule: async (id) => {
     await window.api.modules.delete(id)
-    set((s) => ({
-      modules: s.modules.filter((m) => m.id !== id),
-      selectedModuleId: s.selectedModuleId === id ? null : s.selectedModuleId
-    }))
+    const { project, selectedModuleId } = get()
+    const modules = project ? await window.api.modules.list(project.id) : []
+    set({ modules, selectedModuleId: selectedModuleId === id ? null : selectedModuleId })
+  },
+
+  moveModule: async (id, newParentId) => {
+    await window.api.modules.move(id, newParentId)
+    const { project } = get()
+    if (!project) return
+    set({ modules: await window.api.modules.list(project.id) })
   },
 
   addRequirement: async (input) => {
@@ -292,12 +302,13 @@ export const useStore = create<Store>((set, get) => ({
   loadTraceability: async () => {
     const { project } = get()
     if (!project) return
-    const [projectRequirements, elements, traceLinks] = await Promise.all([
+    const [projectRequirements, elements, traceLinks, reqLinks] = await Promise.all([
       window.api.requirements.listByProject(project.id),
       window.api.elements.list(project.id),
-      window.api.elementLinks.listByProject(project.id)
+      window.api.elementLinks.listByProject(project.id),
+      window.api.reqLinks.listByProject(project.id)
     ])
-    set({ projectRequirements, elements, traceLinks })
+    set({ projectRequirements, elements, traceLinks, reqLinks })
   },
 
   toggleTraceLink: async (elementId, requirementId) => {
@@ -307,6 +318,20 @@ export const useStore = create<Store>((set, get) => ({
     else await window.api.elementLinks.add(elementId, requirementId)
     if (!project) return
     set({ traceLinks: await window.api.elementLinks.listByProject(project.id) })
+  },
+
+  addReqLink: async (parentReqId, childReqId) => {
+    await window.api.reqLinks.add(parentReqId, childReqId)
+    const { project } = get()
+    if (!project) return
+    set({ reqLinks: await window.api.reqLinks.listByProject(project.id) })
+  },
+
+  removeReqLink: async (parentReqId, childReqId) => {
+    await window.api.reqLinks.remove(parentReqId, childReqId)
+    const { project } = get()
+    if (!project) return
+    set({ reqLinks: await window.api.reqLinks.listByProject(project.id) })
   },
 
   selectElement: (id) => set({ selectedElementId: id, selectedConnectionId: null }),

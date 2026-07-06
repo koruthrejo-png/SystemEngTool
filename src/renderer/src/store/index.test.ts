@@ -30,7 +30,8 @@ vi.stubGlobal('window', {
       list: vi.fn().mockResolvedValue([mockModule]),
       create: vi.fn().mockResolvedValue(mockModule),
       update: vi.fn().mockResolvedValue({ ...mockModule, name: 'Renamed' }),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
+      move: vi.fn().mockResolvedValue({ ...mockModule, parentId: 2 })
     },
     requirements: {
       list: vi.fn().mockResolvedValue([mockReq]),
@@ -55,18 +56,25 @@ vi.stubGlobal('window', {
     elementLinks: {
       list: vi.fn().mockResolvedValue([]),
       add: vi.fn().mockResolvedValue(undefined),
-      remove: vi.fn().mockResolvedValue(undefined)
+      remove: vi.fn().mockResolvedValue(undefined),
+      listByProject: vi.fn().mockResolvedValue([])
     },
     connectionLinks: {
       list: vi.fn().mockResolvedValue([]),
       add: vi.fn().mockResolvedValue(undefined),
       remove: vi.fn().mockResolvedValue(undefined)
+    },
+    reqLinks: {
+      add: vi.fn().mockResolvedValue(undefined),
+      remove: vi.fn().mockResolvedValue(undefined),
+      listByProject: vi.fn().mockResolvedValue([{ parentReqId: 1, childReqId: 2 }])
     }
   }
 })
 
 describe('store', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     useStore.setState({ project: null, modules: [], selectedModuleId: null, requirements: [], selectedRequirementId: null })
   })
 
@@ -91,6 +99,7 @@ describe('store', () => {
 
   it('removeModule removes from list and clears selection if selected', async () => {
     useStore.setState({ project: mockProject, modules: [mockModule], selectedModuleId: 1 })
+    ;(window.api.modules.list as any).mockResolvedValueOnce([])
     await useStore.getState().removeModule(1)
     expect(useStore.getState().modules).toHaveLength(0)
     expect(useStore.getState().selectedModuleId).toBeNull()
@@ -173,6 +182,37 @@ describe('store', () => {
     useStore.setState({ requirements: [mockReq], checkedIds: [1, 2], selectedRequirementId: null })
     await useStore.getState().removeRequirement(1)
     expect(useStore.getState().checkedIds).toEqual([2])
+  })
+
+  it('moveModule calls the api and re-syncs the module list', async () => {
+    await useStore.getState().loadProject()
+    await useStore.getState().moveModule(1, 2)
+    expect(window.api.modules.move).toHaveBeenCalledWith(1, 2)
+    expect(window.api.modules.list).toHaveBeenCalledTimes(2) // loadProject + re-sync
+  })
+
+  it('removeModule re-syncs modules from the DB (reparented children)', async () => {
+    await useStore.getState().loadProject()
+    ;(window.api.modules.list as any).mockResolvedValueOnce([])
+    await useStore.getState().removeModule(1)
+    expect(window.api.modules.delete).toHaveBeenCalledWith(1)
+    expect(useStore.getState().modules).toEqual([]) // state comes from the re-fetch, not a local filter
+  })
+
+  it('loadTraceability also loads requirement links', async () => {
+    await useStore.getState().loadProject()
+    await useStore.getState().loadTraceability()
+    expect(window.api.reqLinks.listByProject).toHaveBeenCalledWith(1)
+    expect(useStore.getState().reqLinks).toEqual([{ parentReqId: 1, childReqId: 2 }])
+  })
+
+  it('addReqLink and removeReqLink call the api and refetch links', async () => {
+    await useStore.getState().loadProject()
+    await useStore.getState().addReqLink(1, 2)
+    expect(window.api.reqLinks.add).toHaveBeenCalledWith(1, 2)
+    expect(useStore.getState().reqLinks).toEqual([{ parentReqId: 1, childReqId: 2 }])
+    await useStore.getState().removeReqLink(1, 2)
+    expect(window.api.reqLinks.remove).toHaveBeenCalledWith(1, 2)
   })
 })
 
