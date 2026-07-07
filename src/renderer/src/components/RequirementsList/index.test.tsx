@@ -41,6 +41,7 @@ beforeEach(() => {
     setStatusFilter: vi.fn(),
     setPriorityFilter: vi.fn(),
     setTypeFilter: vi.fn(),
+    acSummary: {},
     checkedIds: [],
     toggleChecked: vi.fn(),
     setChecked: vi.fn(),
@@ -295,5 +296,19 @@ describe('RequirementsList', () => {
     expect(screen.queryByText('SRS-0002')).not.toBeInTheDocument()
     fireEvent.click(screen.getByLabelText('Expand section'))
     expect(storeState.toggleHeadingCollapsed).toHaveBeenCalledWith(5)
+  })
+
+  it('acceptance criteria cell shows passed/total and first item text', () => {
+    storeState.acSummary = { [req1.id]: { passed: 2, total: 5, first: 'boots in 2s' } }
+    render(<RequirementsList />)
+    expect(screen.getByText('2/5')).toBeInTheDocument()
+    expect(screen.getByText('boots in 2s')).toBeInTheDocument()
+  })
+
+  it('acceptance criteria cell shows em-dash when requirement has no items', () => {
+    storeState.acSummary = {}
+    render(<RequirementsList />)
+    const row = screen.getByText(req1.reqId).closest('div[style]') as HTMLElement
+    expect(within(row).queryByText(/\d+\/\d+/)).toBeNull()
   })
 })

@@ -35,7 +35,7 @@ function loadWidths(): number[] {
 
 export default function RequirementsList(): JSX.Element {
   const {
-    selectedModuleId, modules, requirements, deletedRequirements,
+    selectedModuleId, modules, requirements, deletedRequirements, acSummary,
     showDeleted, setShowDeleted,
     statusFilter, setStatusFilter,
     priorityFilter, setPriorityFilter,
@@ -268,7 +268,16 @@ export default function RequirementsList(): JSX.Element {
                       {req.text || <span className="text-ink-faint/50 italic">—</span>}
                     </span>
                     <span className="text-sm text-ink-muted break-words pr-1">
-                      {req.acceptanceCriteria || <span className="text-ink-faint/50">—</span>}
+                      {acSummary[req.id] ? (
+                        <>
+                          <span className="text-xs font-mono text-ink-faint mr-1.5">
+                            {acSummary[req.id].passed}/{acSummary[req.id].total}
+                          </span>
+                          {acSummary[req.id].first}
+                        </>
+                      ) : (
+                        <span className="text-ink-faint/50">—</span>
+                      )}
                     </span>
                     <span className="text-xs text-ink-muted truncate">
                       {req.source || <span className="text-ink-faint/50">—</span>}
