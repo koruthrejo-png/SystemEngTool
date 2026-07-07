@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../../store'
 import { SectionLabel, Chip } from '../ui'
-import { computeStats, timeAgo } from './stats'
+import { computeStats, timeAgo, derivationStats } from './stats'
 import type { ModuleCoverage } from './stats'
-import type { Requirement } from '../../../../types'
+import { flattenTree } from '../ModuleTree/moduleTree'
+import type { Module, Requirement, RequirementLink } from '../../../../types'
 
 // Chart-mark colors: hex mirrors of tailwind tokens (SVG attrs can't take classes).
 // Fixed per status entity — see plan Global Constraints.
@@ -44,7 +45,7 @@ const warnIcon = (
 
 export default function Dashboard(): JSX.Element {
   const {
-    project, projectRequirements, elements, traceLinks, modules,
+    project, projectRequirements, elements, traceLinks, modules, reqLinks,
     loadTraceability, openRequirement, setActiveTab
   } = useStore()
 
@@ -102,6 +103,13 @@ export default function Dashboard(): JSX.Element {
             <ModuleBarsCard perModule={stats.perModule} />
           </div>
         </div>
+
+        <DerivationCard
+          requirements={projectRequirements}
+          reqLinks={reqLinks}
+          modules={modules}
+          onOpen={openRequirement}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <ActivityCard reqs={stats.recent} onOpen={openRequirement} />
@@ -283,6 +291,72 @@ function GapsCard({
       <button onClick={onMatrix} className="mt-3 text-xs font-medium text-action hover:text-action-hover self-center">
         Open Traceability Matrix
       </button>
+    </div>
+  )
+}
+
+function DerivationCard({
+  requirements, reqLinks, modules, onOpen
+}: {
+  requirements: Requirement[]
+  reqLinks: RequirementLink[]
+  modules: Module[]
+  onOpen: (req: Requirement) => Promise<void>
+}): JSX.Element {
+  const [moduleId, setModuleId] = useState<string>('')
+  const [direction, setDirection] = useState<'hasParent' | 'hasChildren'>('hasParent')
+  const s = derivationStats(requirements, reqLinks, moduleId === '' ? null : Number(moduleId), direction)
+  return (
+    <div className="bg-white border border-line rounded p-4" data-testid="derivation-coverage">
+      <div className="flex items-center justify-between mb-3 gap-3">
+        <SectionLabel>Derivation Coverage</SectionLabel>
+        <div className="flex items-center gap-2">
+          <select
+            aria-label="Derivation module filter"
+            value={moduleId}
+            onChange={(e) => setModuleId(e.target.value)}
+            className="text-xs border border-line rounded px-1.5 py-1 bg-white text-ink focus:outline-none focus:border-action"
+          >
+            <option value="">All modules</option>
+            {flattenTree(modules).map(({ module: m, depth }) => (
+              <option key={m.id} value={m.id}>{' '.repeat(depth * 2)}{m.name}</option>
+            ))}
+          </select>
+          <span className="flex rounded border border-line overflow-hidden text-xs">
+            {([['hasParent', 'Has parent'], ['hasChildren', 'Has children']] as const).map(([dir, label]) => (
+              <button
+                key={dir}
+                onClick={() => setDirection(dir)}
+                className={`px-2 py-1 ${direction === dir ? 'bg-action text-white' : 'bg-white text-ink-muted hover:text-ink'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mb-3">
+        <span className="text-sm font-semibold text-ink">{s.linked} / {s.total} linked</span>
+        <span className="flex-1 h-1.5 rounded bg-line overflow-hidden">
+          <span className="block h-full bg-action" style={{ width: `${s.pct}%` }} />
+        </span>
+        <span className="text-sm font-semibold text-ink">{s.pct}%</span>
+      </div>
+      {s.total === 0 && <div className="text-xs text-ink-faint">No requirements in scope.</div>}
+      {s.total > 0 && s.unlinked.length === 0 && (
+        <div className="text-xs text-ink-faint">Every requirement in scope is linked.</div>
+      )}
+      {s.unlinked.length > 0 && (
+        <div className="divide-y divide-line/60 max-h-56 overflow-y-auto">
+          {s.unlinked.map((r) => (
+            <button key={r.id} onClick={() => onOpen(r)}
+              className="w-full text-left py-1.5 px-1 rounded flex gap-2 items-baseline hover:bg-action-tint/20">
+              <span className="text-xs font-mono text-ink-faint shrink-0">{r.reqId}</span>
+              <span className="text-xs text-ink truncate">{r.text || '—'}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

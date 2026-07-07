@@ -1,4 +1,4 @@
-import type { Requirement, ArchitectureElement, ElementRequirementLink, Module } from '../../../../types'
+import type { Requirement, ArchitectureElement, ElementRequirementLink, Module, RequirementLink } from '../../../../types'
 
 export interface ModuleCoverage {
   moduleId: number
@@ -75,5 +75,32 @@ export function computeStats(
       })
       .filter((m) => m.total > 0),
     criticalGaps: unallocated.filter((r) => r.priority === 'High')
+  }
+}
+
+export interface DerivationStats {
+  total: number
+  linked: number
+  pct: number
+  unlinked: Requirement[]
+}
+
+export function derivationStats(
+  requirements: Requirement[],
+  reqLinks: RequirementLink[],
+  moduleId: number | null,
+  direction: 'hasParent' | 'hasChildren'
+): DerivationStats {
+  const scoped = moduleId === null ? requirements : requirements.filter((r) => r.moduleId === moduleId)
+  const linkedIds = direction === 'hasParent'
+    ? new Set(reqLinks.map((l) => l.childReqId))
+    : new Set(reqLinks.map((l) => l.parentReqId))
+  const unlinked = scoped.filter((r) => !linkedIds.has(r.id))
+  const linked = scoped.length - unlinked.length
+  return {
+    total: scoped.length,
+    linked,
+    pct: scoped.length === 0 ? 0 : Math.round((linked / scoped.length) * 100),
+    unlinked
   }
 }

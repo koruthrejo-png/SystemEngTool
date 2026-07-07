@@ -30,6 +30,7 @@ beforeEach(() => {
     ],
     modules: [{ id: 1, name: 'SRS', position: 0 }],
     traceLinks: [{ elementId: 1, requirementId: 1 }],
+    reqLinks: [{ parentReqId: 1, childReqId: 2 }],
     loadTraceability: vi.fn().mockResolvedValue(undefined),
     openRequirement: vi.fn().mockResolvedValue(undefined),
     setActiveTab: vi.fn()
@@ -81,6 +82,26 @@ describe('Dashboard (executive layout)', () => {
     expect(storeState.openRequirement).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }))
     fireEvent.click(screen.getByText('Open Traceability Matrix'))
     expect(storeState.setActiveTab).toHaveBeenCalledWith('traceability')
+  })
+
+  it('renders derivation coverage with module and direction filters', () => {
+    render(<Dashboard />)
+    const card = screen.getByTestId('derivation-coverage')
+    // default: All modules, direction hasParent → req 1 unlinked (no parent), req 2 linked
+    expect(within(card).getByText('1 / 2 linked')).toBeInTheDocument()
+    expect(within(card).getByText('SRS-1')).toBeInTheDocument() // unlinked list
+    fireEvent.click(within(card).getByText('Has children'))
+    // hasChildren → req 1 linked (has child), req 2 unlinked
+    expect(within(card).getByText('SRS-2')).toBeInTheDocument()
+    fireEvent.click(within(card).getByText('SRS-2').closest('button')!)
+    expect(storeState.openRequirement).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }))
+  })
+
+  it('derivation module filter narrows the scope', () => {
+    render(<Dashboard />)
+    const card = screen.getByTestId('derivation-coverage')
+    fireEvent.change(within(card).getByLabelText('Derivation module filter'), { target: { value: '1' } })
+    expect(within(card).getByText('1 / 2 linked')).toBeInTheDocument()
   })
 
   it('loads data on mount and shows empty state without a project', () => {

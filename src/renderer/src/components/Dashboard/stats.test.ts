@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeStats, timeAgo } from './stats'
+import { computeStats, timeAgo, derivationStats } from './stats'
 import type { Requirement } from '../../../../types'
 
 function req(partial: Partial<Requirement> & { id: number }): Requirement {
@@ -98,6 +98,31 @@ describe('computeStats', () => {
     const s = computeStats([], [el, { ...el, id: 2, parentId: 1 }], [])
     expect(s.totalObjects).toBe(2)
     expect(s.subsystemCount).toBe(1)
+  })
+})
+
+describe('derivationStats', () => {
+  const links = [{ parentReqId: 1, childReqId: 3 }] // req 3 (module 2) derives from req 1 (module 1)
+  const reqs = [
+    req({ id: 1, moduleId: 1 }), req({ id: 2, moduleId: 1 }),
+    req({ id: 3, moduleId: 2 }), req({ id: 4, moduleId: 2 })
+  ]
+
+  it('hasChildren: high-level reqs with at least one derived child', () => {
+    const s = derivationStats(reqs, links, 1, 'hasChildren')
+    expect(s).toMatchObject({ total: 2, linked: 1, pct: 50 })
+    expect(s.unlinked.map((r) => r.id)).toEqual([2])
+  })
+
+  it('hasParent: low-level reqs traced to a parent', () => {
+    const s = derivationStats(reqs, links, 2, 'hasParent')
+    expect(s).toMatchObject({ total: 2, linked: 1, pct: 50 })
+    expect(s.unlinked.map((r) => r.id)).toEqual([4])
+  })
+
+  it('All modules scope and empty input', () => {
+    expect(derivationStats(reqs, links, null, 'hasParent').total).toBe(4)
+    expect(derivationStats([], [], null, 'hasChildren')).toMatchObject({ total: 0, linked: 0, pct: 0, unlinked: [] })
   })
 })
 
