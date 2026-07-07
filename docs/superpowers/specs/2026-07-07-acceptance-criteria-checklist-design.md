@@ -71,7 +71,7 @@ New handler file `src/main/handlers/acceptanceCriteria.ts` (registered in `src/m
 Custom-fields pattern exactly:
 
 - State: `acItems: AcceptanceCriterion[]` (items of the currently selected requirement); `acSummary: Record<number, { passed: number; total: number; first: string }>` (summary per requirement id for the selected module's table).
-- Actions: `loadAcItems(reqId)`, `addAcItem(reqId, text)`, `updateAcItem(id, patch)`, `removeAcItem(id)`, `moveAcItem(id, direction)` — each mutation refetches via `list` for the selected requirement.
+- Actions: `loadAcItems(reqId)`, `addAcItem(reqId, text)`, `updateAcItem(id, patch, reqId)`, `removeAcItem(id, reqId)`, `moveAcItem(id, direction, reqId)` — mutations take the owning requirement id explicitly and refetch both the item list and the module summary.
 - `acSummary` loads via `listByModule` alongside `loadRequirements` and recomputes after any AC mutation on a requirement in the current module; the derivation from item rows to the summary map is a pure exported helper so it can be unit-tested directly.
 
 ## Drawer UI (`src/renderer/src/components/RequirementDetail/index.tsx`)
