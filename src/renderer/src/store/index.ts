@@ -10,8 +10,10 @@ import type {
   RequirementCustomField, UpdateCustomFieldInput,
   RequirementStatus, RequirementPriority, RequirementType,
   ReqHeading, CreateHeadingInput,
-  ElementRequirementLink, RequirementLink
+  ElementRequirementLink, RequirementLink,
+  AcceptanceCriterion, UpdateAcceptanceCriterionInput
 } from '../../../types'
+import { summarize, type AcSummaryEntry } from './acSummary'
 
 interface Store {
   // shared
@@ -35,6 +37,8 @@ interface Store {
   selectedConnectionId: number | null
   projectRequirements: Requirement[]
   customFields: RequirementCustomField[]
+  acItems: AcceptanceCriterion[]
+  acSummary: Record<number, AcSummaryEntry>
   showDeleted: boolean
   deletedRequirements: Requirement[]
   statusFilter: RequirementStatus | 'All'
@@ -81,6 +85,11 @@ interface Store {
   addCustomField: (requirementId: number) => Promise<void>
   updateCustomField: (id: number, patch: UpdateCustomFieldInput) => Promise<void>
   removeCustomField: (id: number) => Promise<void>
+  loadAcItems: (requirementId: number) => Promise<void>
+  addAcItem: (requirementId: number, text: string) => Promise<void>
+  updateAcItem: (id: number, patch: UpdateAcceptanceCriterionInput, requirementId: number) => Promise<void>
+  removeAcItem: (id: number, requirementId: number) => Promise<void>
+  moveAcItem: (id: number, direction: 'up' | 'down', requirementId: number) => Promise<void>
 
   // actions — architecture
   loadArchitecture: () => Promise<void>
@@ -104,7 +113,7 @@ export const useStore = create<Store>((set, get) => ({
   headings: [], collapsedHeadingIds: [],
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
-  customFields: [], showDeleted: false, deletedRequirements: [],
+  customFields: [], acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
   traceLinks: [], reqLinks: [],
 
@@ -118,16 +127,17 @@ export const useStore = create<Store>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   selectModule: async (id) => {
-    set({ selectedModuleId: id, requirements: [], headings: [], collapsedHeadingIds: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [] })
+    set({ selectedModuleId: id, requirements: [], headings: [], collapsedHeadingIds: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], acItems: [], acSummary: {}, statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [] })
     if (id === null) return
-    const [requirements, headings] = await Promise.all([
+    const [requirements, headings, moduleAcItems] = await Promise.all([
       window.api.requirements.list(id),
-      window.api.headings.list(id)
+      window.api.headings.list(id),
+      window.api.acceptanceCriteria.listByModule(id)
     ])
-    set({ requirements, headings })
+    set({ requirements, headings, acSummary: summarize(moduleAcItems) })
   },
 
-  selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [] }),
+  selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [], acItems: [] }),
 
   openRequirement: async (req) => {
     set({ activeTab: 'requirements' })
@@ -286,6 +296,31 @@ export const useStore = create<Store>((set, get) => ({
     set((s) => ({ customFields: s.customFields.filter((f) => f.id !== id) }))
   },
 
+  loadAcItems: async (requirementId) => {
+    const acItems = await window.api.acceptanceCriteria.list(requirementId)
+    set({ acItems })
+  },
+
+  addAcItem: async (requirementId, text) => {
+    await window.api.acceptanceCriteria.create(requirementId, text)
+    await refreshAc(requirementId)
+  },
+
+  updateAcItem: async (id, patch, requirementId) => {
+    await window.api.acceptanceCriteria.update(id, patch)
+    await refreshAc(requirementId)
+  },
+
+  removeAcItem: async (id, requirementId) => {
+    await window.api.acceptanceCriteria.remove(id)
+    await refreshAc(requirementId)
+  },
+
+  moveAcItem: async (id, direction, requirementId) => {
+    await window.api.acceptanceCriteria.move(id, direction)
+    await refreshAc(requirementId)
+  },
+
   loadArchitecture: async () => {
     const { project } = get()
     if (!project) return
@@ -397,3 +432,14 @@ export const useStore = create<Store>((set, get) => ({
     await window.api.connectionLinks.remove(connectionId, requirementId)
   }
 }))
+
+async function refreshAc(requirementId: number): Promise<void> {
+  const { selectedModuleId } = useStore.getState()
+  const [acItems, moduleItems] = await Promise.all([
+    window.api.acceptanceCriteria.list(requirementId),
+    selectedModuleId != null
+      ? window.api.acceptanceCriteria.listByModule(selectedModuleId)
+      : Promise.resolve([])
+  ])
+  useStore.setState({ acItems, acSummary: summarize(moduleItems) })
+}

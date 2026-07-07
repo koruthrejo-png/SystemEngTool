@@ -68,6 +68,14 @@ vi.stubGlobal('window', {
       add: vi.fn().mockResolvedValue(undefined),
       remove: vi.fn().mockResolvedValue(undefined),
       listByProject: vi.fn().mockResolvedValue([{ parentReqId: 1, childReqId: 2 }])
+    },
+    acceptanceCriteria: {
+      list: vi.fn().mockResolvedValue([]),
+      listByModule: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue(undefined),
+      remove: vi.fn().mockResolvedValue(undefined),
+      move: vi.fn().mockResolvedValue(undefined)
     }
   }
 })
