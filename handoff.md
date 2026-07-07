@@ -92,9 +92,16 @@ Plan: `docs/superpowers/plans/2026-07-07-acceptance-criteria-checklist.md` (comm
 - Requirements table: Acceptance Criteria cell shows mono `passed/total` + first item, em-dash when empty
 - Test baseline: 48 failed (unchanged: 47 sqlite ABI + 1 pre-existing ArchitectureCanvas) / 165 passed
 
+### Global Search — COMPLETE (backlog item 4)
+Plan: `docs/superpowers/plans/2026-07-07-global-search.md` (commits `f4fc503..4927f32`). Spec: `docs/superpowers/specs/2026-07-07-global-search-design.md`. Tenth ledger section; final whole-branch review (opus): ready to merge, no Critical/Important. Live-verified (grouped dropdown, all 3 navigation paths, wildcard escaping proven with "S%2", Esc, real ⌘K). Delivered:
+- `search:query(projectId, term)` IPC — three parameterized LIKE queries (requirements req_id/text/source/rationale, module names, heading titles) with `ESCAPE '\'` + backslash-safe escaping, soft-deletes excluded, project-scoped, LIMIT 10/group; `rowToRequirement`/`rowToModule`/`rowToHeading` now exported and reused (not duplicated)
+- `GlobalSearch` component in navy header: 200ms debounce, 2-char min, stale-response guard, grouped dropdown (empty groups omitted, "No matches."), row click navigates via `openRequirement`/`selectModule`+`setActiveTab`, Esc/outside-click close, ⌘K/Ctrl+K focus, null without project
+- Test baseline: 48 failed (unchanged) / 174 passed
+- Follow-up candidates (final-review minors): anchor heading clicks to the section, stale-guard out-of-order test, listbox aria if arrow-key nav ever lands
+
 ## Next Step: pick the next backlog slice
 
-Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 8 (Trace to Architecture linking UI), 4 (global search), 16/17 (component library + RF controls restyle). Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
+Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 8 (Trace to Architecture linking UI), 16/17 (component library + RF controls restyle). Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
 
 Known deferrals from final reviews (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply; unawaited fire-and-forget mutation promises (singular + bulk) — a codebase-wide error-surfacing pass is the right home; batched `aria-pressed` pass for toggle-group buttons; `requirement_links(child_req_id)` index if link volume grows.
 
