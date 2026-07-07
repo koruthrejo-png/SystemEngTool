@@ -4,7 +4,7 @@ import type { Requirement, CreateRequirementInput, UpdateRequirementInput } from
 
 function now(): string { return new Date().toISOString() }
 
-function rowToRequirement(row: any): Requirement {
+export function rowToRequirement(row: any): Requirement {
   return {
     id: row.id, moduleId: row.module_id, reqId: row.req_id, text: row.text,
     acceptanceCriteria: row.acceptance_criteria ?? null,

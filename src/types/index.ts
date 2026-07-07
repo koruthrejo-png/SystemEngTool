@@ -255,3 +255,9 @@ export interface RequirementLink {
   parentReqId: number
   childReqId: number
 }
+
+export interface SearchResults {
+  requirements: Requirement[]
+  modules: Module[]
+  headings: ReqHeading[]
+}

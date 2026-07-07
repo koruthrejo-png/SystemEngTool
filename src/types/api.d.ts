@@ -10,7 +10,7 @@ import type {
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
-  ElementRequirementLink, RequirementLink
+  ElementRequirementLink, RequirementLink, SearchResults
 } from './index'
 
 declare global {
@@ -96,6 +96,9 @@ declare global {
         add(parentReqId: number, childReqId: number): Promise<void>
         remove(parentReqId: number, childReqId: number): Promise<void>
         listByProject(projectId: number): Promise<RequirementLink[]>
+      }
+      search: {
+        query(projectId: number, term: string): Promise<SearchResults>
       }
     }
   }

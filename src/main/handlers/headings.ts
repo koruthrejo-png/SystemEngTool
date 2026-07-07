@@ -4,7 +4,7 @@ import type { ReqHeading, CreateHeadingInput, UpdateHeadingInput } from '../../t
 
 function now(): string { return new Date().toISOString() }
 
-function rowToHeading(row: any): ReqHeading {
+export function rowToHeading(row: any): ReqHeading {
   return {
     id: row.id, moduleId: row.module_id, parentId: row.parent_id ?? null,
     title: row.title, position: row.position,

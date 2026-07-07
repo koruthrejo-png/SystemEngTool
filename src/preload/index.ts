@@ -11,7 +11,7 @@ import type {
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
-  ElementRequirementLink, RequirementLink
+  ElementRequirementLink, RequirementLink, SearchResults
 } from '../types'
 
 contextBridge.exposeInMainWorld('api', {
@@ -95,5 +95,8 @@ contextBridge.exposeInMainWorld('api', {
     add: (parentReqId: number, childReqId: number): Promise<void> => ipcRenderer.invoke('reqLinks:add', parentReqId, childReqId),
     remove: (parentReqId: number, childReqId: number): Promise<void> => ipcRenderer.invoke('reqLinks:remove', parentReqId, childReqId),
     listByProject: (projectId: number): Promise<RequirementLink[]> => ipcRenderer.invoke('reqLinks:listByProject', projectId)
+  },
+  search: {
+    query: (projectId: number, term: string): Promise<SearchResults> => ipcRenderer.invoke('search:query', projectId, term)
   }
 })

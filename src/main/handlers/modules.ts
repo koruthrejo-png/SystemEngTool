@@ -4,7 +4,7 @@ import type { Module, CreateModuleInput, UpdateModuleInput } from '../../types'
 
 function now(): string { return new Date().toISOString() }
 
-function rowToModule(row: any): Module {
+export function rowToModule(row: any): Module {
   return {
     id: row.id, projectId: row.project_id, parentId: row.parent_id ?? null,
     name: row.name, idPrefix: row.id_prefix, idPadding: row.id_padding,

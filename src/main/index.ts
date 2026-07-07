@@ -13,6 +13,7 @@ import { registerConnectionHandlers } from './handlers/connections'
 import { registerElementLinkHandlers } from './handlers/elementLinks'
 import { registerConnectionLinkHandlers } from './handlers/connectionLinks'
 import { registerRequirementLinkHandlers } from './handlers/requirementLinks'
+import { registerSearchHandlers } from './handlers/search'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -45,6 +46,7 @@ app.whenReady().then(() => {
   registerElementLinkHandlers()
   registerConnectionLinkHandlers()
   registerRequirementLinkHandlers()
+  registerSearchHandlers()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
