@@ -35,6 +35,7 @@ export default function RequirementDetail(): JSX.Element {
     setSource(req.source ?? '')
     setRationale(req.rationale ?? '')
     focusNewField.current = false
+    focusNewAc.current = false
     setLocalAcTexts({})
     loadCustomFields(req.id)
     loadAcItems(req.id)

@@ -92,4 +92,30 @@ describe('acceptance criteria checklist', () => {
     render(<RequirementDetail />)
     expect(mockLoadAcItems).toHaveBeenCalledWith(5)
   })
+
+  it('does not steal focus in the new requirement when acItems land after a requirement switch', () => {
+    const { rerender } = render(<RequirementDetail />)
+    // Sets focusNewAc.current = true for requirement 5, before its acItems update lands.
+    fireEvent.click(screen.getByText('+ Add criterion'))
+
+    // User switches to requirement 6 before that update arrives.
+    const req2: Requirement = { ...req, id: 6, reqId: 'SRS-0002' }
+    Object.assign(storeState, { selectedRequirementId: 6, requirements: [req2] })
+    rerender(<RequirementDetail />)
+
+    // Requirement 6's acItems now load (different length triggers the focus effect).
+    Object.assign(storeState, {
+      acItems: [
+        item({ id: 10, requirementId: 6, text: 'starts up', status: 'Unverified', position: 0 }),
+        item({ id: 11, requirementId: 6, text: 'shuts down', status: 'Unverified', position: 1 }),
+        item({ id: 12, requirementId: 6, text: 'stays up', status: 'Unverified', position: 2 })
+      ]
+    })
+    rerender(<RequirementDetail />)
+
+    const section = screen.getByTestId('ac-section')
+    const inputs = within(section).getAllByLabelText('Criterion text')
+    const newest = inputs[inputs.length - 1]
+    expect(document.activeElement).not.toBe(newest)
+  })
 })
