@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../store'
 import { Button, Input, Select, Textarea, SectionLabel, Chip } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES, AC_STATUSES } from '../../../../types'
-import type { RequirementStatus, RequirementPriority, RequirementType, Requirement, AcStatus } from '../../../../types'
+import type { RequirementStatus, RequirementPriority, RequirementType, Requirement, AcStatus, ArchitectureElement } from '../../../../types'
 import { buildOutline } from '../RequirementsList/outline'
 import { flattenTree } from '../ModuleTree/moduleTree'
 
@@ -247,6 +247,7 @@ export default function RequirementDetail(): JSX.Element {
         </div>
 
         <TraceabilitySection req={req} />
+        <ArchitectureSection req={req} />
       </div>
     </div>
   )
@@ -344,6 +345,67 @@ function TraceabilitySection({ req }: { req: Requirement }): JSX.Element {
             Add as child
           </Button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function ArchitectureSection({ req }: { req: Requirement }): JSX.Element {
+  const { traceLinks, elements, loadTraceability, toggleTraceLink, selectElement, setActiveTab } = useStore()
+  const [pickId, setPickId] = useState<string>('')
+
+  useEffect(() => { loadTraceability() }, [req.id])
+
+  const byId = new Map(elements.map((e) => [e.id, e]))
+  const linked = traceLinks
+    .filter((l) => l.requirementId === req.id)
+    .map((l) => byId.get(l.elementId))
+    .filter((e): e is ArchitectureElement => e !== undefined)
+  const linkedIds = new Set(linked.map((e) => e.id))
+  const candidates = elements.filter((e) => !linkedIds.has(e.id))
+
+  return (
+    <div data-testid="arch-section" className="space-y-2 pt-2 border-t border-line">
+      <SectionLabel className="block pt-2">Architecture</SectionLabel>
+      {linked.length === 0 && <div className="text-xs text-ink-faint">None.</div>}
+      {linked.map((e) => (
+        <div key={e.id} className="flex items-center gap-2">
+          <button
+            onClick={() => { setActiveTab('architecture'); selectElement(e.id) }}
+            className="flex-1 min-w-0 text-left flex gap-2 items-baseline hover:bg-action-tint/20 rounded px-1 py-0.5"
+          >
+            <span className="text-xs font-mono text-ink-faint shrink-0">{e.blockId}</span>
+            <span className="text-xs text-ink truncate">{e.name || '—'}</span>
+          </button>
+          <button
+            aria-label={`Unlink ${e.blockId}`}
+            title="Unlink"
+            onClick={() => { toggleTraceLink(e.id, req.id) }}
+            className="text-ink-faint hover:text-error text-lg leading-none px-1"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <div className="flex gap-2 items-center">
+        <Select
+          aria-label="Link element"
+          value={pickId}
+          onChange={(e) => setPickId(e.target.value)}
+          className="flex-1 !py-1.5"
+        >
+          <option value="">Select element…</option>
+          {candidates.map((e) => (
+            <option key={e.id} value={e.id}>{e.blockId} — {e.name || 'Unnamed'}</option>
+          ))}
+        </Select>
+        <Button
+          disabled={pickId === ''}
+          onClick={() => { toggleTraceLink(Number(pickId), req.id); setPickId('') }}
+          className="!py-1.5"
+        >
+          Link
+        </Button>
       </div>
     </div>
   )

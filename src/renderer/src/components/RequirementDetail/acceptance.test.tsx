@@ -44,7 +44,9 @@ beforeEach(() => {
     openRequirement: vi.fn(),
     loadAcItems: mockLoadAcItems, addAcItem: mockAddAcItem,
     updateAcItem: mockUpdateAcItem, removeAcItem: mockRemoveAcItem,
-    moveAcItem: mockMoveAcItem
+    moveAcItem: mockMoveAcItem,
+    traceLinks: [], elements: [],
+    selectElement: vi.fn(), setActiveTab: vi.fn(), toggleTraceLink: vi.fn()
   })
 })
 

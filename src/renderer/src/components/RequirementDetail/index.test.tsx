@@ -34,7 +34,12 @@ const storeState = {
   addAcItem: vi.fn(),
   updateAcItem: vi.fn(),
   removeAcItem: vi.fn(),
-  moveAcItem: vi.fn()
+  moveAcItem: vi.fn(),
+  traceLinks: [],
+  elements: [],
+  selectElement: vi.fn(),
+  setActiveTab: vi.fn(),
+  toggleTraceLink: vi.fn()
 }
 
 vi.mock('../../store', () => ({
