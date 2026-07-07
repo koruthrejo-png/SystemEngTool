@@ -38,7 +38,14 @@ const baseStore = {
   loadCustomFields: vi.fn(),
   addCustomField: vi.fn(),
   updateCustomField: vi.fn(),
-  removeCustomField: vi.fn()
+  removeCustomField: vi.fn(),
+  acItems: [],
+  acSummary: {},
+  loadAcItems: vi.fn(),
+  addAcItem: vi.fn(),
+  updateAcItem: vi.fn(),
+  removeAcItem: vi.fn(),
+  moveAcItem: vi.fn()
 }
 
 describe('App', () => {
