@@ -58,7 +58,7 @@ Mounted in the `App.tsx` navy header (`h-14 bg-navy`) between the tab nav and th
 
 ## Error Handling
 
-The query promise carries a `.catch` that clears results and logs via the existing `window.api.debugLog` if available — search must never crash the shell bar. (Deliberate small deviation from the codebase's fire-and-forget convention: a background typeahead has no other error surface.)
+The query promise carries a `.catch` that clears results (closes the dropdown) — search must never crash the shell bar. (Deliberate small deviation from the codebase's fire-and-forget convention: a background typeahead has no other error surface.)
 
 ## Testing
 
