@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../store'
-import { Button, Input, Select, Textarea, SectionLabel } from '../ui'
-import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
-import type { RequirementStatus, RequirementPriority, RequirementType, Requirement } from '../../../../types'
+import { Button, Input, Select, Textarea, SectionLabel, Chip } from '../ui'
+import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES, AC_STATUSES } from '../../../../types'
+import type { RequirementStatus, RequirementPriority, RequirementType, Requirement, AcStatus } from '../../../../types'
 import { buildOutline } from '../RequirementsList/outline'
 import { flattenTree } from '../ModuleTree/moduleTree'
 
@@ -10,12 +10,12 @@ export default function RequirementDetail(): JSX.Element {
   const {
     selectedRequirementId, requirements, updateRequirement,
     customFields, loadCustomFields, addCustomField, updateCustomField, removeCustomField,
-    headings
+    headings,
+    acItems, loadAcItems, addAcItem, updateAcItem, removeAcItem, moveAcItem
   } = useStore()
   const req = requirements.find((r) => r.id === selectedRequirementId) ?? null
 
   const [text, setText] = useState('')
-  const [ac, setAc] = useState('')
   const [source, setSource] = useState('')
   const [rationale, setRationale] = useState('')
 
@@ -24,14 +24,20 @@ export default function RequirementDetail(): JSX.Element {
   const newFieldRef = useRef<HTMLInputElement>(null)
   const focusNewField = useRef(false)
 
+  // Local edits for acceptance criteria text: keyed by item id
+  const [localAcTexts, setLocalAcTexts] = useState<Record<number, string>>({})
+  const newAcRef = useRef<HTMLInputElement>(null)
+  const focusNewAc = useRef(false)
+
   useEffect(() => {
     if (!req) return
     setText(req.text)
-    setAc(req.acceptanceCriteria ?? '')
     setSource(req.source ?? '')
     setRationale(req.rationale ?? '')
     focusNewField.current = false
+    setLocalAcTexts({})
     loadCustomFields(req.id)
+    loadAcItems(req.id)
   }, [req?.id])
 
   // Sync localFields when customFields change
@@ -50,6 +56,24 @@ export default function RequirementDetail(): JSX.Element {
     }
   }, [customFields])
 
+  // Sync localAcTexts when acItems change
+  useEffect(() => {
+    setLocalAcTexts((prev) => {
+      const next: Record<number, string> = {}
+      for (const item of acItems) {
+        next[item.id] = prev[item.id] ?? item.text
+      }
+      return next
+    })
+  }, [acItems])
+
+  useEffect(() => {
+    if (focusNewAc.current) {
+      newAcRef.current?.focus()
+      focusNewAc.current = false
+    }
+  }, [acItems.length])
+
   if (!req) {
     return (
       <div className="flex items-center justify-center h-full text-sm text-ink-faint">
@@ -61,7 +85,6 @@ export default function RequirementDetail(): JSX.Element {
   function save(): void {
     updateRequirement(req!.id, {
       text,
-      acceptanceCriteria: ac || undefined,
       source: source || undefined,
       rationale: rationale || undefined
     })
@@ -74,6 +97,11 @@ export default function RequirementDetail(): JSX.Element {
   async function handleAddField(): Promise<void> {
     focusNewField.current = true
     await addCustomField(req!.id)
+  }
+
+  async function handleAddCriterion(): Promise<void> {
+    focusNewAc.current = true
+    await addAcItem(req!.id, '')
   }
 
   return (
@@ -137,9 +165,42 @@ export default function RequirementDetail(): JSX.Element {
         <Field label="Requirement">
           <Textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} rows={4} />
         </Field>
-        <Field label="Acceptance Criteria">
-          <Textarea value={ac} onChange={(e) => setAc(e.target.value)} onBlur={save} rows={3} />
-        </Field>
+        <div data-testid="ac-section" className="space-y-2">
+          <SectionLabel className="block">Acceptance Criteria</SectionLabel>
+          {acItems.map((item, i) => {
+            const localText = localAcTexts[item.id] ?? item.text
+            const next: AcStatus = AC_STATUSES[(AC_STATUSES.indexOf(item.status) + 1) % AC_STATUSES.length]
+            const isNewest = i === acItems.length - 1
+            return (
+              <div key={item.id} className="flex gap-2 items-center">
+                <button
+                  aria-label="Criterion status"
+                  title={`Mark ${next}`}
+                  onClick={() => updateAcItem(item.id, { status: next }, req.id)}
+                  className="shrink-0"
+                >
+                  <Chip value={item.status} />
+                </button>
+                <Input
+                  ref={isNewest ? newAcRef : undefined}
+                  aria-label="Criterion text"
+                  value={localText}
+                  onChange={(e) => setLocalAcTexts((p) => ({ ...p, [item.id]: e.target.value }))}
+                  onBlur={() => updateAcItem(item.id, { text: localText }, req.id)}
+                  placeholder="Criterion"
+                  className="flex-1 !py-1.5"
+                />
+                <button aria-label="Move criterion up" onClick={() => moveAcItem(item.id, 'up', req.id)}
+                  className="text-ink-faint hover:text-ink">↑</button>
+                <button aria-label="Move criterion down" onClick={() => moveAcItem(item.id, 'down', req.id)}
+                  className="text-ink-faint hover:text-ink">↓</button>
+                <button aria-label="Remove criterion" onClick={() => removeAcItem(item.id, req.id)}
+                  className="text-ink-faint hover:text-error text-lg leading-none px-1">×</button>
+              </div>
+            )
+          })}
+          <Button variant="ghost" onClick={handleAddCriterion} className="!px-2">+ Add criterion</Button>
+        </div>
         <Field label="Source">
           <Input value={source} onChange={(e) => setSource(e.target.value)} onBlur={save} />
         </Field>

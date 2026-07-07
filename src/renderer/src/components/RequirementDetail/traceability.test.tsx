@@ -36,7 +36,13 @@ beforeEach(() => {
     loadTraceability: vi.fn().mockResolvedValue(undefined),
     addReqLink: vi.fn().mockResolvedValue(undefined),
     removeReqLink: vi.fn().mockResolvedValue(undefined),
-    openRequirement: vi.fn().mockResolvedValue(undefined)
+    openRequirement: vi.fn().mockResolvedValue(undefined),
+    acItems: [],
+    loadAcItems: vi.fn(),
+    addAcItem: vi.fn(),
+    updateAcItem: vi.fn(),
+    removeAcItem: vi.fn(),
+    moveAcItem: vi.fn()
   })
 })
 

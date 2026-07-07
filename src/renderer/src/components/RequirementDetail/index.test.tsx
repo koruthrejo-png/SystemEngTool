@@ -28,7 +28,13 @@ const storeState = {
   loadTraceability: vi.fn(),
   addReqLink: vi.fn(),
   removeReqLink: vi.fn(),
-  openRequirement: vi.fn()
+  openRequirement: vi.fn(),
+  acItems: [],
+  loadAcItems: vi.fn(),
+  addAcItem: vi.fn(),
+  updateAcItem: vi.fn(),
+  removeAcItem: vi.fn(),
+  moveAcItem: vi.fn()
 }
 
 vi.mock('../../store', () => ({
@@ -40,12 +46,12 @@ describe('RequirementDetail', () => {
     vi.clearAllMocks()
   })
 
-  it('renders all 4 fields with current values', () => {
+  it('renders all fields with current values', () => {
     render(<RequirementDetail />)
     expect(screen.getByDisplayValue('The system shall respond within 2s')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('Measured under load')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Customer spec')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Performance SLA')).toBeInTheDocument()
+    expect(screen.getByTestId('ac-section')).toBeInTheDocument()
   })
 
   it('shows req_id read-only', () => {

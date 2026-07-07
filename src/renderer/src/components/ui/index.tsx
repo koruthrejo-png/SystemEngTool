@@ -68,7 +68,10 @@ const CHIP_STYLES: Record<string, string> = {
   Rejected: 'bg-error/10 text-error',
   High: 'bg-error/10 text-error',
   Medium: 'bg-workspace text-ink-muted border border-line',
-  Low: 'bg-workspace text-ink-faint border border-line'
+  Low: 'bg-workspace text-ink-faint border border-line',
+  Unverified: 'bg-workspace text-ink-muted border border-line',
+  Passed: 'bg-action-tint text-action-hover',
+  Failed: 'bg-error/10 text-error'
 }
 
 export function Chip({ value, className = '' }: { value: string; className?: string }): JSX.Element {
