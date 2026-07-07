@@ -441,5 +441,11 @@ async function refreshAc(requirementId: number): Promise<void> {
       ? window.api.acceptanceCriteria.listByModule(selectedModuleId)
       : Promise.resolve([])
   ])
-  useStore.setState({ acItems, acSummary: summarize(moduleItems) })
+  // A late-resolving refetch must not clobber acItems after the user switched requirements;
+  // the summary is keyed per requirement, so it stays safe to update either way.
+  if (useStore.getState().selectedRequirementId === requirementId) {
+    useStore.setState({ acItems, acSummary: summarize(moduleItems) })
+  } else {
+    useStore.setState({ acSummary: summarize(moduleItems) })
+  }
 }
