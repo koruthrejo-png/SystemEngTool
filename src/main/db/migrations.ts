@@ -135,6 +135,16 @@ export function runMigrations(db: Database.Database): void {
       child_req_id  INTEGER NOT NULL REFERENCES requirements(id),
       PRIMARY KEY (parent_req_id, child_req_id)
     );
+
+    CREATE TABLE IF NOT EXISTS acceptance_criteria (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      requirement_id INTEGER NOT NULL REFERENCES requirements(id),
+      text           TEXT    NOT NULL,
+      status         TEXT    NOT NULL DEFAULT 'Unverified',
+      position       INTEGER NOT NULL,
+      created_at     TEXT    NOT NULL,
+      updated_at     TEXT    NOT NULL
+    );
   `)
 
   addColumnIfMissing(db, 'projects', 'elem_id_prefix',    "TEXT NOT NULL DEFAULT 'SYS'")
@@ -149,4 +159,24 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'architecture_connections', 'source_handle', 'TEXT')
   addColumnIfMissing(db, 'architecture_connections', 'target_handle', 'TEXT')
   addColumnIfMissing(db, 'requirements', 'heading_id', 'INTEGER REFERENCES req_headings(id)')
+
+  // One-time conversion: split legacy free-text acceptance_criteria into checklist items.
+  // Per-row idempotent — each converted row is set to NULL, so re-runs are no-ops.
+  const legacyRows = db
+    .prepare("SELECT id, acceptance_criteria FROM requirements WHERE acceptance_criteria IS NOT NULL AND TRIM(acceptance_criteria) != ''")
+    .all() as { id: number; acceptance_criteria: string }[]
+  if (legacyRows.length > 0) {
+    const ts = new Date().toISOString()
+    const insert = db.prepare(
+      'INSERT INTO acceptance_criteria (requirement_id, text, status, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    const clear = db.prepare('UPDATE requirements SET acceptance_criteria = NULL WHERE id = ?')
+    db.transaction(() => {
+      for (const row of legacyRows) {
+        const lines = row.acceptance_criteria.split('\n').map((l) => l.trim()).filter((l) => l !== '')
+        lines.forEach((line, i) => insert.run(row.id, line, 'Unverified', i, ts, ts))
+        clear.run(row.id)
+      }
+    })()
+  }
 }

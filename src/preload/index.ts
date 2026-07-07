@@ -5,6 +5,7 @@ import type {
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
   RequirementCustomField, UpdateCustomFieldInput,
+  AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   ElementType, ConnectionType,
   ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, CreateConnectionTypeInput,
@@ -48,6 +49,14 @@ contextBridge.exposeInMainWorld('api', {
     create: (requirementId: number): Promise<RequirementCustomField> => ipcRenderer.invoke('customFields:create', requirementId),
     update: (id: number, patch: UpdateCustomFieldInput): Promise<RequirementCustomField> => ipcRenderer.invoke('customFields:update', id, patch),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('customFields:delete', id)
+  },
+  acceptanceCriteria: {
+    list: (requirementId: number): Promise<AcceptanceCriterion[]> => ipcRenderer.invoke('acceptanceCriteria:list', requirementId),
+    listByModule: (moduleId: number): Promise<AcceptanceCriterion[]> => ipcRenderer.invoke('acceptanceCriteria:listByModule', moduleId),
+    create: (requirementId: number, text: string): Promise<AcceptanceCriterion> => ipcRenderer.invoke('acceptanceCriteria:create', requirementId, text),
+    update: (id: number, patch: UpdateAcceptanceCriterionInput): Promise<AcceptanceCriterion> => ipcRenderer.invoke('acceptanceCriteria:update', id, patch),
+    remove: (id: number): Promise<void> => ipcRenderer.invoke('acceptanceCriteria:delete', id),
+    move: (id: number, direction: 'up' | 'down'): Promise<void> => ipcRenderer.invoke('acceptanceCriteria:move', id, direction)
   },
   elementTypes: {
     list: (projectId: number): Promise<ElementType[]> => ipcRenderer.invoke('elementTypes:list', projectId),

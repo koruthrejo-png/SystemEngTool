@@ -34,6 +34,24 @@ export type RequirementPriority = (typeof REQUIREMENT_PRIORITIES)[number]
 export const REQUIREMENT_TYPES = ['Functional', 'Non-Functional', 'Interface', 'Performance', 'Constraint'] as const
 export type RequirementType = (typeof REQUIREMENT_TYPES)[number]
 
+export const AC_STATUSES = ['Unverified', 'Passed', 'Failed'] as const
+export type AcStatus = (typeof AC_STATUSES)[number]
+
+export interface AcceptanceCriterion {
+  id: number
+  requirementId: number
+  text: string
+  status: AcStatus
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UpdateAcceptanceCriterionInput {
+  text?: string
+  status?: AcStatus
+}
+
 export interface Requirement {
   id: number
   moduleId: number
