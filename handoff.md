@@ -99,9 +99,16 @@ Plan: `docs/superpowers/plans/2026-07-07-global-search.md` (commits `f4fc503..49
 - Test baseline: 48 failed (unchanged) / 174 passed
 - Follow-up candidates (final-review minors): anchor heading clicks to the section, stale-guard out-of-order test, listbox aria if arrow-key nav ever lands
 
+### Trace to Architecture — COMPLETE (backlog item 8)
+Plan: `docs/superpowers/plans/2026-07-07-trace-to-architecture.md` (commits `f9a31a7..f96ba65`). Spec: `docs/superpowers/specs/2026-07-07-trace-to-architecture-design.md`. Eleventh ledger section; final whole-branch review (opus): ready to merge, no Critical/Important. Live-verified (list matrix-linked elements, Link via picker + DB row, Unlink + DB removal, picker exclusion + reset, row click → Architecture tab with element selected). Delivered:
+- `ArchitectureSection` in the requirement drawer (after Traceability section): linked-element rows (mono blockId + name, click navigates via `setActiveTab('architecture')` + `selectElement`), × unlink and picker+Link add via existing `toggleTraceLink`, "None." empty state
+- Pure renderer change — zero backend/store/preload/type changes; `elements` comes from `loadTraceability`, so the section works before the canvas is ever visited
+- Test baseline: 48 failed (unchanged) / 180 passed
+- Deferred: hoist the duplicated `loadTraceability` mount effect if a third drawer section ever consumes it
+
 ## Next Step: pick the next backlog slice
 
-Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 8 (Trace to Architecture linking UI), 16/17 (component library + RF controls restyle). Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
+Nothing in flight. Remaining Deferred Backlog candidates in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: items 16/17 (component library palette + RF zoom-controls restyle) and any unnumbered leftovers listed there. Also ticketed follow-ups: codebase-wide promise error-surfacing pass; batched `aria-pressed` toggle a11y pass; heading-anchor on search section clicks. Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
 
 Known deferrals from final reviews (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply; unawaited fire-and-forget mutation promises (singular + bulk) — a codebase-wide error-surfacing pass is the right home; batched `aria-pressed` pass for toggle-group buttons; `requirement_links(child_req_id)` index if link volume grows.
 
