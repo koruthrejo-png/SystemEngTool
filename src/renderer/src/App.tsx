@@ -9,6 +9,7 @@ import ElementPanel from './components/ElementPanel'
 import ConnectionPanel from './components/ConnectionPanel'
 import TraceabilityMatrix from './components/TraceabilityMatrix'
 import Dashboard from './components/Dashboard'
+import GlobalSearch from './components/GlobalSearch'
 
 export default function App(): JSX.Element {
   const { project, activeTab, setActiveTab, loadProject, loadArchitecture, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
@@ -69,6 +70,7 @@ export default function App(): JSX.Element {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3">
+          <GlobalSearch />
           {project && <span className="text-sm text-white/50">{project.name}</span>}
           <Button variant="secondary-on-navy" onClick={handleOpen}>Open</Button>
           <Button onClick={() => setShowNewDialog(true)}>New Project</Button>
