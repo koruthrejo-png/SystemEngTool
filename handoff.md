@@ -83,9 +83,18 @@ Plan: `docs/superpowers/plans/2026-07-06-requirement-hierarchy.md` (commits `f96
 - Dashboard Derivation Coverage card: module filter + hasParent/hasChildren toggle, `derivationStats` pure helper, unlinked list navigates to requirement
 - Test baseline: 48 failed (unchanged: 47 sqlite ABI + 1 pre-existing ArchitectureCanvas) / 149 passed
 
+### Acceptance Criteria Checklist — COMPLETE (backlog item 7)
+Plan: `docs/superpowers/plans/2026-07-07-acceptance-criteria-checklist.md` (commits `8a8830c..438041a`). Spec: `docs/superpowers/specs/2026-07-07-acceptance-criteria-checklist-design.md`. Ninth ledger section; final whole-branch review (opus): ready to merge, no Critical/Important. Live-verified (legacy free-text migrated line-per-item + column NULLed + relaunch idempotence, add/focus/blur-save/chip-cycle/move/remove, live table badge, persistence). Delivered:
+- `acceptance_criteria` child table (text, Unverified/Passed/Failed status, position) + idempotent transactional line-split migration of legacy free text; `requirements.acceptance_criteria` column stays but is never read/written post-migration
+- 6 IPC methods (`list`/`listByModule`/`create`/`update`/`remove`→`delete` channel/`move`) mirrored preload + api.d.ts; handler mirrors `requirementCustomFields.ts`, move mirrors `moveHeading`
+- Store: `acItems` + per-module `acSummary` (one `listByModule` query, `summarize` pure helper in `store/acSummary.ts`); module-level `refreshAc` with stale-requirement guard
+- Drawer: checklist section replaces textarea — status chip click-cycles (CHIP_STYLES gained Unverified/Passed/Failed), inline blur-save edit, ↑↓ move, × remove, + Add criterion with auto-focus (focusNewAc reset on requirement switch — regression-tested)
+- Requirements table: Acceptance Criteria cell shows mono `passed/total` + first item, em-dash when empty
+- Test baseline: 48 failed (unchanged: 47 sqlite ABI + 1 pre-existing ArchitectureCanvas) / 165 passed
+
 ## Next Step: pick the next backlog slice
 
-Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 7 (structured acceptance-criteria checklist), 8 (Trace to Architecture linking UI), 4 (global search), 16/17 (component library + RF controls restyle). Follow the same flow: superpowers:writing-plans → subagent-driven-development (append new ledger section).
+Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 8 (Trace to Architecture linking UI), 4 (global search), 16/17 (component library + RF controls restyle). Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
 
 Known deferrals from final reviews (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply; unawaited fire-and-forget mutation promises (singular + bulk) — a codebase-wide error-surfacing pass is the right home; batched `aria-pressed` pass for toggle-group buttons; `requirement_links(child_req_id)` index if link volume grows.
 
