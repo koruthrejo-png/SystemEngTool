@@ -1,6 +1,6 @@
 # Handoff: ReqArch2 — Current State
 
-## What's Been Built (as of 2026-07-04)
+## What's Been Built (as of 2026-07-07)
 
 ### Core App — Working
 The app launches, creates/opens projects, manages modules, and all IPC is wired. Key fixes that unblocked everything:
@@ -64,11 +64,30 @@ Plan: `docs/superpowers/plans/2026-07-04-canvas-resize-nesting-handles.md` (comm
 - Known deferrals (ledger): ConnectionPanel test fixture needs sourceHandle/targetHandle when that panel consumes them; absolutePosition cycle guard; 3-level nesting test; resolveDrop equal-area tiebreak
 - Note: SmokeTest dev project contains some leftover scratch blocks/connections from driver verification
 
+### Headings, Traceability Matrix & Dashboard — COMPLETE
+Plan: `docs/superpowers/plans/2026-07-05-headings-traceability-dashboard.md` (commits `2f6be32..a004223`). Sixth ledger section; final whole-branch review (opus): ready to merge, no Critical/Important. Live-verified end-to-end (heading create/rename/numbering/collapse, section select in drawer, 16×11 traceability matrix with live toggle + DB round-trip, dashboard KPIs/breakdowns/navigation). Delivered:
+- `req_headings` table (tree via `parent_id`, `position` ordering, depth guard max 2 levels) + CRUD/move IPC; requirements get `heading_id`
+- Outline helper (`buildOutline`) numbers sections `1`, `1.1`; RequirementsList renders heading rows (rename inline, add sub/req to section, collapse, move up/down); drawer "Section" select
+- Traceability tab: req×element matrix, cell click toggles element↔requirement link; Dashboard tab: KPI cards, status donut, per-module coverage bars, recent activity, critical gaps, unallocated list — rows navigate to the requirement
+
+### Dashboard Executive Restyle — COMPLETE
+Plan: `docs/superpowers/plans/2026-07-06-dashboard-redesign.md` (commits `61cb1ab..72b1a30`). Spec: `docs/superpowers/specs/2026-07-06-dashboard-redesign-design.md`. Seventh ledger section; final review: ready to merge. Live-verified (KPIs, donut percentages, module bars, activity badges, tab navigation, drawer open from activity row). Also RESOLVED the "renderer reloads spontaneously in driver sessions" mystery: window was closed externally during idle; the app's `activate` handler recreates a default-size window — not an app bug. Driver now logs lifecycle events + re-points at recreated windows (`f96d0fb`).
+
+### Requirement Hierarchy & Derivation Traceability — COMPLETE
+Plan: `docs/superpowers/plans/2026-07-06-requirement-hierarchy.md` (commits `f96d0fb..1efbe67`). Spec: `docs/superpowers/specs/2026-07-06-requirement-hierarchy-design.md`. Eighth ledger section; final whole-branch review (opus): ready to merge, no Critical/Important. Live-verified (submodule create/indent/collapse, move picker, cycle guard at both UI and backend layers, bidirectional drawer links, Derivation Coverage counts per module×direction, unlinked-req navigation, relaunch persistence). Delivered:
+- Modules backend: `moveModule` with ancestor-walk cycle guard; `deleteModule` reparents children to grandparent (transaction)
+- `requirement_links` table (composite PK `(parent_req_id, child_req_id)`, matches sibling link tables) + add/remove/listByProject IPC with derivation-cycle guard; listings join out soft-deleted reqs on both sides
+- Store: `reqLinks` + `loadTraceability`/`addReqLink`/`removeReqLink`; `removeModule` re-syncs from DB (children reparented server-side — do NOT regress to local filter)
+- Sidebar module tree: add-submodule (+) and move (⇄, descendants excluded from targets) on hover; pure helpers in `ModuleTree/moduleTree.ts` (orphan-safe)
+- Drawer Traceability section: Derives from / Derived by lists (navigate + × remove), module→requirement picker, Add as parent/child buttons (picker resets after add — regression-tested)
+- Dashboard Derivation Coverage card: module filter + hasParent/hasChildren toggle, `derivationStats` pure helper, unlinked list navigates to requirement
+- Test baseline: 48 failed (unchanged: 47 sqlite ABI + 1 pre-existing ArchitectureCanvas) / 149 passed
+
 ## Next Step: pick the next backlog slice
 
-Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 7 (structured acceptance-criteria checklist), 8 (Trace to Architecture linking UI), 4 (global search), 16/17 (component library + RF controls restyle). Follow the same flow: superpowers:writing-plans → subagent-driven-development (append fifth ledger section).
+Nothing in flight. Next candidates from the Deferred Backlog in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: item 7 (structured acceptance-criteria checklist), 8 (Trace to Architecture linking UI), 4 (global search), 16/17 (component library + RF controls restyle). Follow the same flow: superpowers:writing-plans → subagent-driven-development (append new ledger section).
 
-Known deferrals from final reviews (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply; unawaited fire-and-forget mutation promises (singular + bulk) — a codebase-wide error-surfacing pass is the right home.
+Known deferrals from final reviews (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply; unawaited fire-and-forget mutation promises (singular + bulk) — a codebase-wide error-surfacing pass is the right home; batched `aria-pressed` pass for toggle-group buttons; `requirement_links(child_req_id)` index if link volume grows.
 
 ---
 
@@ -99,7 +118,7 @@ Known deferrals from final reviews (all triaged non-blocking, recorded in the le
 - Stitch MCP server available: `claude mcp add stitch --transport http -H "X-Goog-Api-Key: ..." https://stitch.googleapis.com/mcp`
 
 ## Branch
-`main` — all work committed directly to main. Latest commit at handoff: `d021616` (fix(canvas): persist position from top/left resize handles — canvas resize/nesting/handles complete).
+`main` — all work committed directly to main. Latest commit at handoff: `1efbe67` (feat(dashboard): filterable derivation coverage card — requirement hierarchy plan complete).
 
 ## Environment gotcha found this session
 The `npm` shim in the Logi node22 distribution is broken (`npm-cli.js: No such file or directory`). Use `./node_modules/.bin/*` binaries directly (`vitest`, `tsc`, `electron-vite`) — `node` itself works fine from that PATH.
