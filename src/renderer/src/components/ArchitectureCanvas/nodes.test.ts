@@ -15,26 +15,26 @@ function el(partial: Partial<ArchitectureElement> & { id: number }): Architectur
 describe('buildNodes', () => {
   it('orders parents before children regardless of input order', () => {
     const els = [el({ id: 3, parentId: 2 }), el({ id: 2, parentId: 1 }), el({ id: 1 })]
-    const ids = buildNodes(els, null, vi.fn()).map((n) => n.id)
+    const ids = buildNodes(els, [], [], null, vi.fn()).map((n) => n.id)
     expect(ids).toEqual(['1', '2', '3'])
   })
 
   it('sets parentId without extent so children can be dragged out', () => {
-    const nodes = buildNodes([el({ id: 1 }), el({ id: 2, parentId: 1 })], null, vi.fn())
+    const nodes = buildNodes([el({ id: 1 }), el({ id: 2, parentId: 1 })], [], [], null, vi.fn())
     const child = nodes.find((n) => n.id === '2')!
     expect(child.parentId).toBe('1')
     expect(child.extent).toBeUndefined()
   })
 
   it('renders an element whose parent is missing as a root (orphan guard)', () => {
-    const nodes = buildNodes([el({ id: 2, parentId: 99 })], null, vi.fn())
+    const nodes = buildNodes([el({ id: 2, parentId: 99 })], [], [], null, vi.fn())
     expect(nodes).toHaveLength(1)
     expect(nodes[0].parentId).toBeUndefined()
   })
 
   it('wires onResizeEnd through node data with the element id', () => {
     const spy = vi.fn()
-    const nodes = buildNodes([el({ id: 7 })], null, spy)
+    const nodes = buildNodes([el({ id: 7 })], [], [], null, spy)
     ;(nodes[0].data as { onResizeEnd: (x: number, y: number, w: number, h: number) => void }).onResizeEnd(10, 20, 300, 200)
     expect(spy).toHaveBeenCalledWith(7, 10, 20, 300, 200)
   })
@@ -42,6 +42,8 @@ describe('buildNodes', () => {
   it('marks nested blocks and counts direct children in node data', () => {
     const nodes = buildNodes(
       [el({ id: 1 }), el({ id: 2, parentId: 1 }), el({ id: 3, parentId: 1 }), el({ id: 4 })],
+      [],
+      [],
       null,
       vi.fn()
     )
@@ -49,6 +51,33 @@ describe('buildNodes', () => {
     expect(byId['1']).toMatchObject({ nested: false, childCount: 2 })
     expect(byId['2']).toMatchObject({ nested: true, childCount: 0 })
     expect(byId['4']).toMatchObject({ nested: false, childCount: 0 })
+  })
+
+  it('resolves typeName from elementTypes and null when unknown/missing', () => {
+    const types = [{ id: 5, projectId: 1, name: 'Sensor', color: null, isBuiltIn: true, deletedAt: null, createdAt: '', updatedAt: '' }]
+    const nodes = buildNodes(
+      [el({ id: 1, elementTypeId: 5 }), el({ id: 2, elementTypeId: 99 }), el({ id: 3, elementTypeId: null })],
+      types as any, [], null, vi.fn()
+    )
+    expect((nodes[0].data as any).typeName).toBe('Sensor')
+    expect((nodes[1].data as any).typeName).toBeNull() // unknown id
+    expect((nodes[2].data as any).typeName).toBeNull() // no type
+  })
+
+  it('counts connections incident on each element (source or target), self-loop once', () => {
+    const conns = [
+      { id: 1, sourceId: 1, targetId: 2 },
+      { id: 2, sourceId: 3, targetId: 1 },
+      { id: 3, sourceId: 1, targetId: 1 } // self-loop
+    ]
+    const nodes = buildNodes(
+      [el({ id: 1 }), el({ id: 2 }), el({ id: 3 })],
+      [], conns as any, null, vi.fn()
+    )
+    const count = (id: string) => (nodes.find((n) => n.id === id)!.data as any).connectionCount
+    expect(count('1')).toBe(3) // conn 1 (source) + conn 2 (target) + conn 3 (self, once)
+    expect(count('2')).toBe(1)
+    expect(count('3')).toBe(1)
   })
 })
 

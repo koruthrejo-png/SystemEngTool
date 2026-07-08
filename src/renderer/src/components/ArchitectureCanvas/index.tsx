@@ -64,7 +64,7 @@ export default function ArchitectureCanvas(): JSX.Element {
 
 function CanvasInner(): JSX.Element {
   const {
-    project, elements, connections, selectedElementId, selectedConnectionId,
+    project, elements, connections, elementTypes, selectedElementId, selectedConnectionId,
     addElement, updateElement, removeElement, addConnection, removeConnection,
     selectElement, selectConnection
   } = useStore()
@@ -74,7 +74,7 @@ function CanvasInner(): JSX.Element {
   const { getInternalNode } = useReactFlow()
 
   useEffect(() => {
-    setNodes(buildNodes(elements, selectedElementId, (id, x, y, width, height) => {
+    setNodes(buildNodes(elements, elementTypes, connections, selectedElementId, (id, x, y, width, height) => {
       const el = elements.find((e) => e.id === id)
       const parent = el?.parentId != null ? elements.find((e) => e.id === el.parentId) : undefined
       if (parent) {
@@ -88,7 +88,7 @@ function CanvasInner(): JSX.Element {
       }
       updateElement(id, { posX: x, posY: y, width, height })
     }))
-  }, [elements, selectedElementId])
+  }, [elements, elementTypes, connections, selectedElementId])
 
   useEffect(() => {
     setEdges(

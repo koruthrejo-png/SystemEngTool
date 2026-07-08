@@ -8,6 +8,8 @@ export type BlockNodeData = {
   selected: boolean
   nested: boolean
   childCount: number
+  typeName: string | null
+  connectionCount: number
   onResizeEnd: (x: number, y: number, width: number, height: number) => void
 }
 

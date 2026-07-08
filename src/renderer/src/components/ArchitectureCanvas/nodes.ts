@@ -1,5 +1,5 @@
 import type { Node } from '@xyflow/react'
-import type { ArchitectureElement } from '../../../../types'
+import type { ArchitectureElement, ElementType, ArchitectureConnection } from '../../../../types'
 import type { BlockNodeData } from './BlockNode'
 
 export function absolutePosition(
@@ -56,9 +56,12 @@ export function fitChildInParent(
 // React Flow requires parents before children in the nodes array.
 export function buildNodes(
   elements: ArchitectureElement[],
+  elementTypes: ElementType[],
+  connections: ArchitectureConnection[],
   selectedId: number | null,
   onResizeEnd: (id: number, x: number, y: number, width: number, height: number) => void
 ): Node[] {
+  const typeName = new Map(elementTypes.map((t) => [t.id, t.name]))
   const byId = new Map(elements.map((e) => [e.id, e]))
   const ordered: ArchitectureElement[] = []
   const placed = new Set<number>()
@@ -89,6 +92,9 @@ export function buildNodes(
       selected: el.id === selectedId,
       nested: hasParent(el),
       childCount: elements.filter((c) => c.parentId === el.id).length,
+      typeName: el.elementTypeId != null ? typeName.get(el.elementTypeId) ?? null : null,
+      // ponytail: O(elements×connections) count, fine at desktop canvas scale
+      connectionCount: connections.filter((c) => c.sourceId === el.id || c.targetId === el.id).length,
       onResizeEnd: (x: number, y: number, w: number, h: number) => onResizeEnd(el.id, x, y, w, h)
     } satisfies BlockNodeData,
     style: { width: el.width, height: el.height }

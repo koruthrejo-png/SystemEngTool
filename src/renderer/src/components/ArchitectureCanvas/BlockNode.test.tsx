@@ -14,6 +14,7 @@ vi.mock('@xyflow/react', () => ({
 const data: BlockNodeData = {
   label: 'Engine', blockId: 'SYS-001', color: null, selected: true,
   nested: false, childCount: 0,
+  typeName: null, connectionCount: 0,
   onResizeEnd: vi.fn()
 }
 
