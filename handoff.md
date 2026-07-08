@@ -106,6 +106,9 @@ Plan: `docs/superpowers/plans/2026-07-07-trace-to-architecture.md` (commits `f9a
 - Test baseline: 48 failed (unchanged) / 180 passed
 - Deferred: hoist the duplicated `loadTraceability` mount effect if a third drawer section ever consumes it
 
+### Zoom/Fit Controls Restyle — COMPLETE (backlog item 17)
+Commit `574cb9c`. Replaced default React Flow `<Controls>` with custom `CanvasControls` in `ArchitectureCanvas/index.tsx` — a bottom-left RF `<Panel>` using `useReactFlow` (zoomIn/zoomOut/fitView) + `useViewport` (live zoom %): token-styled white/blur card (zoom-in / live % / zoom-out, divider-separated) + a separate fit-view button with a corner-bracket SVG. Plain +/− glyphs and SVG per the app's no-Material-Symbols convention. Typecheck clean; live-verified (79%→114% on two zoom-ins, fit resets to 79%, buttons functional). Also this session: committed the orphaned `refreshAc` per-req summary optimization (`6454bc9`, drops a redundant listByModule IPC per AC mutation) + its test; gitignored `*.tsbuildinfo`.
+
 ## Next Step: pick the next backlog slice
 
 Nothing in flight. Remaining Deferred Backlog candidates in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: items 16/17 (component library palette + RF zoom-controls restyle) and any unnumbered leftovers listed there. Also ticketed follow-ups: codebase-wide promise error-surfacing pass; batched `aria-pressed` toggle a11y pass; heading-anchor on search section clicks. Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).

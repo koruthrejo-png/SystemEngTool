@@ -128,13 +128,13 @@ Recorded so they can be planned as future feature work:
 14. Export PDF from architecture view
 15. Undo/redo on the architecture canvas
 16. Node port-count indicators and typed component library (Sensor/Actuator/Controller/Bus), including the Component Library left palette panel from spec §4
-17. Restyle React Flow zoom/fit controls (spec §4 called for it; the overhaul kept default React Flow chrome)
+17. ~~Restyle React Flow zoom/fit controls~~ — DONE 2026-07-08 (custom `CanvasControls`, commit 574cb9c)
 
 ### Ratified deviations from the mockups (accepted at final review, 2026-07-03)
 
 - Focus/selection rings use `ring-action/60` (60% opacity), not full-opacity action green
 - Architecture node names render at `text-sm font-medium`, not body-lg
-- React Flow zoom controls keep default chrome (restyle deferred, item 17)
+- ~~React Flow zoom controls keep default chrome (restyle deferred, item 17)~~ — DONE 2026-07-08 (custom CanvasControls, commit 574cb9c)
 - Module rename input in the tree stays a compact native `<input>` (token colors, not the Input primitive)
 
 ## Out of Scope
