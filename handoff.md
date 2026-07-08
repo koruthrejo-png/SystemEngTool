@@ -106,6 +106,15 @@ Plan: `docs/superpowers/plans/2026-07-07-trace-to-architecture.md` (commits `f9a
 - Test baseline: 48 failed (unchanged) / 180 passed
 - Deferred: hoist the duplicated `loadTraceability` mount effect if a third drawer section ever consumes it
 
+### Component Library Palette & Typed Nodes — COMPLETE (backlog item 16)
+Plan: `docs/superpowers/plans/2026-07-08-component-library-typed-nodes.md`. Spec: `docs/superpowers/specs/2026-07-08-component-library-typed-nodes-design.md`. Commits `ee93fad..7589d28` (subagent-driven, 4 tasks; new ledger section in `.superpowers/sdd/progress.md`). UI-only on the existing `element_types` data model — no backend/DB/IPC. Delivered:
+- `ArchitectureCanvas/ComponentLibrary.tsx` — left palette listing the project's `elementTypes` (seeded System/Subsystem/Component/Function/External) with color dots; click a row → `addElement({ projectId, elementTypeId, posX, posY })`. Toolbar `+ Object` kept for untyped blocks.
+- `buildNodes(elements, elementTypes, connections, selectedId, onResizeEnd)` — now derives `typeName` (id→name lookup) and `connectionCount` (source-or-target incidence, self-loop once) into `BlockNodeData`.
+- `BlockNode` header shows the type name (uppercase; replaces generic "Object" on unnamed typed nodes, leading tag on named ones) + a `⇆ N` port-count badge styled like the Nested pill, only when count > 0.
+- Architecture view rewrapped into a flex row (palette + canvas); item-17 CanvasControls/zoom preserved.
+- Also recovered 4 pre-existing `index.test.tsx` failures that item-17's CanvasControls had introduced (missing `useViewport`/`Panel`/zoom mocks) — `7589d28`. Remaining ArchitectureCanvas failure is a stale "connection mode toggle button" test (pre-existing, unrelated).
+- Live-verified end-to-end (palette, click-to-add typed headers, untyped fallback, badges, relaunch persistence).
+
 ### Zoom/Fit Controls Restyle — COMPLETE (backlog item 17)
 Commit `574cb9c`. Replaced default React Flow `<Controls>` with custom `CanvasControls` in `ArchitectureCanvas/index.tsx` — a bottom-left RF `<Panel>` using `useReactFlow` (zoomIn/zoomOut/fitView) + `useViewport` (live zoom %): token-styled white/blur card (zoom-in / live % / zoom-out, divider-separated) + a separate fit-view button with a corner-bracket SVG. Plain +/− glyphs and SVG per the app's no-Material-Symbols convention. Typecheck clean; live-verified (79%→114% on two zoom-ins, fit resets to 79%, buttons functional). Also this session: committed the orphaned `refreshAc` per-req summary optimization (`6454bc9`, drops a redundant listByModule IPC per AC mutation) + its test; gitignored `*.tsbuildinfo`.
 

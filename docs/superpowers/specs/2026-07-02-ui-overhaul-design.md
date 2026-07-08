@@ -127,7 +127,7 @@ Recorded so they can be planned as future feature work:
 13. Last-modified attribution (user + timestamp) on requirements
 14. Export PDF from architecture view
 15. Undo/redo on the architecture canvas
-16. Node port-count indicators and typed component library (Sensor/Actuator/Controller/Bus), including the Component Library left palette panel from spec §4
+16. ~~Node port-count indicators and typed component library, including the Component Library left palette panel from spec §4~~ — DONE 2026-07-08 (commits ee93fad..7589d28; palette click-to-add typed node, type name in node header, ⇆N connection-count badge)
 17. ~~Restyle React Flow zoom/fit controls~~ — DONE 2026-07-08 (custom `CanvasControls`, commit 574cb9c)
 
 ### Ratified deviations from the mockups (accepted at final review, 2026-07-03)
