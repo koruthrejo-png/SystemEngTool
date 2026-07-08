@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import {
-  ReactFlow, Background, BackgroundVariant, Controls, ReactFlowProvider,
-  useNodesState, useEdgesState, useReactFlow, ConnectionMode,
+  ReactFlow, Background, BackgroundVariant, Panel, ReactFlowProvider,
+  useNodesState, useEdgesState, useReactFlow, useViewport, ConnectionMode,
   type Node, type Edge, type Connection
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -13,6 +13,36 @@ import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
+
+// Industrial-precision zoom/fit controls (design backlog item 17) replacing default RF chrome.
+function CanvasControls(): JSX.Element {
+  const { zoomIn, zoomOut, fitView } = useReactFlow()
+  const { zoom } = useViewport()
+  const btn = 'p-1.5 rounded hover:bg-workspace text-ink-muted leading-none text-base'
+  return (
+    <Panel position="bottom-left" className="flex flex-col gap-2">
+      <div className="bg-white/90 backdrop-blur border border-line rounded-lg p-1 flex flex-col items-stretch shadow-md">
+        <button className={btn} onClick={() => zoomIn()} aria-label="Zoom in" title="Zoom in">+</button>
+        <div className="h-px bg-line mx-1 my-0.5" />
+        <div className="px-1 py-0.5 text-center text-ink font-mono text-xs font-bold tabular-nums">
+          {Math.round(zoom * 100)}%
+        </div>
+        <div className="h-px bg-line mx-1 my-0.5" />
+        <button className={btn} onClick={() => zoomOut()} aria-label="Zoom out" title="Zoom out">−</button>
+      </div>
+      <button
+        className="bg-white/90 backdrop-blur border border-line rounded-lg p-1.5 shadow-md hover:bg-workspace text-ink-muted flex items-center justify-center"
+        onClick={() => fitView()}
+        aria-label="Fit view"
+        title="Fit view"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" />
+        </svg>
+      </button>
+    </Panel>
+  )
+}
 
 export default function ArchitectureCanvas(): JSX.Element {
   const { project } = useStore()
@@ -159,7 +189,7 @@ function CanvasInner(): JSX.Element {
           fitView
         >
           <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
-          <Controls />
+          <CanvasControls />
         </ReactFlow>
       </div>
     </div>
