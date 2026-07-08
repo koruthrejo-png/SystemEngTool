@@ -10,6 +10,7 @@ import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
 import { Button } from '../ui'
 import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
+import ComponentLibrary from './ComponentLibrary'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -164,33 +165,36 @@ function CanvasInner(): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
-        <Button onClick={handleAddBlock}>+ Object</Button>
-        <span className="text-xs text-ink-faint">Drag from a block's edge to connect</span>
-      </div>
-      <div className="flex-1">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick}
-          onEdgeClick={onEdgeClick}
-          onPaneClick={onPaneClick}
-          onNodeDragStop={onNodeDragStop}
-          onNodesDelete={onNodesDelete}
-          onEdgesDelete={onEdgesDelete}
-          deleteKeyCode="Delete"
-          connectionMode={ConnectionMode.Loose}
-          fitView
-        >
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
-          <CanvasControls />
-        </ReactFlow>
+    <div className="flex h-full">
+      <ComponentLibrary />
+      <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
+          <Button onClick={handleAddBlock}>+ Object</Button>
+          <span className="text-xs text-ink-faint">Drag from a block's edge to connect</span>
+        </div>
+        <div className="flex-1">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onEdgeClick={onEdgeClick}
+            onPaneClick={onPaneClick}
+            onNodeDragStop={onNodeDragStop}
+            onNodesDelete={onNodesDelete}
+            onEdgesDelete={onEdgesDelete}
+            deleteKeyCode="Delete"
+            connectionMode={ConnectionMode.Loose}
+            fitView
+          >
+            <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
+            <CanvasControls />
+          </ReactFlow>
+        </div>
       </div>
     </div>
   )
