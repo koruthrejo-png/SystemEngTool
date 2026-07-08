@@ -40,11 +40,12 @@ describe('acceptance criteria store actions', () => {
     expect(useStore.getState().acItems).toHaveLength(1)
   })
 
-  it('addAcItem creates then refetches items and module summary', async () => {
+  it('addAcItem creates then refetches items and derives summary from that list', async () => {
     await useStore.getState().addAcItem(5, '')
     expect(mockCreate).toHaveBeenCalledWith(5, '')
     expect(mockList).toHaveBeenCalledWith(5)
-    expect(mockListByModule).toHaveBeenCalledWith(3)
+    // refreshAc derives this req's summary entry from the same list — no whole-module re-query.
+    expect(mockListByModule).not.toHaveBeenCalled()
     expect(useStore.getState().acSummary[5]).toEqual({ passed: 0, total: 1, first: 'c1' })
   })
 

@@ -434,18 +434,16 @@ export const useStore = create<Store>((set, get) => ({
 }))
 
 async function refreshAc(requirementId: number): Promise<void> {
-  const { selectedModuleId } = useStore.getState()
-  const [acItems, moduleItems] = await Promise.all([
-    window.api.acceptanceCriteria.list(requirementId),
-    selectedModuleId != null
-      ? window.api.acceptanceCriteria.listByModule(selectedModuleId)
-      : Promise.resolve([])
-  ])
-  // A late-resolving refetch must not clobber acItems after the user switched requirements;
-  // the summary is keyed per requirement, so it stays safe to update either way.
-  if (useStore.getState().selectedRequirementId === requirementId) {
-    useStore.setState({ acItems, acSummary: summarize(moduleItems) })
-  } else {
-    useStore.setState({ acSummary: summarize(moduleItems) })
-  }
+  // Only this requirement's items changed, so derive its summary entry from the same
+  // list we already fetch and merge it in — no whole-module re-query, and no chance of a
+  // late resolve overwriting another module's summary (we only touch this req's key).
+  const acItems = await window.api.acceptanceCriteria.list(requirementId)
+  const entry = summarize(acItems)[requirementId]
+  useStore.setState((s) => {
+    const acSummary = { ...s.acSummary }
+    if (entry) acSummary[requirementId] = entry
+    else delete acSummary[requirementId]
+    // A late-resolving refetch must not clobber acItems after the user switched requirements.
+    return s.selectedRequirementId === requirementId ? { acItems, acSummary } : { acSummary }
+  })
 }
