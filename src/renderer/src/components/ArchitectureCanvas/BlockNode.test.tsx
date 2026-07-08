@@ -77,4 +77,23 @@ describe('BlockNode', () => {
     expect(screen.getByText('Contains 2')).toBeInTheDocument()
     expect(parent.querySelector('.border-dashed')).not.toBeNull()
   })
+
+  it('shows the type name on an unnamed node instead of "Object"', () => {
+    render(<BlockNode data={{ ...data, label: '', typeName: 'Subsystem' }} {...({} as any)} />)
+    expect(screen.getByText('Subsystem')).toBeInTheDocument()
+    expect(screen.queryByText('Object')).not.toBeInTheDocument()
+  })
+
+  it('falls back to "Object" on an unnamed node with no type', () => {
+    render(<BlockNode data={{ ...data, label: '', typeName: null }} {...({} as any)} />)
+    expect(screen.getByText('Object')).toBeInTheDocument()
+  })
+
+  it('renders the port-count badge only when connectionCount > 0', () => {
+    render(<BlockNode data={{ ...data, connectionCount: 0 }} {...({} as any)} />)
+    expect(screen.queryByText(/⇆/)).not.toBeInTheDocument()
+
+    render(<BlockNode data={{ ...data, connectionCount: 3 }} {...({} as any)} />)
+    expect(screen.getByText('⇆ 3')).toBeInTheDocument()
+  })
 })

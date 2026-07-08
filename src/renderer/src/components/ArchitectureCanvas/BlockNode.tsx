@@ -38,15 +38,19 @@ export default memo(function BlockNode({ data }: NodeProps) {
       >
         {named ? (
           <span className="flex items-baseline gap-2 min-w-0 normal-case tracking-normal">
+            {d.typeName && <span className="uppercase tracking-[0.05em] text-white/60 shrink-0">{d.typeName}</span>}
             <span className="text-[11px] truncate">{d.label}</span>
             <span className="font-mono font-medium text-white/70 shrink-0">{d.blockId}</span>
           </span>
         ) : (
-          <span>Object</span>
+          <span>{d.typeName ?? 'Object'}</span>
         )}
         <span className="flex items-center gap-2 font-medium normal-case tracking-normal text-white/75 shrink-0">
           {d.nested && <span className="border border-white/40 rounded px-1 leading-tight">Nested</span>}
           {d.childCount > 0 && <span>Contains {d.childCount}</span>}
+          {d.connectionCount > 0 && (
+            <span className="border border-white/40 rounded px-1 leading-tight">⇆ {d.connectionCount}</span>
+          )}
         </span>
       </div>
       <div className={`px-3 py-2 flex-1 min-h-0 ${d.childCount > 0 ? 'm-1 rounded border border-dashed border-line bg-workspace/60' : ''}`}>
