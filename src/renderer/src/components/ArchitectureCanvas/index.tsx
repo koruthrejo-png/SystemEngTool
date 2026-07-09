@@ -108,6 +108,7 @@ function CanvasInner(): JSX.Element {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
+      if (e.repeat) return
       if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return

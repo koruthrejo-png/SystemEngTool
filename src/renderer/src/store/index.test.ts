@@ -375,6 +375,11 @@ describe('undo/redo — edit', () => {
     expect(useStore.getState().undoStack).toHaveLength(0)
   })
 
+  it('updateElement with the same value it already has does NOT push a command', async () => {
+    await useStore.getState().updateElement(1, { name: 'Old' })
+    expect(useStore.getState().undoStack).toHaveLength(0)
+  })
+
   it('updateConnection with a name change pushes an edit command', async () => {
     await useStore.getState().updateConnection(1, { name: 'NewConn' })
     expect(useStore.getState().undoStack).toHaveLength(1)

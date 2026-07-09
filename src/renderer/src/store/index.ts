@@ -387,19 +387,26 @@ export const useStore = create<Store>((set, get) => ({
     const { undoStack, redoStack } = get()
     if (undoStack.length === 0) return
     const cmd = undoStack[undoStack.length - 1]
-    await cmd.undo()
-    set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, cmd] })
-    // ponytail: full re-fetch keeps the store in sync with the DB after undo; cheap at diagram scale
-    await get().loadArchitecture()
+    try {
+      await cmd.undo()
+    } finally {
+      set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, cmd] })
+      // ponytail: full re-fetch keeps the store in sync with the DB after undo; cheap at diagram scale
+      await get().loadArchitecture()
+    }
   },
 
   redo: async () => {
     const { undoStack, redoStack } = get()
     if (redoStack.length === 0) return
     const cmd = redoStack[redoStack.length - 1]
-    await cmd.redo()
-    set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, cmd] })
-    await get().loadArchitecture()
+    try {
+      await cmd.redo()
+    } finally {
+      set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, cmd] })
+      // ponytail: full re-fetch keeps the store in sync with the DB after undo; cheap at diagram scale
+      await get().loadArchitecture()
+    }
   },
 
   clearHistory: () => set({ undoStack: [], redoStack: [] }),
@@ -422,7 +429,8 @@ export const useStore = create<Store>((set, get) => ({
     const editKeys = ELEMENT_PROP_KEYS.filter((k) => k in input)
     const updated = await window.api.elements.update(id, input)
     set((s) => ({ elements: s.elements.map((e) => (e.id === id ? updated : e)) }))
-    if (before && editKeys.length > 0) {
+    const changed = editKeys.some((k) => (before as Record<string, unknown> | undefined)?.[k] !== (input as Record<string, unknown>)[k])
+    if (before && changed) {
       const prev: UpdateElementInput = {}
       for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as Record<string, unknown>)[k]
       pushUndo({
@@ -480,7 +488,8 @@ export const useStore = create<Store>((set, get) => ({
     const editKeys = CONNECTION_PROP_KEYS.filter((k) => k in input)
     const updated = await window.api.connections.update(id, input)
     set((s) => ({ connections: s.connections.map((c) => (c.id === id ? updated : c)) }))
-    if (before && editKeys.length > 0) {
+    const changed = editKeys.some((k) => (before as Record<string, unknown> | undefined)?.[k] !== (input as Record<string, unknown>)[k])
+    if (before && changed) {
       const prev: UpdateConnectionInput = {}
       for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as Record<string, unknown>)[k]
       pushUndo({
