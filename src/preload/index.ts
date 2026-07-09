@@ -72,13 +72,15 @@ contextBridge.exposeInMainWorld('api', {
     list: (projectId: number): Promise<ArchitectureElement[]> => ipcRenderer.invoke('elements:list', projectId),
     create: (input: CreateElementInput): Promise<ArchitectureElement> => ipcRenderer.invoke('elements:create', input),
     update: (id: number, input: UpdateElementInput): Promise<ArchitectureElement> => ipcRenderer.invoke('elements:update', id, input),
-    delete: (id: number): Promise<void> => ipcRenderer.invoke('elements:delete', id)
+    delete: (id: number): Promise<void> => ipcRenderer.invoke('elements:delete', id),
+    restore: (id: number): Promise<ArchitectureElement> => ipcRenderer.invoke('elements:restore', id)
   },
   connections: {
     list: (projectId: number): Promise<ArchitectureConnection[]> => ipcRenderer.invoke('connections:list', projectId),
     create: (input: CreateConnectionInput): Promise<ArchitectureConnection> => ipcRenderer.invoke('connections:create', input),
     update: (id: number, input: UpdateConnectionInput): Promise<ArchitectureConnection> => ipcRenderer.invoke('connections:update', id, input),
-    delete: (id: number): Promise<void> => ipcRenderer.invoke('connections:delete', id)
+    delete: (id: number): Promise<void> => ipcRenderer.invoke('connections:delete', id),
+    restore: (id: number): Promise<ArchitectureConnection> => ipcRenderer.invoke('connections:restore', id)
   },
   elementLinks: {
     list: (elementId: number): Promise<Requirement[]> => ipcRenderer.invoke('elementLinks:list', elementId),

@@ -74,12 +74,14 @@ declare global {
         create(input: CreateElementInput): Promise<ArchitectureElement>
         update(id: number, input: UpdateElementInput): Promise<ArchitectureElement>
         delete(id: number): Promise<void>
+        restore(id: number): Promise<ArchitectureElement>
       }
       connections: {
         list(projectId: number): Promise<ArchitectureConnection[]>
         create(input: CreateConnectionInput): Promise<ArchitectureConnection>
         update(id: number, input: UpdateConnectionInput): Promise<ArchitectureConnection>
         delete(id: number): Promise<void>
+        restore(id: number): Promise<ArchitectureConnection>
       }
       elementLinks: {
         list(elementId: number): Promise<Requirement[]>
