@@ -15,6 +15,11 @@ import type {
 } from '../../../types'
 import { summarize, type AcSummaryEntry } from './acSummary'
 
+interface UndoCommand {
+  undo: () => Promise<void>
+  redo: () => Promise<void>
+}
+
 interface Store {
   // shared
   project: Project | null
@@ -47,6 +52,11 @@ interface Store {
   checkedIds: number[]
   traceLinks: ElementRequirementLink[]
   reqLinks: RequirementLink[]
+  undoStack: UndoCommand[]
+  redoStack: UndoCommand[]
+  undo: () => Promise<void>
+  redo: () => Promise<void>
+  clearHistory: () => void
 
   // actions — shared
   loadProject: () => Promise<void>
@@ -116,12 +126,13 @@ export const useStore = create<Store>((set, get) => ({
   customFields: [], acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
   traceLinks: [], reqLinks: [],
+  undoStack: [], redoStack: [],
 
   loadProject: async () => {
     const project = await window.api.project.getCurrent()
     if (!project) return
     const modules = await window.api.modules.list(project.id)
-    set({ project, modules })
+    set({ project, modules, undoStack: [], redoStack: [] })
   },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -369,6 +380,27 @@ export const useStore = create<Store>((set, get) => ({
     set({ reqLinks: await window.api.reqLinks.listByProject(project.id) })
   },
 
+  undo: async () => {
+    const { undoStack, redoStack } = get()
+    if (undoStack.length === 0) return
+    const cmd = undoStack[undoStack.length - 1]
+    await cmd.undo()
+    set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, cmd] })
+    // ponytail: full re-fetch keeps the store in sync with the DB after undo; cheap at diagram scale
+    await get().loadArchitecture()
+  },
+
+  redo: async () => {
+    const { undoStack, redoStack } = get()
+    if (redoStack.length === 0) return
+    const cmd = redoStack[redoStack.length - 1]
+    await cmd.redo()
+    set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, cmd] })
+    await get().loadArchitecture()
+  },
+
+  clearHistory: () => set({ undoStack: [], redoStack: [] }),
+
   selectElement: (id) => set({ selectedElementId: id, selectedConnectionId: null }),
 
   selectConnection: (id) => set({ selectedConnectionId: id, selectedElementId: null }),
@@ -376,6 +408,10 @@ export const useStore = create<Store>((set, get) => ({
   addElement: async (input) => {
     const el = await window.api.elements.create(input)
     set((s) => ({ elements: [...s.elements, el], selectedElementId: el.id, selectedConnectionId: null }))
+    pushUndo({
+      undo: async () => { await window.api.elements.delete(el.id) },
+      redo: async () => { await window.api.elements.restore(el.id) }
+    })
   },
 
   updateElement: async (id, input) => {
@@ -401,6 +437,10 @@ export const useStore = create<Store>((set, get) => ({
   addConnection: async (input) => {
     const conn = await window.api.connections.create(input)
     set((s) => ({ connections: [...s.connections, conn], selectedConnectionId: conn.id, selectedElementId: null }))
+    pushUndo({
+      undo: async () => { await window.api.connections.delete(conn.id) },
+      redo: async () => { await window.api.connections.restore(conn.id) }
+    })
   },
 
   updateConnection: async (id, input) => {
@@ -432,6 +472,10 @@ export const useStore = create<Store>((set, get) => ({
     await window.api.connectionLinks.remove(connectionId, requirementId)
   }
 }))
+
+function pushUndo(cmd: UndoCommand): void {
+  useStore.setState((s) => ({ undoStack: [...s.undoStack, cmd], redoStack: [] }))
+}
 
 async function refreshAc(requirementId: number): Promise<void> {
   // Only this requirement's items changed, so derive its summary entry from the same

@@ -47,11 +47,14 @@ vi.stubGlobal('window', {
       list: vi.fn().mockResolvedValue([mockElement]),
       create: vi.fn().mockResolvedValue(mockElement),
       update: vi.fn().mockResolvedValue({ ...mockElement, name: 'Updated' }),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
+      restore: vi.fn().mockResolvedValue(mockElement)
     },
     connections: {
       list: vi.fn().mockResolvedValue([mockConn]),
-      delete: vi.fn().mockResolvedValue(undefined)
+      create: vi.fn().mockResolvedValue(mockConn),
+      delete: vi.fn().mockResolvedValue(undefined),
+      restore: vi.fn().mockResolvedValue(mockConn)
     },
     elementLinks: {
       list: vi.fn().mockResolvedValue([]),
@@ -281,5 +284,35 @@ describe('architecture store', () => {
     expect(useStore.getState().elements).toEqual([child])
     expect(useStore.getState().connections).toEqual([])
     expect(useStore.getState().selectedElementId).toBeNull()
+  })
+})
+
+describe('undo/redo — create', () => {
+  beforeEach(async () => {
+    useStore.setState({ project: mockProject as any, elements: [], connections: [], undoStack: [], redoStack: [] })
+    vi.clearAllMocks()
+  })
+
+  it('addElement pushes an undo command; undo deletes, redo restores', async () => {
+    await useStore.getState().addElement({ projectId: 1 })
+    expect(useStore.getState().undoStack).toHaveLength(1)
+
+    await useStore.getState().undo()
+    expect(window.api.elements.delete).toHaveBeenCalledWith(1)
+    expect(useStore.getState().undoStack).toHaveLength(0)
+    expect(useStore.getState().redoStack).toHaveLength(1)
+
+    await useStore.getState().redo()
+    expect(window.api.elements.restore).toHaveBeenCalledWith(1)
+    expect(useStore.getState().undoStack).toHaveLength(1)
+    expect(useStore.getState().redoStack).toHaveLength(0)
+  })
+
+  it('a new action clears the redo stack', async () => {
+    await useStore.getState().addElement({ projectId: 1 })
+    await useStore.getState().undo()
+    expect(useStore.getState().redoStack).toHaveLength(1)
+    await useStore.getState().addConnection({ projectId: 1, sourceId: 1, targetId: 2, sourceHandle: null, targetHandle: null })
+    expect(useStore.getState().redoStack).toHaveLength(0)
   })
 })
