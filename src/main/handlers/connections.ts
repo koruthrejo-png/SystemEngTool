@@ -74,9 +74,16 @@ export function deleteConnection(id: number): void {
   getDatabase().prepare('UPDATE architecture_connections SET deleted_at = ?, updated_at = ? WHERE id = ?').run(ts, ts, id)
 }
 
+export function restoreConnection(id: number): ArchitectureConnection {
+  const db = getDatabase()
+  db.prepare('UPDATE architecture_connections SET deleted_at = NULL, updated_at = ? WHERE id = ?').run(now(), id)
+  return rowToConnection(db.prepare('SELECT * FROM architecture_connections WHERE id = ?').get(id))
+}
+
 export function registerConnectionHandlers(): void {
   ipcMain.handle('connections:list', (_e, projectId: number) => listConnections(projectId))
   ipcMain.handle('connections:create', (_e, input: CreateConnectionInput) => createConnection(input))
   ipcMain.handle('connections:update', (_e, id: number, input: UpdateConnectionInput) => updateConnection(id, input))
   ipcMain.handle('connections:delete', (_e, id: number) => deleteConnection(id))
+  ipcMain.handle('connections:restore', (_e, id: number) => restoreConnection(id))
 }

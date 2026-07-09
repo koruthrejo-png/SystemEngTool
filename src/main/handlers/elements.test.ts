@@ -4,7 +4,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { openDatabase, closeDatabase } from '../db/connection'
 import { createProject } from './projects'
-import { listElements, createElement, updateElement, deleteElement } from './elements'
+import { listElements, createElement, updateElement, deleteElement, restoreElement } from './elements'
 import { createConnection, listConnections } from './connections'
 
 describe('elements handler', () => {
@@ -75,5 +75,14 @@ describe('elements handler', () => {
     createConnection({ projectId, sourceId: src.id, targetId: tgt.id })
     deleteElement(src.id)
     expect(listConnections(projectId)).toHaveLength(0)
+  })
+
+  it('restoreElement clears deleted_at and returns the row to the list', () => {
+    const a = createElement({ projectId })
+    deleteElement(a.id)
+    expect(listElements(projectId)).toHaveLength(0)
+    const restored = restoreElement(a.id)
+    expect(restored.deletedAt).toBeNull()
+    expect(listElements(projectId)).toHaveLength(1)
   })
 })

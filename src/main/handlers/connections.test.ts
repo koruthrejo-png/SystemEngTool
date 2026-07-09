@@ -5,7 +5,7 @@ import { tmpdir } from 'os'
 import { openDatabase, closeDatabase } from '../db/connection'
 import { createProject } from './projects'
 import { createElement } from './elements'
-import { listConnections, createConnection, updateConnection, deleteConnection } from './connections'
+import { listConnections, createConnection, updateConnection, deleteConnection, restoreConnection } from './connections'
 
 describe('connections handler', () => {
   let tempDir: string
@@ -55,5 +55,16 @@ describe('connections handler', () => {
     expect(updated.name).toBe('Power bus')
     expect(updated.description).toBe('Main 28V bus')
     expect(updated.connId).toBe(conn.connId)
+  })
+
+  it('restoreConnection clears deleted_at and returns the row to the list', () => {
+    const a = createElement({ projectId })
+    const b = createElement({ projectId })
+    const conn = createConnection({ projectId, sourceId: a.id, targetId: b.id })
+    deleteConnection(conn.id)
+    expect(listConnections(projectId)).toHaveLength(0)
+    const restored = restoreConnection(conn.id)
+    expect(restored.deletedAt).toBeNull()
+    expect(listConnections(projectId)).toHaveLength(1)
   })
 })
