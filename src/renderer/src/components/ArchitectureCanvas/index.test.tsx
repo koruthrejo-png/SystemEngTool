@@ -68,9 +68,9 @@ describe('ArchitectureCanvas', () => {
     expect(mockAddElement).toHaveBeenCalledWith({ projectId: 1, posX: expect.any(Number), posY: expect.any(Number) })
   })
 
-  it('renders connection mode toggle button', () => {
+  it('renders the connect hint', () => {
     render(<ArchitectureCanvas />)
-    expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument()
+    expect(screen.getByText(/drag from a block's edge to connect/i)).toBeInTheDocument()
   })
 
   it('renders undo and redo buttons, disabled when history is empty', () => {
