@@ -53,6 +53,7 @@ vi.stubGlobal('window', {
     connections: {
       list: vi.fn().mockResolvedValue([mockConn]),
       create: vi.fn().mockResolvedValue(mockConn),
+      update: vi.fn().mockResolvedValue(mockConn),
       delete: vi.fn().mockResolvedValue(undefined),
       restore: vi.fn().mockResolvedValue(mockConn)
     },
@@ -348,5 +349,36 @@ describe('undo/redo — delete', () => {
     expect(window.api.connections.restore).toHaveBeenCalledWith(5)
     await useStore.getState().redo()
     expect(window.api.connections.delete).toHaveBeenCalledWith(5)
+  })
+})
+
+describe('undo/redo — edit', () => {
+  beforeEach(() => {
+    useStore.setState({
+      project: mockProject as any,
+      elements: [{ ...mockElement, name: 'Old' }],
+      connections: [{ ...mockConn, name: 'OldConn' }],
+      undoStack: [], redoStack: []
+    })
+    vi.clearAllMocks()
+  })
+
+  it('updateElement with a name change pushes an edit command; undo restores the old name', async () => {
+    await useStore.getState().updateElement(1, { name: 'New' })
+    expect(useStore.getState().undoStack).toHaveLength(1)
+    await useStore.getState().undo()
+    expect(window.api.elements.update).toHaveBeenLastCalledWith(1, { name: 'Old' })
+  })
+
+  it('updateElement with only position does NOT push a command', async () => {
+    await useStore.getState().updateElement(1, { posX: 5, posY: 6 })
+    expect(useStore.getState().undoStack).toHaveLength(0)
+  })
+
+  it('updateConnection with a name change pushes an edit command', async () => {
+    await useStore.getState().updateConnection(1, { name: 'NewConn' })
+    expect(useStore.getState().undoStack).toHaveLength(1)
+    await useStore.getState().undo()
+    expect(window.api.connections.update).toHaveBeenLastCalledWith(1, { name: 'OldConn' })
   })
 })

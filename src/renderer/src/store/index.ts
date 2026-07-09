@@ -15,6 +15,9 @@ import type {
 } from '../../../types'
 import { summarize, type AcSummaryEntry } from './acSummary'
 
+const ELEMENT_PROP_KEYS = ['name', 'color', 'elementTypeId', 'description', 'blockId'] as const
+const CONNECTION_PROP_KEYS = ['name', 'connectionTypeId', 'description', 'connId'] as const
+
 interface UndoCommand {
   undo: () => Promise<void>
   redo: () => Promise<void>
@@ -415,8 +418,18 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   updateElement: async (id, input) => {
+    const before = get().elements.find((e) => e.id === id)
+    const editKeys = ELEMENT_PROP_KEYS.filter((k) => k in input)
     const updated = await window.api.elements.update(id, input)
     set((s) => ({ elements: s.elements.map((e) => (e.id === id ? updated : e)) }))
+    if (before && editKeys.length > 0) {
+      const prev: UpdateElementInput = {}
+      for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as Record<string, unknown>)[k]
+      pushUndo({
+        undo: async () => { await window.api.elements.update(id, prev) },
+        redo: async () => { await window.api.elements.update(id, input) }
+      })
+    }
   },
 
   removeElement: async (id) => {
@@ -463,8 +476,18 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   updateConnection: async (id, input) => {
+    const before = get().connections.find((c) => c.id === id)
+    const editKeys = CONNECTION_PROP_KEYS.filter((k) => k in input)
     const updated = await window.api.connections.update(id, input)
     set((s) => ({ connections: s.connections.map((c) => (c.id === id ? updated : c)) }))
+    if (before && editKeys.length > 0) {
+      const prev: UpdateConnectionInput = {}
+      for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as Record<string, unknown>)[k]
+      pushUndo({
+        undo: async () => { await window.api.connections.update(id, prev) },
+        redo: async () => { await window.api.connections.update(id, input) }
+      })
+    }
   },
 
   removeConnection: async (id) => {
