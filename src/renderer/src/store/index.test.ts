@@ -316,3 +316,37 @@ describe('undo/redo — create', () => {
     expect(useStore.getState().redoStack).toHaveLength(0)
   })
 })
+
+describe('undo/redo — delete', () => {
+  const child = { ...mockElement, id: 2, parentId: 1, posX: 10, posY: 20 }
+  const conn = { ...mockConn, id: 5, sourceId: 1, targetId: 3 }
+
+  beforeEach(() => {
+    useStore.setState({
+      project: mockProject as any,
+      elements: [mockElement, child],
+      connections: [conn],
+      undoStack: [], redoStack: []
+    })
+    vi.clearAllMocks()
+  })
+
+  it('removeElement undo restores the element, its connections, and reparents children back', async () => {
+    await useStore.getState().removeElement(1)
+    expect(window.api.elements.delete).toHaveBeenCalledWith(1)
+    expect(useStore.getState().undoStack).toHaveLength(1)
+
+    await useStore.getState().undo()
+    expect(window.api.elements.restore).toHaveBeenCalledWith(1)
+    expect(window.api.connections.restore).toHaveBeenCalledWith(5)
+    expect(window.api.elements.update).toHaveBeenCalledWith(2, { parentId: 1, posX: 10, posY: 20 })
+  })
+
+  it('removeConnection undo restores, redo re-deletes', async () => {
+    await useStore.getState().removeConnection(5)
+    await useStore.getState().undo()
+    expect(window.api.connections.restore).toHaveBeenCalledWith(5)
+    await useStore.getState().redo()
+    expect(window.api.connections.delete).toHaveBeenCalledWith(5)
+  })
+})

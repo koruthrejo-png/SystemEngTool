@@ -420,6 +420,14 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   removeElement: async (id) => {
+    const state = get()
+    const childSnaps = state.elements
+      .filter((e) => e.parentId === id)
+      .map((e) => ({ id: e.id, parentId: e.parentId, posX: e.posX, posY: e.posY }))
+    const connIds = state.connections
+      .filter((c) => c.sourceId === id || c.targetId === id)
+      .map((c) => c.id)
+
     await window.api.elements.delete(id)
     const { project } = get()
     if (!project) return
@@ -432,6 +440,17 @@ export const useStore = create<Store>((set, get) => ({
       connections,
       selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
     }))
+
+    pushUndo({
+      undo: async () => {
+        await window.api.elements.restore(id)
+        for (const cid of connIds) await window.api.connections.restore(cid)
+        for (const c of childSnaps) {
+          await window.api.elements.update(c.id, { parentId: c.parentId, posX: c.posX, posY: c.posY })
+        }
+      },
+      redo: async () => { await window.api.elements.delete(id) }
+    })
   },
 
   addConnection: async (input) => {
@@ -454,6 +473,10 @@ export const useStore = create<Store>((set, get) => ({
       connections: s.connections.filter((c) => c.id !== id),
       selectedConnectionId: s.selectedConnectionId === id ? null : s.selectedConnectionId
     }))
+    pushUndo({
+      undo: async () => { await window.api.connections.restore(id) },
+      redo: async () => { await window.api.connections.delete(id) }
+    })
   },
 
   addElementLink: async (elementId, requirementId) => {
