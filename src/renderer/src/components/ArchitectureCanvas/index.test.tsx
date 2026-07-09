@@ -43,7 +43,11 @@ vi.mock('../../store', () => ({
     addConnection: vi.fn(),
     removeConnection: vi.fn(),
     selectElement: mockSelectElement,
-    selectConnection: mockSelectConnection
+    selectConnection: mockSelectConnection,
+    undo: vi.fn(),
+    redo: vi.fn(),
+    undoStack: [],
+    redoStack: []
   })
 }))
 
@@ -67,5 +71,11 @@ describe('ArchitectureCanvas', () => {
   it('renders connection mode toggle button', () => {
     render(<ArchitectureCanvas />)
     expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument()
+  })
+
+  it('renders undo and redo buttons, disabled when history is empty', () => {
+    render(<ArchitectureCanvas />)
+    expect(screen.getByRole('button', { name: /undo/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /redo/i })).toBeDisabled()
   })
 })
