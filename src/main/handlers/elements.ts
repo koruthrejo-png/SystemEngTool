@@ -101,9 +101,16 @@ export function deleteElement(id: number): void {
   })()
 }
 
+export function restoreElement(id: number): ArchitectureElement {
+  const db = getDatabase()
+  db.prepare('UPDATE architecture_elements SET deleted_at = NULL, updated_at = ? WHERE id = ?').run(now(), id)
+  return rowToElement(db.prepare('SELECT * FROM architecture_elements WHERE id = ?').get(id))
+}
+
 export function registerElementHandlers(): void {
   ipcMain.handle('elements:list', (_e, projectId: number) => listElements(projectId))
   ipcMain.handle('elements:create', (_e, input: CreateElementInput) => createElement(input))
   ipcMain.handle('elements:update', (_e, id: number, input: UpdateElementInput) => updateElement(id, input))
   ipcMain.handle('elements:delete', (_e, id: number) => deleteElement(id))
+  ipcMain.handle('elements:restore', (_e, id: number) => restoreElement(id))
 }

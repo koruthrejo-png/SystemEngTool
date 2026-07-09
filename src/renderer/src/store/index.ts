@@ -15,6 +15,14 @@ import type {
 } from '../../../types'
 import { summarize, type AcSummaryEntry } from './acSummary'
 
+const ELEMENT_PROP_KEYS = ['name', 'color', 'elementTypeId', 'description', 'blockId'] as const
+const CONNECTION_PROP_KEYS = ['name', 'connectionTypeId', 'description', 'connId'] as const
+
+interface UndoCommand {
+  undo: () => Promise<void>
+  redo: () => Promise<void>
+}
+
 interface Store {
   // shared
   project: Project | null
@@ -47,6 +55,11 @@ interface Store {
   checkedIds: number[]
   traceLinks: ElementRequirementLink[]
   reqLinks: RequirementLink[]
+  undoStack: UndoCommand[]
+  redoStack: UndoCommand[]
+  undo: () => Promise<void>
+  redo: () => Promise<void>
+  clearHistory: () => void
 
   // actions — shared
   loadProject: () => Promise<void>
@@ -116,12 +129,13 @@ export const useStore = create<Store>((set, get) => ({
   customFields: [], acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
   traceLinks: [], reqLinks: [],
+  undoStack: [], redoStack: [],
 
   loadProject: async () => {
     const project = await window.api.project.getCurrent()
     if (!project) return
     const modules = await window.api.modules.list(project.id)
-    set({ project, modules })
+    set({ project, modules, undoStack: [], redoStack: [] })
   },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -369,6 +383,34 @@ export const useStore = create<Store>((set, get) => ({
     set({ reqLinks: await window.api.reqLinks.listByProject(project.id) })
   },
 
+  undo: async () => {
+    const { undoStack, redoStack } = get()
+    if (undoStack.length === 0) return
+    const cmd = undoStack[undoStack.length - 1]
+    try {
+      await cmd.undo()
+    } finally {
+      set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, cmd] })
+      // ponytail: full re-fetch keeps the store in sync with the DB after undo; cheap at diagram scale
+      await get().loadArchitecture()
+    }
+  },
+
+  redo: async () => {
+    const { undoStack, redoStack } = get()
+    if (redoStack.length === 0) return
+    const cmd = redoStack[redoStack.length - 1]
+    try {
+      await cmd.redo()
+    } finally {
+      set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, cmd] })
+      // ponytail: full re-fetch keeps the store in sync with the DB after undo; cheap at diagram scale
+      await get().loadArchitecture()
+    }
+  },
+
+  clearHistory: () => set({ undoStack: [], redoStack: [] }),
+
   selectElement: (id) => set({ selectedElementId: id, selectedConnectionId: null }),
 
   selectConnection: (id) => set({ selectedConnectionId: id, selectedElementId: null }),
@@ -376,14 +418,37 @@ export const useStore = create<Store>((set, get) => ({
   addElement: async (input) => {
     const el = await window.api.elements.create(input)
     set((s) => ({ elements: [...s.elements, el], selectedElementId: el.id, selectedConnectionId: null }))
+    pushUndo({
+      undo: async () => { await window.api.elements.delete(el.id) },
+      redo: async () => { await window.api.elements.restore(el.id) }
+    })
   },
 
   updateElement: async (id, input) => {
+    const before = get().elements.find((e) => e.id === id)
+    const editKeys = ELEMENT_PROP_KEYS.filter((k) => k in input)
     const updated = await window.api.elements.update(id, input)
     set((s) => ({ elements: s.elements.map((e) => (e.id === id ? updated : e)) }))
+    const changed = editKeys.some((k) => (before as Record<string, unknown> | undefined)?.[k] !== (input as Record<string, unknown>)[k])
+    if (before && changed) {
+      const prev: UpdateElementInput = {}
+      for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as Record<string, unknown>)[k]
+      pushUndo({
+        undo: async () => { await window.api.elements.update(id, prev) },
+        redo: async () => { await window.api.elements.update(id, input) }
+      })
+    }
   },
 
   removeElement: async (id) => {
+    const state = get()
+    const childSnaps = state.elements
+      .filter((e) => e.parentId === id)
+      .map((e) => ({ id: e.id, parentId: e.parentId, posX: e.posX, posY: e.posY }))
+    const connIds = state.connections
+      .filter((c) => c.sourceId === id || c.targetId === id)
+      .map((c) => c.id)
+
     await window.api.elements.delete(id)
     const { project } = get()
     if (!project) return
@@ -396,16 +461,42 @@ export const useStore = create<Store>((set, get) => ({
       connections,
       selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
     }))
+
+    pushUndo({
+      undo: async () => {
+        await window.api.elements.restore(id)
+        for (const cid of connIds) await window.api.connections.restore(cid)
+        for (const c of childSnaps) {
+          await window.api.elements.update(c.id, { parentId: c.parentId, posX: c.posX, posY: c.posY })
+        }
+      },
+      redo: async () => { await window.api.elements.delete(id) }
+    })
   },
 
   addConnection: async (input) => {
     const conn = await window.api.connections.create(input)
     set((s) => ({ connections: [...s.connections, conn], selectedConnectionId: conn.id, selectedElementId: null }))
+    pushUndo({
+      undo: async () => { await window.api.connections.delete(conn.id) },
+      redo: async () => { await window.api.connections.restore(conn.id) }
+    })
   },
 
   updateConnection: async (id, input) => {
+    const before = get().connections.find((c) => c.id === id)
+    const editKeys = CONNECTION_PROP_KEYS.filter((k) => k in input)
     const updated = await window.api.connections.update(id, input)
     set((s) => ({ connections: s.connections.map((c) => (c.id === id ? updated : c)) }))
+    const changed = editKeys.some((k) => (before as Record<string, unknown> | undefined)?.[k] !== (input as Record<string, unknown>)[k])
+    if (before && changed) {
+      const prev: UpdateConnectionInput = {}
+      for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as Record<string, unknown>)[k]
+      pushUndo({
+        undo: async () => { await window.api.connections.update(id, prev) },
+        redo: async () => { await window.api.connections.update(id, input) }
+      })
+    }
   },
 
   removeConnection: async (id) => {
@@ -414,6 +505,10 @@ export const useStore = create<Store>((set, get) => ({
       connections: s.connections.filter((c) => c.id !== id),
       selectedConnectionId: s.selectedConnectionId === id ? null : s.selectedConnectionId
     }))
+    pushUndo({
+      undo: async () => { await window.api.connections.restore(id) },
+      redo: async () => { await window.api.connections.delete(id) }
+    })
   },
 
   addElementLink: async (elementId, requirementId) => {
@@ -432,6 +527,10 @@ export const useStore = create<Store>((set, get) => ({
     await window.api.connectionLinks.remove(connectionId, requirementId)
   }
 }))
+
+function pushUndo(cmd: UndoCommand): void {
+  useStore.setState((s) => ({ undoStack: [...s.undoStack, cmd], redoStack: [] }))
+}
 
 async function refreshAc(requirementId: number): Promise<void> {
   // Only this requirement's items changed, so derive its summary entry from the same

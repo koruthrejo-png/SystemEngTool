@@ -47,11 +47,15 @@ vi.stubGlobal('window', {
       list: vi.fn().mockResolvedValue([mockElement]),
       create: vi.fn().mockResolvedValue(mockElement),
       update: vi.fn().mockResolvedValue({ ...mockElement, name: 'Updated' }),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
+      restore: vi.fn().mockResolvedValue(mockElement)
     },
     connections: {
       list: vi.fn().mockResolvedValue([mockConn]),
-      delete: vi.fn().mockResolvedValue(undefined)
+      create: vi.fn().mockResolvedValue(mockConn),
+      update: vi.fn().mockResolvedValue(mockConn),
+      delete: vi.fn().mockResolvedValue(undefined),
+      restore: vi.fn().mockResolvedValue(mockConn)
     },
     elementLinks: {
       list: vi.fn().mockResolvedValue([]),
@@ -281,5 +285,105 @@ describe('architecture store', () => {
     expect(useStore.getState().elements).toEqual([child])
     expect(useStore.getState().connections).toEqual([])
     expect(useStore.getState().selectedElementId).toBeNull()
+  })
+})
+
+describe('undo/redo — create', () => {
+  beforeEach(async () => {
+    useStore.setState({ project: mockProject as any, elements: [], connections: [], undoStack: [], redoStack: [] })
+    vi.clearAllMocks()
+  })
+
+  it('addElement pushes an undo command; undo deletes, redo restores', async () => {
+    await useStore.getState().addElement({ projectId: 1 })
+    expect(useStore.getState().undoStack).toHaveLength(1)
+
+    await useStore.getState().undo()
+    expect(window.api.elements.delete).toHaveBeenCalledWith(1)
+    expect(useStore.getState().undoStack).toHaveLength(0)
+    expect(useStore.getState().redoStack).toHaveLength(1)
+
+    await useStore.getState().redo()
+    expect(window.api.elements.restore).toHaveBeenCalledWith(1)
+    expect(useStore.getState().undoStack).toHaveLength(1)
+    expect(useStore.getState().redoStack).toHaveLength(0)
+  })
+
+  it('a new action clears the redo stack', async () => {
+    await useStore.getState().addElement({ projectId: 1 })
+    await useStore.getState().undo()
+    expect(useStore.getState().redoStack).toHaveLength(1)
+    await useStore.getState().addConnection({ projectId: 1, sourceId: 1, targetId: 2, sourceHandle: null, targetHandle: null })
+    expect(useStore.getState().redoStack).toHaveLength(0)
+  })
+})
+
+describe('undo/redo — delete', () => {
+  const child = { ...mockElement, id: 2, parentId: 1, posX: 10, posY: 20 }
+  const conn = { ...mockConn, id: 5, sourceId: 1, targetId: 3 }
+
+  beforeEach(() => {
+    useStore.setState({
+      project: mockProject as any,
+      elements: [mockElement, child],
+      connections: [conn],
+      undoStack: [], redoStack: []
+    })
+    vi.clearAllMocks()
+  })
+
+  it('removeElement undo restores the element, its connections, and reparents children back', async () => {
+    await useStore.getState().removeElement(1)
+    expect(window.api.elements.delete).toHaveBeenCalledWith(1)
+    expect(useStore.getState().undoStack).toHaveLength(1)
+
+    await useStore.getState().undo()
+    expect(window.api.elements.restore).toHaveBeenCalledWith(1)
+    expect(window.api.connections.restore).toHaveBeenCalledWith(5)
+    expect(window.api.elements.update).toHaveBeenCalledWith(2, { parentId: 1, posX: 10, posY: 20 })
+  })
+
+  it('removeConnection undo restores, redo re-deletes', async () => {
+    await useStore.getState().removeConnection(5)
+    await useStore.getState().undo()
+    expect(window.api.connections.restore).toHaveBeenCalledWith(5)
+    await useStore.getState().redo()
+    expect(window.api.connections.delete).toHaveBeenCalledWith(5)
+  })
+})
+
+describe('undo/redo — edit', () => {
+  beforeEach(() => {
+    useStore.setState({
+      project: mockProject as any,
+      elements: [{ ...mockElement, name: 'Old' }],
+      connections: [{ ...mockConn, name: 'OldConn' }],
+      undoStack: [], redoStack: []
+    })
+    vi.clearAllMocks()
+  })
+
+  it('updateElement with a name change pushes an edit command; undo restores the old name', async () => {
+    await useStore.getState().updateElement(1, { name: 'New' })
+    expect(useStore.getState().undoStack).toHaveLength(1)
+    await useStore.getState().undo()
+    expect(window.api.elements.update).toHaveBeenLastCalledWith(1, { name: 'Old' })
+  })
+
+  it('updateElement with only position does NOT push a command', async () => {
+    await useStore.getState().updateElement(1, { posX: 5, posY: 6 })
+    expect(useStore.getState().undoStack).toHaveLength(0)
+  })
+
+  it('updateElement with the same value it already has does NOT push a command', async () => {
+    await useStore.getState().updateElement(1, { name: 'Old' })
+    expect(useStore.getState().undoStack).toHaveLength(0)
+  })
+
+  it('updateConnection with a name change pushes an edit command', async () => {
+    await useStore.getState().updateConnection(1, { name: 'NewConn' })
+    expect(useStore.getState().undoStack).toHaveLength(1)
+    await useStore.getState().undo()
+    expect(window.api.connections.update).toHaveBeenLastCalledWith(1, { name: 'OldConn' })
   })
 })

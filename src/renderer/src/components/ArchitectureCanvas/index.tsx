@@ -67,7 +67,7 @@ function CanvasInner(): JSX.Element {
   const {
     project, elements, connections, elementTypes, selectedElementId, selectedConnectionId,
     addElement, updateElement, removeElement, addConnection, removeConnection,
-    selectElement, selectConnection
+    selectElement, selectConnection, undo, redo, undoStack, redoStack
   } = useStore()
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
@@ -105,6 +105,20 @@ function CanvasInner(): JSX.Element {
       }))
     )
   }, [connections, selectedConnectionId])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent): void {
+      if (e.repeat) return
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      e.preventDefault()
+      if (e.shiftKey) void redo()
+      else void undo()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [undo, redo])
 
   const onConnect = useCallback((params: Connection) => {
     if (!project) return
@@ -170,6 +184,22 @@ function CanvasInner(): JSX.Element {
       <div className="flex flex-col flex-1 min-w-0">
         <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
           <Button onClick={handleAddBlock}>+ Object</Button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => void undo()}
+              disabled={undoStack.length === 0}
+              aria-label="Undo"
+              title="Undo (Cmd/Ctrl+Z)"
+              className="p-1.5 rounded hover:bg-workspace text-ink-muted leading-none text-base disabled:opacity-40 disabled:hover:bg-transparent"
+            >↶</button>
+            <button
+              onClick={() => void redo()}
+              disabled={redoStack.length === 0}
+              aria-label="Redo"
+              title="Redo (Cmd/Ctrl+Shift+Z)"
+              className="p-1.5 rounded hover:bg-workspace text-ink-muted leading-none text-base disabled:opacity-40 disabled:hover:bg-transparent"
+            >↷</button>
+          </div>
           <span className="text-xs text-ink-faint">Drag from a block's edge to connect</span>
         </div>
         <div className="flex-1">
