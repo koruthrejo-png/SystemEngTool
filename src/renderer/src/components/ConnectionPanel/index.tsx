@@ -5,7 +5,9 @@ import { Input, Textarea, Select, SectionLabel, Button } from '../ui'
 export default function ConnectionPanel(): JSX.Element {
   const {
     selectedConnectionId, connections, connectionTypes, projectRequirements,
-    updateConnection, removeConnection, addConnectionLink, removeConnectionLink
+    updateConnection, removeConnection, addConnectionLink, removeConnectionLink,
+    connectionCustomFields, loadConnectionCustomFields,
+    addConnectionCustomField, updateConnectionCustomField, removeConnectionCustomField
   } = useStore()
   const conn = connections.find((c) => c.id === selectedConnectionId) ?? null
 
@@ -21,6 +23,7 @@ export default function ConnectionPanel(): JSX.Element {
     setDescription(conn.description ?? '')
     setConnectionTypeId(conn.connectionTypeId)
     window.api.connectionLinks.list(conn.id).then((reqs) => setLinkedReqIds(reqs.map((r) => r.id)))
+    loadConnectionCustomFields(conn.id)
   }, [conn?.id])
 
   if (!conn) {
@@ -86,6 +89,34 @@ export default function ConnectionPanel(): JSX.Element {
         <Field label="Description">
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onBlur={save} rows={3} />
         </Field>
+        <div className="space-y-2 pt-2 border-t border-line">
+          <SectionLabel className="block pt-2">Custom Fields</SectionLabel>
+          {connectionCustomFields.map((field) => (
+            <div key={field.id} className="flex gap-2 items-center">
+              <Input
+                defaultValue={field.key}
+                onBlur={(e) => updateConnectionCustomField(field.id, { key: e.target.value })}
+                placeholder="Field name"
+                className="!w-2/5 !py-1.5"
+              />
+              <Input
+                defaultValue={field.value}
+                onBlur={(e) => updateConnectionCustomField(field.id, { value: e.target.value })}
+                placeholder="Value"
+                className="flex-1 !py-1.5"
+              />
+              <button
+                onClick={() => removeConnectionCustomField(field.id)}
+                className="text-ink-faint hover:text-error text-lg leading-none px-1"
+                title="Remove field"
+                aria-label="Remove field"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <Button variant="ghost" onClick={() => addConnectionCustomField(conn.id)} className="!px-2">+ Add Field</Button>
+        </div>
         <Field label="Requirements">
           <Input placeholder="Filter by ID or text…" value={reqSearch} onChange={(e) => setReqSearch(e.target.value)} className="!py-1.5 !text-xs mb-2" />
           <div className="space-y-1 max-h-48 overflow-y-auto">

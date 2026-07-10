@@ -25,7 +25,12 @@ vi.mock('../../store', () => ({
     updateConnection: mockUpdateConnection,
     removeConnection: mockRemoveConnection,
     addConnectionLink: vi.fn(),
-    removeConnectionLink: vi.fn()
+    removeConnectionLink: vi.fn(),
+    connectionCustomFields: [],
+    loadConnectionCustomFields: vi.fn(),
+    addConnectionCustomField: vi.fn(),
+    updateConnectionCustomField: vi.fn(),
+    removeConnectionCustomField: vi.fn()
   })
 }))
 
