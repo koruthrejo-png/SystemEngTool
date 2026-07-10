@@ -10,9 +10,10 @@ import ConnectionPanel from './components/ConnectionPanel'
 import TraceabilityMatrix from './components/TraceabilityMatrix'
 import Dashboard from './components/Dashboard'
 import GlobalSearch from './components/GlobalSearch'
+import InterfaceRegister from './components/InterfaceRegister'
 
 export default function App(): JSX.Element {
-  const { project, activeTab, setActiveTab, loadProject, loadArchitecture, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
+  const { project, activeTab, setActiveTab, loadProject, loadArchitecture, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -21,6 +22,10 @@ export default function App(): JSX.Element {
 
   useEffect(() => {
     if (activeTab === 'architecture' && project) loadArchitecture()
+  }, [activeTab, project?.id])
+
+  useEffect(() => {
+    if (activeTab === 'interfaces' && project) loadInterfaces()
   }, [activeTab, project?.id])
 
   useEffect(() => {
@@ -56,7 +61,7 @@ export default function App(): JSX.Element {
       <header className="flex items-center h-14 px-4 gap-6 bg-navy shrink-0">
         <span className="font-semibold text-lg tracking-tight text-white">ReqArch Suite</span>
         <nav className="flex h-full">
-          {([['requirements', 'Requirements'], ['architecture', 'Architecture'], ['traceability', 'Traceability'], ['dashboard', 'Dashboard']] as const).map(([tab, label]) => (
+          {([['requirements', 'Requirements'], ['architecture', 'Architecture'], ['interfaces', 'Interfaces'], ['traceability', 'Traceability'], ['dashboard', 'Dashboard']] as const).map(([tab, label]) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -121,6 +126,17 @@ export default function App(): JSX.Element {
       ) : activeTab === 'dashboard' ? (
         <div data-testid="panel-dashboard" className="flex-1 overflow-hidden">
           <Dashboard />
+        </div>
+      ) : activeTab === 'interfaces' ? (
+        <div data-testid="panel-interfaces" className="flex flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden">
+            <InterfaceRegister />
+          </div>
+          {selectedConnectionId !== null && (
+            <Panel className="w-96 shrink-0 border-l overflow-y-auto">
+              <ConnectionPanel />
+            </Panel>
+          )}
         </div>
       ) : (
         <div data-testid="panel-architecture" className="flex flex-1 overflow-hidden">
