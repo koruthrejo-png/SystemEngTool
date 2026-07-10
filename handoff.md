@@ -1,6 +1,6 @@
 # Handoff: ReqArch2 — Current State
 
-## What's Been Built (as of 2026-07-07)
+## What's Been Built (as of 2026-07-11)
 
 ### Core App — Working
 The app launches, creates/opens projects, manages modules, and all IPC is wired. Key fixes that unblocked everything:
@@ -129,9 +129,23 @@ Commit `0be30c2`. Replaced the drawer's always-visible parent/child picker + "Ad
 
 Also fixed two pre-existing `tsc` errors in `src/renderer/src/store/index.ts` (lines 435/494, `ArchitectureElement`/`ArchitectureConnection` → `Record<string, unknown>` cast) that landed with the undo/redo merge — now `as unknown as Record<...>`. **Both typechecks (web + node) are clean again.**
 
+### Interfaces Module — Interface Register — COMPLETE
+Spec: `docs/superpowers/specs/2026-07-11-interfaces-module-design.md`. Plan: `docs/superpowers/plans/2026-07-11-interfaces-module.md` (commits `f538750..8026b6f`, base `b3f38c5`). Thirteenth ledger section in `.superpowers/sdd/progress.md`. Executed via subagent-driven development (6 tasks, each task-reviewed clean); final whole-branch review (opus) + full live-verify on the running app. The third build-order pillar (requirements → architecture → **interfaces** → V&V).
+
+Core model: **an interface IS an architecture connection** — no new primary entity. The register derives its rows in the renderer from already-loaded `connections` + `elements` (no new backend join). Delivered:
+- New `Interfaces` top-nav tab → `InterfaceRegister` component: project-wide table, one row per connection. Mandatory columns (never hideable): **Interface ID** (`conn_id`, e.g. `ICN-0001`), **From**/**To** object IDs (source/target element `blockId`, e.g. `SYS-001`). Optional toggleable columns: Name, Type, Description, + one per custom-field key.
+- `connection_custom_fields` child table (mirrors `requirement_custom_fields`) + handler `src/main/handlers/connectionCustomFields.ts` (`list`/`listByProject`/`create`/`update`/`delete`); `listByProject` joins connections, project-scoped, excludes soft-deleted. Preload bridge + `api.d.ts` + types (`ConnectionCustomField`, `UpdateConnectionCustomFieldInput`).
+- Pure helper `src/renderer/src/components/InterfaceRegister/rows.ts` (`buildInterfaceRows`, `customFieldKeys`, `loadColumnVisibility`/`saveColumnVisibility` → localStorage key `reqarch.interfaceRegister.columns.v1`); custom-field keys auto-become default-on toggleable columns.
+- Store: `activeTab` gained `'interfaces'`; `connectionCustomFields` (selected connection, for the drawer) + `projectConnectionCustomFields` (all, for register columns) kept in sync across add/update/remove; `loadInterfaces` reuses the architecture list calls + `connectionCustomFields.listByProject`.
+- Drawer reuses the existing `ConnectionPanel` (now with a Custom Fields section — `defaultValue`+`onBlur` uncontrolled inputs, `+ Add Field`, `×` remove), so custom fields are also editable from the architecture canvas. Register row click → `selectConnection` opens the same drawer.
+- `+ New Interface` toolbar form: two element `Select`s → `addConnection` (existing IPC, auto-assigns next `ICN-000N`) → re-syncs register; canvas-drawn connections appear automatically.
+- Live-verified on SmokeTest: register lists ICN-0001..4 with correct SYS-* endpoints; add custom field Protocol=CAN → column appears with value; column toggle hides + persists to localStorage; DB value + hidden column survive relaunch; `+ New Interface` created ICN-0005. Renderer vitest 205/205, both typechecks clean.
+- Out of scope (deferred, recorded in spec): N² matrix, element ports, structured data-items child list, fixed protocol/direction schema (custom fields cover these), interface↔requirement column in the register (`connection_requirement_links` already editable in the drawer).
+- Known minors (non-blocking, in ledger): `customFieldKeys` O(n²) `includes`; redundant `?? ''` in `buildInterfaceRows`; `loadColumnVisibility` runs twice on mount; `loadInterfaces` double-fetch on first tab visit (register mount effect + App tab-switch effect). Orphaned `connection_custom_fields` rows remain when a connection is soft-deleted (register/drawer never read them; a hard-delete cleanup is a future nicety).
+
 ## Next Step: pick the next backlog slice
 
-Nothing in flight. Next major pillar per build order: **interfaces** module (requirements → architecture → interfaces → V&V). Ticketed follow-ups: codebase-wide promise error-surfacing pass; batched `aria-pressed` toggle a11y pass; heading-anchor on search section clicks. Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
+Nothing in flight. Interfaces pillar done — next major pillar per build order: **V&V** (requirements → architecture → interfaces → **V&V**). Ticketed follow-ups: codebase-wide promise error-surfacing pass; batched `aria-pressed` toggle a11y pass; heading-anchor on search section clicks. Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
 
 Known deferrals from final reviews (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply; unawaited fire-and-forget mutation promises (singular + bulk) — a codebase-wide error-surfacing pass is the right home; batched `aria-pressed` pass for toggle-group buttons; `requirement_links(child_req_id)` index if link volume grows.
 
@@ -153,7 +167,11 @@ Known deferrals from final reviews (all triaged non-blocking, recorded in the le
 | `src/renderer/src/components/ui/index.tsx` | Shared UI primitives (Button, Input, Textarea, Select, SectionLabel, Panel) |
 | `src/renderer/src/components/RequirementsList/index.tsx` | Requirements table UI (Task 5 target) |
 | `src/renderer/src/components/RequirementDetail/index.tsx` | Requirement detail + custom fields (Task 6 target) |
-| `.superpowers/sdd/progress.md` | SDD task ledger (both plans) |
+| `src/main/handlers/connectionCustomFields.ts` | Connection (interface) custom fields CRUD + listByProject |
+| `src/renderer/src/components/InterfaceRegister/index.tsx` | Interface Register table + column toggle + create form |
+| `src/renderer/src/components/InterfaceRegister/rows.ts` | Pure helpers: register rows + column visibility |
+| `src/renderer/src/components/ConnectionPanel/index.tsx` | Connection drawer (shared canvas + register; custom-fields section) |
+| `.superpowers/sdd/progress.md` | SDD task ledger (all plans) |
 
 ## Environment Notes
 - Electron 31, Node ABI 125
@@ -164,7 +182,7 @@ Known deferrals from final reviews (all triaged non-blocking, recorded in the le
 - Stitch MCP server available: `claude mcp add stitch --transport http -H "X-Goog-Api-Key: ..." https://stitch.googleapis.com/mcp`
 
 ## Branch
-`main` — all work committed directly to main. Latest commit at handoff: `0be30c2` (feat(req): single "+ Link" flow for requirement links) + a follow-up `tsc`-fix commit.
+`main` — all work committed directly to main. Latest commit at handoff: `8026b6f` (feat(interfaces): Interface Register view, column toggle, create form, tab wiring) — end of the Interfaces module (`f538750..8026b6f`).
 
 ## Environment gotcha found this session
 The `npm` shim in the Logi node22 distribution is broken (`npm-cli.js: No such file or directory`). Use `./node_modules/.bin/*` binaries directly (`vitest`, `tsc`, `electron-vite`) — `node` itself works fine from that PATH.
