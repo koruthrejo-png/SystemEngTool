@@ -432,7 +432,7 @@ export const useStore = create<Store>((set, get) => ({
     const changed = editKeys.some((k) => (before as Record<string, unknown> | undefined)?.[k] !== (input as Record<string, unknown>)[k])
     if (before && changed) {
       const prev: UpdateElementInput = {}
-      for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as Record<string, unknown>)[k]
+      for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as unknown as Record<string, unknown>)[k]
       pushUndo({
         undo: async () => { await window.api.elements.update(id, prev) },
         redo: async () => { await window.api.elements.update(id, input) }
@@ -491,7 +491,7 @@ export const useStore = create<Store>((set, get) => ({
     const changed = editKeys.some((k) => (before as Record<string, unknown> | undefined)?.[k] !== (input as Record<string, unknown>)[k])
     if (before && changed) {
       const prev: UpdateConnectionInput = {}
-      for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as Record<string, unknown>)[k]
+      for (const k of editKeys) (prev as Record<string, unknown>)[k] = (before as unknown as Record<string, unknown>)[k]
       pushUndo({
         undo: async () => { await window.api.connections.update(id, prev) },
         redo: async () => { await window.api.connections.update(id, input) }

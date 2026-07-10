@@ -118,9 +118,20 @@ Plan: `docs/superpowers/plans/2026-07-08-component-library-typed-nodes.md`. Spec
 ### Zoom/Fit Controls Restyle — COMPLETE (backlog item 17)
 Commit `574cb9c`. Replaced default React Flow `<Controls>` with custom `CanvasControls` in `ArchitectureCanvas/index.tsx` — a bottom-left RF `<Panel>` using `useReactFlow` (zoomIn/zoomOut/fitView) + `useViewport` (live zoom %): token-styled white/blur card (zoom-in / live % / zoom-out, divider-separated) + a separate fit-view button with a corner-bracket SVG. Plain +/− glyphs and SVG per the app's no-Material-Symbols convention. Typecheck clean; live-verified (79%→114% on two zoom-ins, fit resets to 79%, buttons functional). Also this session: committed the orphaned `refreshAc` per-req summary optimization (`6454bc9`, drops a redundant listByModule IPC per AC mutation) + its test; gitignored `*.tsbuildinfo`.
 
+### Architecture Canvas Undo/Redo — COMPLETE
+Plan: `docs/superpowers/plans/2026-07-09-architecture-canvas-undo.md`. Commits `38d1d82..e4e522c`, merged to main at `bab0c1e`. Twelfth ledger section (`.superpowers/sdd/progress.md`); final whole-branch review (opus): ready to merge, no Critical/Important. Delivered:
+- Undo/redo command stack in the store (create/delete/property-edit; geometry excluded) with cascade restore on delete; `elements`/`connections` restore exposed over the preload bridge
+- Toolbar undo/redo buttons + keyboard shortcuts; final fixes (`e4e522c`): skip no-op undo steps from empty field blurs, resync store on command failure, ignore key autorepeat (`e.repeat`)
+- Store tests 30/30
+
+### Requirement Link UI — flat "+ Link" flow — COMPLETE
+Commit `0be30c2`. Replaced the drawer's always-visible parent/child picker + "Add as parent"/"Add as child" buttons with a single merged **"Linked Requirements"** list and a **"+ Link"** button that reveals the module/requirement picker on demand (Add link / Cancel). New links store the current requirement as parent by convention; the merged list shows both directions and `×` remove picks the correct arg order per link. UI-only — the directional `requirement_links` table and the dashboard derivation-coverage card are unchanged. `traceability.test.tsx` updated (5/5); live-verified in-app (render, + Link picker, add SRS-0005, remove, self/already-linked exclusion; DB left clean).
+
+Also fixed two pre-existing `tsc` errors in `src/renderer/src/store/index.ts` (lines 435/494, `ArchitectureElement`/`ArchitectureConnection` → `Record<string, unknown>` cast) that landed with the undo/redo merge — now `as unknown as Record<...>`. **Both typechecks (web + node) are clean again.**
+
 ## Next Step: pick the next backlog slice
 
-Nothing in flight. Remaining Deferred Backlog candidates in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`: items 16/17 (component library palette + RF zoom-controls restyle) and any unnumbered leftovers listed there. Also ticketed follow-ups: codebase-wide promise error-surfacing pass; batched `aria-pressed` toggle a11y pass; heading-anchor on search section clicks. Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
+Nothing in flight. Next major pillar per build order: **interfaces** module (requirements → architecture → interfaces → V&V). Ticketed follow-ups: codebase-wide promise error-surfacing pass; batched `aria-pressed` toggle a11y pass; heading-anchor on search section clicks. Follow the same flow: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
 
 Known deferrals from final reviews (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply; unawaited fire-and-forget mutation promises (singular + bulk) — a codebase-wide error-surfacing pass is the right home; batched `aria-pressed` pass for toggle-group buttons; `requirement_links(child_req_id)` index if link volume grows.
 
@@ -153,7 +164,7 @@ Known deferrals from final reviews (all triaged non-blocking, recorded in the le
 - Stitch MCP server available: `claude mcp add stitch --transport http -H "X-Goog-Api-Key: ..." https://stitch.googleapis.com/mcp`
 
 ## Branch
-`main` — all work committed directly to main. Latest commit at handoff: `1efbe67` (feat(dashboard): filterable derivation coverage card — requirement hierarchy plan complete).
+`main` — all work committed directly to main. Latest commit at handoff: `0be30c2` (feat(req): single "+ Link" flow for requirement links) + a follow-up `tsc`-fix commit.
 
 ## Environment gotcha found this session
 The `npm` shim in the Logi node22 distribution is broken (`npm-cli.js: No such file or directory`). Use `./node_modules/.bin/*` binaries directly (`vitest`, `tsc`, `electron-vite`) — `node` itself works fine from that PATH.
