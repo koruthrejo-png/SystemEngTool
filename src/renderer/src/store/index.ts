@@ -8,6 +8,7 @@ import type {
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
   RequirementCustomField, UpdateCustomFieldInput,
+  ConnectionCustomField, UpdateConnectionCustomFieldInput,
   RequirementStatus, RequirementPriority, RequirementType,
   ReqHeading, CreateHeadingInput,
   ElementRequirementLink, RequirementLink,
@@ -26,7 +27,7 @@ interface UndoCommand {
 interface Store {
   // shared
   project: Project | null
-  activeTab: 'requirements' | 'architecture' | 'traceability' | 'dashboard'
+  activeTab: 'requirements' | 'architecture' | 'traceability' | 'dashboard' | 'interfaces'
 
   // requirements tab
   modules: Module[]
@@ -45,6 +46,8 @@ interface Store {
   selectedConnectionId: number | null
   projectRequirements: Requirement[]
   customFields: RequirementCustomField[]
+  connectionCustomFields: ConnectionCustomField[]
+  projectConnectionCustomFields: ConnectionCustomField[]
   acItems: AcceptanceCriterion[]
   acSummary: Record<number, AcSummaryEntry>
   showDeleted: boolean
@@ -63,7 +66,7 @@ interface Store {
 
   // actions — shared
   loadProject: () => Promise<void>
-  setActiveTab: (tab: 'requirements' | 'architecture' | 'traceability' | 'dashboard') => void
+  setActiveTab: (tab: 'requirements' | 'architecture' | 'traceability' | 'dashboard' | 'interfaces') => void
   loadTraceability: () => Promise<void>
   toggleTraceLink: (elementId: number, requirementId: number) => Promise<void>
   addReqLink: (parentReqId: number, childReqId: number) => Promise<void>
@@ -98,6 +101,11 @@ interface Store {
   addCustomField: (requirementId: number) => Promise<void>
   updateCustomField: (id: number, patch: UpdateCustomFieldInput) => Promise<void>
   removeCustomField: (id: number) => Promise<void>
+  loadInterfaces: () => Promise<void>
+  loadConnectionCustomFields: (connectionId: number) => Promise<void>
+  addConnectionCustomField: (connectionId: number) => Promise<void>
+  updateConnectionCustomField: (id: number, patch: UpdateConnectionCustomFieldInput) => Promise<void>
+  removeConnectionCustomField: (id: number) => Promise<void>
   loadAcItems: (requirementId: number) => Promise<void>
   addAcItem: (requirementId: number, text: string) => Promise<void>
   updateAcItem: (id: number, patch: UpdateAcceptanceCriterionInput, requirementId: number) => Promise<void>
@@ -126,7 +134,8 @@ export const useStore = create<Store>((set, get) => ({
   headings: [], collapsedHeadingIds: [],
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
-  customFields: [], acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
+  customFields: [], connectionCustomFields: [], projectConnectionCustomFields: [],
+  acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
   traceLinks: [], reqLinks: [],
   undoStack: [], redoStack: [],
@@ -308,6 +317,48 @@ export const useStore = create<Store>((set, get) => ({
   removeCustomField: async (id) => {
     await window.api.customFields.delete(id)
     set((s) => ({ customFields: s.customFields.filter((f) => f.id !== id) }))
+  },
+
+  loadInterfaces: async () => {
+    const { project } = get()
+    if (!project) return
+    const [elements, connections, elementTypes, connectionTypes, projectConnectionCustomFields] = await Promise.all([
+      window.api.elements.list(project.id),
+      window.api.connections.list(project.id),
+      window.api.elementTypes.list(project.id),
+      window.api.connectionTypes.list(project.id),
+      window.api.connectionCustomFields.listByProject(project.id)
+    ])
+    set({ elements, connections, elementTypes, connectionTypes, projectConnectionCustomFields })
+  },
+
+  loadConnectionCustomFields: async (connectionId) => {
+    const connectionCustomFields = await window.api.connectionCustomFields.list(connectionId)
+    set({ connectionCustomFields })
+  },
+
+  addConnectionCustomField: async (connectionId) => {
+    const field = await window.api.connectionCustomFields.create(connectionId)
+    set((s) => ({
+      connectionCustomFields: [...s.connectionCustomFields, field],
+      projectConnectionCustomFields: [...s.projectConnectionCustomFields, field]
+    }))
+  },
+
+  updateConnectionCustomField: async (id, patch) => {
+    const updated = await window.api.connectionCustomFields.update(id, patch)
+    set((s) => ({
+      connectionCustomFields: s.connectionCustomFields.map((f) => (f.id === id ? updated : f)),
+      projectConnectionCustomFields: s.projectConnectionCustomFields.map((f) => (f.id === id ? updated : f))
+    }))
+  },
+
+  removeConnectionCustomField: async (id) => {
+    await window.api.connectionCustomFields.delete(id)
+    set((s) => ({
+      connectionCustomFields: s.connectionCustomFields.filter((f) => f.id !== id),
+      projectConnectionCustomFields: s.projectConnectionCustomFields.filter((f) => f.id !== id)
+    }))
   },
 
   loadAcItems: async (requirementId) => {
