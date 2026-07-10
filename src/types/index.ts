@@ -138,6 +138,20 @@ export interface UpdateCustomFieldInput {
   value?: string
 }
 
+export interface ConnectionCustomField {
+  id: number
+  connectionId: number
+  key: string
+  value: string
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+export interface UpdateConnectionCustomFieldInput {
+  key?: string
+  value?: string
+}
+
 export interface ElementType {
   id: number
   projectId: number

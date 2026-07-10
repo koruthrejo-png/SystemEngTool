@@ -5,6 +5,7 @@ import { registerModuleHandlers } from './handlers/modules'
 import { registerRequirementHandlers } from './handlers/requirements'
 import { registerHeadingHandlers } from './handlers/headings'
 import { registerCustomFieldHandlers } from './handlers/requirementCustomFields'
+import { registerConnectionCustomFieldHandlers } from './handlers/connectionCustomFields'
 import { registerAcceptanceCriteriaHandlers } from './handlers/acceptanceCriteria'
 import { registerElementTypeHandlers } from './handlers/elementTypes'
 import { registerConnectionTypeHandlers } from './handlers/connectionTypes'
@@ -38,6 +39,7 @@ app.whenReady().then(() => {
   registerRequirementHandlers()
   registerHeadingHandlers()
   registerCustomFieldHandlers()
+  registerConnectionCustomFieldHandlers()
   registerAcceptanceCriteriaHandlers()
   registerElementTypeHandlers()
   registerConnectionTypeHandlers()
