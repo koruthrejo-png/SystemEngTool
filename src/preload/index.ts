@@ -11,7 +11,8 @@ import type {
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
-  ElementRequirementLink, RequirementLink, SearchResults
+  ElementRequirementLink, RequirementLink, SearchResults,
+  ConnectionCustomField, UpdateConnectionCustomFieldInput
 } from '../types'
 
 contextBridge.exposeInMainWorld('api', {
@@ -92,6 +93,13 @@ contextBridge.exposeInMainWorld('api', {
     list: (connectionId: number): Promise<Requirement[]> => ipcRenderer.invoke('connectionLinks:list', connectionId),
     add: (connectionId: number, requirementId: number): Promise<void> => ipcRenderer.invoke('connectionLinks:add', connectionId, requirementId),
     remove: (connectionId: number, requirementId: number): Promise<void> => ipcRenderer.invoke('connectionLinks:remove', connectionId, requirementId)
+  },
+  connectionCustomFields: {
+    list: (connectionId: number): Promise<ConnectionCustomField[]> => ipcRenderer.invoke('connectionCustomFields:list', connectionId),
+    listByProject: (projectId: number): Promise<ConnectionCustomField[]> => ipcRenderer.invoke('connectionCustomFields:listByProject', projectId),
+    create: (connectionId: number): Promise<ConnectionCustomField> => ipcRenderer.invoke('connectionCustomFields:create', connectionId),
+    update: (id: number, patch: UpdateConnectionCustomFieldInput): Promise<ConnectionCustomField> => ipcRenderer.invoke('connectionCustomFields:update', id, patch),
+    delete: (id: number): Promise<void> => ipcRenderer.invoke('connectionCustomFields:delete', id)
   },
   reqLinks: {
     add: (parentReqId: number, childReqId: number): Promise<void> => ipcRenderer.invoke('reqLinks:add', parentReqId, childReqId),

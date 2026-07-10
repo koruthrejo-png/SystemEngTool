@@ -10,7 +10,8 @@ import type {
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
-  ElementRequirementLink, RequirementLink, SearchResults
+  ElementRequirementLink, RequirementLink, SearchResults,
+  ConnectionCustomField, UpdateConnectionCustomFieldInput
 } from './index'
 
 declare global {
@@ -93,6 +94,13 @@ declare global {
         list(connectionId: number): Promise<Requirement[]>
         add(connectionId: number, requirementId: number): Promise<void>
         remove(connectionId: number, requirementId: number): Promise<void>
+      }
+      connectionCustomFields: {
+        list: (connectionId: number) => Promise<ConnectionCustomField[]>
+        listByProject: (projectId: number) => Promise<ConnectionCustomField[]>
+        create: (connectionId: number) => Promise<ConnectionCustomField>
+        update: (id: number, patch: UpdateConnectionCustomFieldInput) => Promise<ConnectionCustomField>
+        delete: (id: number) => Promise<void>
       }
       reqLinks: {
         add(parentReqId: number, childReqId: number): Promise<void>
