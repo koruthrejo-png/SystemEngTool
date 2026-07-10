@@ -132,7 +132,20 @@
       "Bash(sw_vers)",
       "Bash(rm -f /tmp/reqarch-debug.txt)",
       "Bash(open -a \"/Users/rejopckoruth/Documents/ReqArch2/node_modules/electron/dist/Electron.app\" --args \"/Users/rejopckoruth/Documents/ReqArch2/out/main/index.js\")",
-      "Bash(pkill -f \"Electron\")"
+      "Bash(pkill -f \"Electron\")",
+      "Bash(\"/Users/rejopckoruth/Documents/ReqArch2/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron\" \"/Users/rejopckoruth/Documents/ReqArch2/out/main/index.js\")",
+      "Bash(curl -sL \"https://github.com/WiseLibs/better-sqlite3/releases/download/v12.11.1/better-sqlite3-v12.11.1-electron-v125-darwin-arm64.tar.gz\" -o /tmp/bsqlite3-electron.tar.gz)",
+      "Bash(tar -xzf /tmp/bsqlite3-electron.tar.gz -C /tmp/bsqlite3-extract)",
+      "Bash(bash scripts/task-brief /Users/rejopckoruth/Documents/ReqArch2/docs/superpowers/plans/2026-07-01-requirements-list-improvements.md 1)",
+      "Bash(/Users/rejopckoruth/Documents/ReqArch2/node_modules/typescript/bin/tsc --noEmit -p tsconfig.node.json --composite false)",
+      "Bash(claude mcp *)",
+      "Bash(bash scripts/review-package 37b7bf7 723ce8e)",
+      "Bash(/Users/rejopckoruth/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package 37b7bf7 *)",
+      "Bash(/Users/rejopckoruth/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package 723ce8e *)",
+      "Bash(/Users/rejopckoruth/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.3/skills/subagent-driven-development/scripts/review-package 3a93a34 7aa49dc)",
+      "Read(//run/current-system/sw/bin/**)",
+      "Read(//nix/var/nix/profiles/default/bin/**)",
+      "Bash(find /nix -name \"node\" -maxdepth 6)"
     ]
   }
 }

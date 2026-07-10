@@ -162,3 +162,21 @@ Base commit: ee93fad. Tasks: 1 buildNodes typeName+connectionCount, 2 BlockNode 
 
 ## PLAN COMPLETE — 4 tasks; commits ee93fad..7589d28 (2623d1f,aeb792e,7ff0314 + test-mock fix 7589d28)
 - [x] Final whole-branch review (ee93fad..bcc7ee7, opus): READY TO MERGE — no Critical/Important. Signature/BlockNodeData/store-wiring/effect-deps consistent end to end; index.tsx rewrap dropped nothing (all 13 ReactFlow props + Background + CanvasControls + +Object preserved); spec A/B/C all met; constraints honored (no deps/Material Symbols, NAVY only sanctioned hex). 3 minors DEFER (random-offset overlap, unreachable !project guard, O(n·m) count — all match existing idioms / ponytail-commented). Commits already on main — nothing to merge.
+
+# SDD Progress Ledger — Architecture Canvas Undo/Redo
+
+Plan: docs/superpowers/plans/2026-07-09-architecture-canvas-undo.md
+Base commit: 38d1d82
+
+## Tasks
+- [x] Task 1: complete (commits 38d1d82..3095edc, review clean — minor: restore of nonexistent id throws in mapper, inherited from update handlers, not a regression)
+- [x] Task 2: complete (commits 3095edc..2ff017e, review clean)
+- NOTE: pre-existing failing test index.test.tsx "renders connection mode toggle button" (/connect/i button never existed, only a hint span) — unrelated to undo; Task 6 touches this file, do not chase it.
+- [x] Task 3: complete (commits 2ff017e..6d5dc90, review clean — minors: two setState calls per action, no-op/loadProject undo not unit-tested, interface field placement; all inherited from brief, non-blocking)
+- [x] Task 4: complete (commits 6d5dc90..47bb52a, review clean — minor: child parentId assertion tautological, posX/posY give real coverage, non-blocking)
+- [x] Task 5: complete (commits 47bb52a..f922313, review clean — no issues; prop/geometry key partition verified exhaustive against input types)
+- [x] Task 6: complete (commits f922313..138dbeb, review clean — no issues)
+
+## ALL TASKS COMPLETE — pending final whole-branch review
+- FINAL REVIEW (opus): Ready=Yes, no Critical/Important. 3 minors: (1) ghost undo steps from no-op field blurs, (2) delete-undo partial failure leaves store stale, (3) keydown lacks e.repeat guard. Fixing all 3 in one pass.
+- FINAL FIXES: commit 138dbeb..e4e522c — all 3 minors applied, store 30/30, typecheck clean. PLAN COMPLETE, branch ready to merge.
