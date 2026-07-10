@@ -52,45 +52,55 @@ beforeEach(() => {
 })
 
 describe('RequirementDetail traceability section', () => {
-  it('loads links on mount and lists parents with remove + navigate', () => {
+  it('loads links on mount and lists linked reqs (both directions) with remove + navigate', () => {
     render(<RequirementDetail />)
     expect(storeState.loadTraceability).toHaveBeenCalled()
-    const parents = screen.getByTestId('derives-from')
-    expect(within(parents).getByText('R-1')).toBeInTheDocument()
-    fireEvent.click(within(parents).getByText('R-1').closest('button')!)
+    const linked = screen.getByTestId('linked-requirements')
+    expect(within(linked).getByText('R-1')).toBeInTheDocument()
+    fireEvent.click(within(linked).getByText('R-1').closest('button')!)
     expect(storeState.openRequirement).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }))
-    fireEvent.click(within(parents).getByLabelText('Remove link to R-1'))
+    // R-1 is a parent of the current req (2) → removeReqLink(parent, child)
+    fireEvent.click(within(linked).getByLabelText('Remove link to R-1'))
     expect(storeState.removeReqLink).toHaveBeenCalledWith(1, 2)
   })
 
-  it('adds a parent link via the module + requirement picker', () => {
+  it('adds a link via the + Link picker (current req stored as parent)', () => {
     render(<RequirementDetail />)
     const section = screen.getByTestId('traceability-section')
+    fireEvent.click(within(section).getByText('+ Link'))
     fireEvent.change(within(section).getByLabelText('Link module'), { target: { value: '1' } })
     fireEvent.change(within(section).getByLabelText('Link requirement'), { target: { value: '3' } })
-    fireEvent.click(within(section).getByText('Add as parent'))
-    expect(storeState.addReqLink).toHaveBeenCalledWith(3, 2) // parent = picked req, child = current
-    // picker resets after add — re-pick before adding as child (mocked addReqLink doesn't refetch, so R-3 stays a candidate)
-    fireEvent.change(within(section).getByLabelText('Link requirement'), { target: { value: '3' } })
-    fireEvent.click(within(section).getByText('Add as child'))
+    fireEvent.click(within(section).getByText('Add link'))
     expect(storeState.addReqLink).toHaveBeenCalledWith(2, 3) // parent = current, child = picked
+    // picker closes after add — the + Link button is back
+    expect(within(section).getByText('+ Link')).toBeInTheDocument()
+  })
+
+  it('Cancel closes the picker without linking', () => {
+    render(<RequirementDetail />)
+    const section = screen.getByTestId('traceability-section')
+    fireEvent.click(within(section).getByText('+ Link'))
+    fireEvent.click(within(section).getByText('Cancel'))
+    expect(storeState.addReqLink).not.toHaveBeenCalled()
+    expect(within(section).getByText('+ Link')).toBeInTheDocument()
   })
 
   it('picker excludes self and already-linked requirements', () => {
     render(<RequirementDetail />)
     const section = screen.getByTestId('traceability-section')
+    fireEvent.click(within(section).getByText('+ Link'))
     fireEvent.change(within(section).getByLabelText('Link module'), { target: { value: '1' } })
     const options = within(within(section).getByLabelText('Link requirement') as HTMLElement)
       .getAllByRole('option').map((o) => o.textContent)
     expect(options.join()).toContain('R-3')
-    expect(options.join()).not.toContain('R-1') // already linked as parent
+    expect(options.join()).not.toContain('R-1') // already linked
   })
 
-  it('shows the derived-by list with the child count', () => {
+  it('lists child-direction links too', () => {
     storeState.selectedRequirementId = 1
     storeState.requirements = [req(1, 1, 'High level req')]
     render(<RequirementDetail />)
-    const children = screen.getByTestId('derived-by')
-    expect(within(children).getByText('R-2')).toBeInTheDocument()
+    const linked = screen.getByTestId('linked-requirements')
+    expect(within(linked).getByText('R-2')).toBeInTheDocument()
   })
 })

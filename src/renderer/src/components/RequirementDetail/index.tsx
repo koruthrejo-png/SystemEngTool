@@ -269,31 +269,36 @@ function TraceabilitySection({ req }: { req: Requirement }): JSX.Element {
   } = useStore()
   const [pickModuleId, setPickModuleId] = useState<string>('')
   const [pickReqId, setPickReqId] = useState<string>('')
+  const [linking, setLinking] = useState(false)
 
   useEffect(() => { loadTraceability() }, [req.id])
+  // reset the inline picker whenever the drawer switches requirement
+  useEffect(() => { setLinking(false); setPickModuleId(''); setPickReqId('') }, [req.id])
 
   const byId = new Map(projectRequirements.map((r) => [r.id, r]))
-  const parents = reqLinks.filter((l) => l.childReqId === req.id)
-    .map((l) => byId.get(l.parentReqId)).filter((r): r is Requirement => r !== undefined)
-  const children = reqLinks.filter((l) => l.parentReqId === req.id)
-    .map((l) => byId.get(l.childReqId)).filter((r): r is Requirement => r !== undefined)
-  const linkedIds = new Set([req.id, ...parents.map((r) => r.id), ...children.map((r) => r.id)])
+  // merge both link directions into one flat list; isParent tells removeReqLink which arg order to use
+  const linked = [
+    ...reqLinks.filter((l) => l.childReqId === req.id)
+      .map((l) => ({ r: byId.get(l.parentReqId), isParent: true })),
+    ...reqLinks.filter((l) => l.parentReqId === req.id)
+      .map((l) => ({ r: byId.get(l.childReqId), isParent: false }))
+  ].filter((x): x is { r: Requirement; isParent: boolean } => x.r !== undefined)
+  const linkedIds = new Set([req.id, ...linked.map((x) => x.r.id)])
   const candidates = pickModuleId === ''
     ? []
     : projectRequirements.filter((r) => r.moduleId === Number(pickModuleId) && !linkedIds.has(r.id))
   const picked = pickReqId === '' ? null : byId.get(Number(pickReqId)) ?? null
 
-  function LinkList({ title, reqs, testId, removeAs }: {
-    title: string
-    reqs: Requirement[]
-    testId: string
-    removeAs: 'parent' | 'child'
-  }): JSX.Element {
-    return (
-      <div data-testid={testId} className="space-y-1">
-        <div className="text-xs font-medium text-ink-muted">{title}</div>
-        {reqs.length === 0 && <div className="text-xs text-ink-faint">None.</div>}
-        {reqs.map((r) => (
+  function closePicker(): void {
+    setLinking(false); setPickModuleId(''); setPickReqId('')
+  }
+
+  return (
+    <div data-testid="traceability-section" className="space-y-2 pt-2 border-t border-line">
+      <SectionLabel className="block pt-2">Linked Requirements</SectionLabel>
+      <div data-testid="linked-requirements" className="space-y-1">
+        {linked.length === 0 && <div className="text-xs text-ink-faint">None.</div>}
+        {linked.map(({ r, isParent }) => (
           <div key={r.id} className="flex items-center gap-2">
             <button onClick={() => openRequirement(r)}
               className="flex-1 min-w-0 text-left flex gap-2 items-baseline hover:bg-action-tint/20 rounded px-1 py-0.5">
@@ -302,7 +307,7 @@ function TraceabilitySection({ req }: { req: Requirement }): JSX.Element {
             </button>
             <button
               aria-label={`Remove link to ${r.reqId}`}
-              onClick={() => removeAs === 'parent' ? removeReqLink(r.id, req.id) : removeReqLink(req.id, r.id)}
+              onClick={() => isParent ? removeReqLink(r.id, req.id) : removeReqLink(req.id, r.id)}
               className="text-ink-faint hover:text-error text-lg leading-none px-1"
             >
               ×
@@ -310,42 +315,41 @@ function TraceabilitySection({ req }: { req: Requirement }): JSX.Element {
           </div>
         ))}
       </div>
-    )
-  }
-
-  return (
-    <div data-testid="traceability-section" className="space-y-3 pt-2 border-t border-line">
-      <SectionLabel className="block pt-2">Traceability</SectionLabel>
-      <LinkList title="Derives from" reqs={parents} testId="derives-from" removeAs="parent" />
-      <LinkList title="Derived by" reqs={children} testId="derived-by" removeAs="child" />
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <Select aria-label="Link module" value={pickModuleId}
-            onChange={(e) => { setPickModuleId(e.target.value); setPickReqId('') }} className="flex-1">
-            <option value="">Pick module…</option>
-            {flattenTree(modules).map(({ module: m, depth }) => (
-              <option key={m.id} value={m.id}>{' '.repeat(depth * 2)}{m.name}</option>
-            ))}
-          </Select>
-          <Select aria-label="Link requirement" value={pickReqId}
-            onChange={(e) => setPickReqId(e.target.value)} className="flex-1">
-            <option value="">Pick requirement…</option>
-            {candidates.map((r) => (
-              <option key={r.id} value={r.id}>{r.reqId} {r.text.slice(0, 40)}</option>
-            ))}
-          </Select>
+      {!linking ? (
+        <Button variant="ghost" className="!px-2 !py-1 !text-xs"
+          onClick={() => setLinking(true)}>
+          + Link
+        </Button>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Select aria-label="Link module" value={pickModuleId}
+              onChange={(e) => { setPickModuleId(e.target.value); setPickReqId('') }} className="flex-1">
+              <option value="">Pick module…</option>
+              {flattenTree(modules).map(({ module: m, depth }) => (
+                <option key={m.id} value={m.id}>{' '.repeat(depth * 2)}{m.name}</option>
+              ))}
+            </Select>
+            <Select aria-label="Link requirement" value={pickReqId}
+              onChange={(e) => setPickReqId(e.target.value)} className="flex-1">
+              <option value="">Pick requirement…</option>
+              {candidates.map((r) => (
+                <option key={r.id} value={r.id}>{r.reqId} {r.text.slice(0, 40)}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex gap-2">
+            {/* ponytail: new links store current req as parent by convention; dashboard derivation card still reads direction */}
+            <Button variant="ghost" className="!px-2 !py-1 !text-xs" disabled={!picked}
+              onClick={() => { if (picked) { addReqLink(req.id, picked.id); closePicker() } }}>
+              Add link
+            </Button>
+            <Button variant="ghost" className="!px-2 !py-1 !text-xs" onClick={closePicker}>
+              Cancel
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" className="!px-2 !py-1 !text-xs" disabled={!picked}
-            onClick={() => { if (picked) { addReqLink(picked.id, req.id); setPickReqId('') } }}>
-            Add as parent
-          </Button>
-          <Button variant="ghost" className="!px-2 !py-1 !text-xs" disabled={!picked}
-            onClick={() => { if (picked) { addReqLink(req.id, picked.id); setPickReqId('') } }}>
-            Add as child
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
