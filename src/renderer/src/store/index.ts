@@ -4,6 +4,7 @@ import type {
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
   ElementType, ConnectionType,
+  Architecture,
   ArchitectureElement, ArchitectureConnection,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
@@ -38,6 +39,8 @@ interface Store {
   collapsedHeadingIds: number[]
 
   // architecture tab
+  architectures: Architecture[]
+  activeArchitectureId: number | null
   elements: ArchitectureElement[]
   connections: ArchitectureConnection[]
   elementTypes: ElementType[]
@@ -114,6 +117,11 @@ interface Store {
 
   // actions — architecture
   loadArchitecture: () => Promise<void>
+  loadArchitectures: () => Promise<void>
+  setActiveArchitecture: (id: number) => Promise<void>
+  addArchitecture: (name: string) => Promise<void>
+  renameArchitecture: (id: number, name: string) => Promise<void>
+  removeArchitecture: (id: number) => Promise<void>
   selectElement: (id: number | null) => void
   selectConnection: (id: number | null) => void
   addElement: (input: CreateElementInput) => Promise<void>
@@ -132,6 +140,7 @@ export const useStore = create<Store>((set, get) => ({
   project: null, activeTab: 'requirements',
   modules: [], selectedModuleId: null, requirements: [], selectedRequirementId: null,
   headings: [], collapsedHeadingIds: [],
+  architectures: [], activeArchitectureId: null,
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
   customFields: [], connectionCustomFields: [], projectConnectionCustomFields: [],
@@ -387,16 +396,57 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   loadArchitecture: async () => {
-    const { project } = get()
+    const { project, activeArchitectureId } = get()
     if (!project) return
     const [elements, connections, elementTypes, connectionTypes, projectRequirements] = await Promise.all([
-      window.api.elements.list(project.id),
-      window.api.connections.list(project.id),
+      window.api.elements.list(project.id, activeArchitectureId),
+      window.api.connections.list(project.id, activeArchitectureId),
       window.api.elementTypes.list(project.id),
       window.api.connectionTypes.list(project.id),
       window.api.requirements.listByProject(project.id)
     ])
     set({ elements, connections, elementTypes, connectionTypes, projectRequirements })
+  },
+
+  loadArchitectures: async () => {
+    const { project } = get()
+    if (!project) return
+    const architectures = await window.api.architectures.list(project.id)
+    const persisted = Number(localStorage.getItem(`reqarch.activeArchitecture.${project.id}`))
+    const active = architectures.some((a) => a.id === persisted) ? persisted : (architectures[0]?.id ?? null)
+    set({ architectures, activeArchitectureId: active })
+    await get().loadArchitecture()
+  },
+
+  setActiveArchitecture: async (id) => {
+    const { project } = get()
+    if (project) localStorage.setItem(`reqarch.activeArchitecture.${project.id}`, String(id))
+    set({ activeArchitectureId: id, selectedElementId: null, selectedConnectionId: null })
+    await get().loadArchitecture()
+  },
+
+  addArchitecture: async (name) => {
+    const { project } = get()
+    if (!project) return
+    const created = await window.api.architectures.create(project.id, name)
+    set((s) => ({ architectures: [...s.architectures, created] }))
+    await get().setActiveArchitecture(created.id)
+  },
+
+  renameArchitecture: async (id, name) => {
+    const updated = await window.api.architectures.rename(id, name)
+    set((s) => ({ architectures: s.architectures.map((a) => (a.id === id ? updated : a)) }))
+  },
+
+  removeArchitecture: async (id) => {
+    const { project, activeArchitectureId } = get()
+    if (!project) return
+    await window.api.architectures.delete(id)
+    const architectures = await window.api.architectures.list(project.id)
+    set({ architectures })
+    if (activeArchitectureId === id) {
+      await get().setActiveArchitecture(architectures[0].id)
+    }
   },
 
   loadTraceability: async () => {
@@ -467,7 +517,7 @@ export const useStore = create<Store>((set, get) => ({
   selectConnection: (id) => set({ selectedConnectionId: id, selectedElementId: null }),
 
   addElement: async (input) => {
-    const el = await window.api.elements.create(input)
+    const el = await window.api.elements.create({ ...input, architectureId: get().activeArchitectureId })
     set((s) => ({ elements: [...s.elements, el], selectedElementId: el.id, selectedConnectionId: null }))
     pushUndo({
       undo: async () => { await window.api.elements.delete(el.id) },
@@ -504,8 +554,8 @@ export const useStore = create<Store>((set, get) => ({
     const { project } = get()
     if (!project) return
     const [elements, connections] = await Promise.all([
-      window.api.elements.list(project.id),
-      window.api.connections.list(project.id)
+      window.api.elements.list(project.id, get().activeArchitectureId),
+      window.api.connections.list(project.id, get().activeArchitectureId)
     ])
     set((s) => ({
       elements,
@@ -526,7 +576,7 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   addConnection: async (input) => {
-    const conn = await window.api.connections.create(input)
+    const conn = await window.api.connections.create({ ...input, architectureId: get().activeArchitectureId })
     set((s) => ({ connections: [...s.connections, conn], selectedConnectionId: conn.id, selectedElementId: null }))
     pushUndo({
       undo: async () => { await window.api.connections.delete(conn.id) },
