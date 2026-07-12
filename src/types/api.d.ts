@@ -6,7 +6,7 @@ import type {
   RequirementCustomField, UpdateCustomFieldInput,
   AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   ElementType, ConnectionType,
-  ArchitectureElement, ArchitectureConnection,
+  Architecture, ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
@@ -70,15 +70,21 @@ declare global {
         create(input: CreateConnectionTypeInput): Promise<ConnectionType>
         delete(id: number): Promise<void>
       }
+      architectures: {
+        list(projectId: number): Promise<Architecture[]>
+        create(projectId: number, name: string): Promise<Architecture>
+        rename(id: number, name: string): Promise<Architecture>
+        delete(id: number): Promise<void>
+      }
       elements: {
-        list(projectId: number): Promise<ArchitectureElement[]>
+        list(projectId: number, architectureId?: number | null): Promise<ArchitectureElement[]>
         create(input: CreateElementInput): Promise<ArchitectureElement>
         update(id: number, input: UpdateElementInput): Promise<ArchitectureElement>
         delete(id: number): Promise<void>
         restore(id: number): Promise<ArchitectureElement>
       }
       connections: {
-        list(projectId: number): Promise<ArchitectureConnection[]>
+        list(projectId: number, architectureId?: number | null): Promise<ArchitectureConnection[]>
         create(input: CreateConnectionInput): Promise<ArchitectureConnection>
         update(id: number, input: UpdateConnectionInput): Promise<ArchitectureConnection>
         delete(id: number): Promise<void>

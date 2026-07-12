@@ -7,7 +7,7 @@ import type {
   RequirementCustomField, UpdateCustomFieldInput,
   AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   ElementType, ConnectionType,
-  ArchitectureElement, ArchitectureConnection,
+  Architecture, ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
@@ -69,15 +69,21 @@ contextBridge.exposeInMainWorld('api', {
     create: (input: CreateConnectionTypeInput): Promise<ConnectionType> => ipcRenderer.invoke('connectionTypes:create', input),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('connectionTypes:delete', id)
   },
+  architectures: {
+    list: (projectId: number): Promise<Architecture[]> => ipcRenderer.invoke('architectures:list', projectId),
+    create: (projectId: number, name: string): Promise<Architecture> => ipcRenderer.invoke('architectures:create', projectId, name),
+    rename: (id: number, name: string): Promise<Architecture> => ipcRenderer.invoke('architectures:rename', id, name),
+    delete: (id: number): Promise<void> => ipcRenderer.invoke('architectures:delete', id)
+  },
   elements: {
-    list: (projectId: number): Promise<ArchitectureElement[]> => ipcRenderer.invoke('elements:list', projectId),
+    list: (projectId: number, architectureId?: number | null): Promise<ArchitectureElement[]> => ipcRenderer.invoke('elements:list', projectId, architectureId),
     create: (input: CreateElementInput): Promise<ArchitectureElement> => ipcRenderer.invoke('elements:create', input),
     update: (id: number, input: UpdateElementInput): Promise<ArchitectureElement> => ipcRenderer.invoke('elements:update', id, input),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('elements:delete', id),
     restore: (id: number): Promise<ArchitectureElement> => ipcRenderer.invoke('elements:restore', id)
   },
   connections: {
-    list: (projectId: number): Promise<ArchitectureConnection[]> => ipcRenderer.invoke('connections:list', projectId),
+    list: (projectId: number, architectureId?: number | null): Promise<ArchitectureConnection[]> => ipcRenderer.invoke('connections:list', projectId, architectureId),
     create: (input: CreateConnectionInput): Promise<ArchitectureConnection> => ipcRenderer.invoke('connections:create', input),
     update: (id: number, input: UpdateConnectionInput): Promise<ArchitectureConnection> => ipcRenderer.invoke('connections:update', id, input),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('connections:delete', id),

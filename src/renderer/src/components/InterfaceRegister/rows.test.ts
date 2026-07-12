@@ -3,12 +3,12 @@ import { buildInterfaceRows, customFieldKeys, loadColumnVisibility, saveColumnVi
 import type { ArchitectureConnection, ArchitectureElement, ConnectionType, ConnectionCustomField } from '../../../../types'
 
 const el = (id: number, blockId: string): ArchitectureElement => ({
-  id, projectId: 1, parentId: null, blockId, name: `El ${blockId}`, elementTypeId: null,
+  id, projectId: 1, architectureId: null, parentId: null, blockId, name: `El ${blockId}`, elementTypeId: null,
   description: null, color: null, posX: 0, posY: 0, width: 140, height: 60,
   deletedAt: null, createdAt: '', updatedAt: ''
 })
 const conn = (id: number, connId: string, s: number, t: number, extra: Partial<ArchitectureConnection> = {}): ArchitectureConnection => ({
-  id, projectId: 1, connId, sourceId: s, targetId: t, sourceHandle: null, targetHandle: null,
+  id, projectId: 1, architectureId: null, connId, sourceId: s, targetId: t, sourceHandle: null, targetHandle: null,
   name: null, connectionTypeId: null, description: null, deletedAt: null, createdAt: '', updatedAt: '', ...extra
 })
 const ccf = (id: number, connectionId: number, key: string, value: string, position = 0): ConnectionCustomField => ({

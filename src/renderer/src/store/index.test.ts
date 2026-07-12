@@ -11,13 +11,13 @@ const mockProject = {
 const mockModule = { id: 1, projectId: 1, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockReq = { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'Req text', acceptanceCriteria: null, source: null, rationale: null, status: 'Draft' as const, priority: 'High' as const, reqType: 'Functional' as const, headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockElement: ArchitectureElement = {
-  id: 1, projectId: 1, parentId: null, blockId: 'SYS-001', name: '',
+  id: 1, projectId: 1, architectureId: null, parentId: null, blockId: 'SYS-001', name: '',
   elementTypeId: null, description: null, color: null,
   posX: 100, posY: 100, width: 160, height: 80,
   deletedAt: null, createdAt: '', updatedAt: ''
 }
 const mockConn: ArchitectureConnection = {
-  id: 1, projectId: 1, connId: 'ICN-0001', sourceId: 1, targetId: 2,
+  id: 1, projectId: 1, architectureId: null, connId: 'ICN-0001', sourceId: 1, targetId: 2,
   sourceHandle: null, targetHandle: null,
   name: null, connectionTypeId: null, description: null,
   deletedAt: null, createdAt: '', updatedAt: ''

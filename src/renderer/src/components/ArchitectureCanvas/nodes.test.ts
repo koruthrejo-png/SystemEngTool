@@ -4,7 +4,7 @@ import type { ArchitectureElement } from '../../../../types'
 
 function el(partial: Partial<ArchitectureElement> & { id: number }): ArchitectureElement {
   return {
-    projectId: 1, parentId: null, blockId: `SYS-${partial.id}`, name: `E${partial.id}`,
+    projectId: 1, architectureId: null, parentId: null, blockId: `SYS-${partial.id}`, name: `E${partial.id}`,
     elementTypeId: null, description: null, color: null,
     posX: 0, posY: 0, width: 160, height: 80,
     deletedAt: null, createdAt: '', updatedAt: '',
