@@ -40,10 +40,13 @@ describe('loadArchitectures', () => {
 describe('setActiveArchitecture', () => {
   it('persists the choice and reloads the canvas for that architecture', async () => {
     await useStore.getState().loadArchitectures()
+    useStore.setState({ undoStack: [{} as any], redoStack: [{} as any] })
     await useStore.getState().setActiveArchitecture(11)
     expect(useStore.getState().activeArchitectureId).toBe(11)
     expect(localStorage.getItem('reqarch.activeArchitecture.1')).toBe('11')
     expect((window as any).api.connections.list).toHaveBeenLastCalledWith(1, 11)
+    expect(useStore.getState().undoStack).toEqual([])
+    expect(useStore.getState().redoStack).toEqual([])
   })
 })
 

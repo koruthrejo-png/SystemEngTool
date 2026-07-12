@@ -422,7 +422,7 @@ export const useStore = create<Store>((set, get) => ({
   setActiveArchitecture: async (id) => {
     const { project } = get()
     if (project) localStorage.setItem(`reqarch.activeArchitecture.${project.id}`, String(id))
-    set({ activeArchitectureId: id, selectedElementId: null, selectedConnectionId: null })
+    set({ activeArchitectureId: id, selectedElementId: null, selectedConnectionId: null, undoStack: [], redoStack: [] })
     await get().loadArchitecture()
   },
 

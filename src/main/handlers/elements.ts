@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../db/connection'
+import { getOrCreateDefaultArchitecture } from './architectures'
 import type { ArchitectureElement, CreateElementInput, UpdateElementInput } from '../../types'
 
 function now(): string { return new Date().toISOString() }
@@ -36,12 +37,14 @@ export function createElement(input: CreateElementInput): ArchitectureElement {
     db.prepare('UPDATE projects SET elem_next_counter = ?, updated_at = ? WHERE id = ?')
       .run(proj.elem_next_counter + 1, ts, input.projectId)
 
+    const architectureId = input.architectureId ?? getOrCreateDefaultArchitecture(db, input.projectId)
+
     const r = db.prepare(`
       INSERT INTO architecture_elements
         (project_id, architecture_id, parent_id, block_id, name, element_type_id, pos_x, pos_y, width, height, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 160, 80, ?, ?)
     `).run(
-      input.projectId, input.architectureId ?? null, input.parentId ?? null, blockId,
+      input.projectId, architectureId, input.parentId ?? null, blockId,
       input.name ?? '', input.elementTypeId ?? null,
       input.posX ?? 100, input.posY ?? 100, ts, ts
     )

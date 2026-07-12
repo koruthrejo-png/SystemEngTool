@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../db/connection'
+import { getOrCreateDefaultArchitecture } from './architectures'
 import type { ArchitectureConnection, CreateConnectionInput, UpdateConnectionInput } from '../../types'
 
 function now(): string { return new Date().toISOString() }
@@ -37,12 +38,18 @@ export function createConnection(input: CreateConnectionInput): ArchitectureConn
     db.prepare('UPDATE projects SET conn_next_counter = ?, updated_at = ? WHERE id = ?')
       .run(proj.conn_next_counter + 1, ts, input.projectId)
 
+    let architectureId = input.architectureId ?? null
+    if (architectureId == null) {
+      const src = db.prepare('SELECT architecture_id FROM architecture_elements WHERE id = ?').get(input.sourceId) as { architecture_id: number | null } | undefined
+      architectureId = src?.architecture_id ?? getOrCreateDefaultArchitecture(db, input.projectId)
+    }
+
     const r = db.prepare(`
       INSERT INTO architecture_connections
         (project_id, architecture_id, conn_id, source_id, target_id, source_handle, target_handle, name, connection_type_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      input.projectId, input.architectureId ?? null, connId, input.sourceId, input.targetId,
+      input.projectId, architectureId, connId, input.sourceId, input.targetId,
       input.sourceHandle ?? null, input.targetHandle ?? null,
       input.name ?? null, input.connectionTypeId ?? null, ts, ts
     )
