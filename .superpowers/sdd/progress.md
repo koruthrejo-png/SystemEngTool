@@ -180,3 +180,32 @@ Base commit: 38d1d82
 ## ALL TASKS COMPLETE — pending final whole-branch review
 - FINAL REVIEW (opus): Ready=Yes, no Critical/Important. 3 minors: (1) ghost undo steps from no-op field blurs, (2) delete-undo partial failure leaves store stale, (3) keydown lacks e.repeat guard. Fixing all 3 in one pass.
 - FINAL FIXES: commit 138dbeb..e4e522c — all 3 minors applied, store 30/30, typecheck clean. PLAN COMPLETE, branch ready to merge.
+
+---
+
+Plan: docs/superpowers/plans/2026-07-11-interfaces-module.md
+Base commit: b3f38c5
+
+## Tasks
+- [x] Task 1: complete (commits b3f38c5..f538750, review clean — no findings)
+- [x] Task 2: complete (commits f538750..0f324fe, review clean — no findings)
+- [x] Task 3: complete (commits 0f324fe..88af0f0, review clean — 5/5, cosmetic nit only)
+- [x] Task 4: complete (commits 88af0f0..81c2613, review clean — 37/37, no findings)
+- [x] Task 5: complete (commits 81c2613..20e787a, review clean — 6/6, no findings)
+- [x] Task 6: complete (commits 20e787a..8026b6f, review clean — renderer 205/205)
+
+## ALL TASKS COMPLETE — pending live-verify + final whole-branch review
+Minors (non-blocking, for final-review triage):
+- Task 3: customFieldKeys uses O(n^2) includes (fine at scale); redundant `?? ''` on typeName false branch.
+- Task 6: loadColumnVisibility called twice on mount (idempotent localStorage read); loadInterfaces double-fetch on first tab visit (spec-driven — register mount effect + App tab-switch effect).
+
+## LIVE-VERIFY (controller, running app on SmokeTest) — ALL PASS
+- Interfaces tab renders register; 4 connections listed with correct Interface IDs (ICN-000N) + From/To object IDs (SYS-*), mandatory + optional columns.
+- Custom field: + Add Field on ICN-0001, key=Protocol value=CAN → Protocol column appears in register showing CAN.
+- Column toggle: unchecking Protocol hides column, localStorage reqarch.interfaceRegister.columns.v1 = {...,"Protocol":false}.
+- Relaunch: Protocol=CAN persists (DB); column visibility persists (localStorage).
+- + New Interface: source/target selects → Create → ICN-0005 row added (4→5).
+(SmokeTest scratch project now holds test ICN-0005 + Protocol field — acceptable, it's the dev scratch DB.)
+
+## FINAL WHOLE-BRANCH REVIEW (opus) — Ready to merge: YES
+No Critical/Important. Cross-boundary data flow, dual-state sync, canvas non-regression, edge cases all verified sound. Minors (all non-blocking, self-healing): removeConnection from drawer doesn't prune projectConnectionCustomFields (lingers empty until tab re-entry); customFieldKeys O(n^2); redundant ?? '' ; unmemoized row recompute. Orphaned connection_custom_fields on soft-delete excluded by deleted_at filter (harmless, mirrors requirement-custom-fields precedent). PLAN COMPLETE — feature on main (f538750..8026b6f).
