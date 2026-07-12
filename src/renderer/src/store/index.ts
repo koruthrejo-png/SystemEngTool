@@ -47,6 +47,7 @@ interface Store {
   connectionTypes: ConnectionType[]
   selectedElementId: number | null
   selectedConnectionId: number | null
+  interfaceArchFilter: number | 'all'
   projectRequirements: Requirement[]
   customFields: RequirementCustomField[]
   connectionCustomFields: ConnectionCustomField[]
@@ -124,6 +125,7 @@ interface Store {
   removeArchitecture: (id: number) => Promise<void>
   selectElement: (id: number | null) => void
   selectConnection: (id: number | null) => void
+  setInterfaceArchFilter: (f: number | 'all') => void
   addElement: (input: CreateElementInput) => Promise<void>
   updateElement: (id: number, input: UpdateElementInput) => Promise<void>
   removeElement: (id: number) => Promise<void>
@@ -142,7 +144,7 @@ export const useStore = create<Store>((set, get) => ({
   headings: [], collapsedHeadingIds: [],
   architectures: [], activeArchitectureId: null,
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
-  selectedElementId: null, selectedConnectionId: null, projectRequirements: [],
+  selectedElementId: null, selectedConnectionId: null, interfaceArchFilter: 'all', projectRequirements: [],
   customFields: [], connectionCustomFields: [], projectConnectionCustomFields: [],
   acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
@@ -153,7 +155,7 @@ export const useStore = create<Store>((set, get) => ({
     const project = await window.api.project.getCurrent()
     if (!project) return
     const modules = await window.api.modules.list(project.id)
-    set({ project, modules, undoStack: [], redoStack: [] })
+    set({ project, modules, undoStack: [], redoStack: [], interfaceArchFilter: 'all' })
   },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -516,6 +518,8 @@ export const useStore = create<Store>((set, get) => ({
   selectElement: (id) => set({ selectedElementId: id, selectedConnectionId: null }),
 
   selectConnection: (id) => set({ selectedConnectionId: id, selectedElementId: null }),
+
+  setInterfaceArchFilter: (f) => set({ interfaceArchFilter: f }),
 
   addElement: async (input) => {
     const el = await window.api.elements.create({ ...input, architectureId: get().activeArchitectureId })
