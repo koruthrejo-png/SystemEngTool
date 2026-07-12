@@ -209,3 +209,30 @@ Minors (non-blocking, for final-review triage):
 
 ## FINAL WHOLE-BRANCH REVIEW (opus) — Ready to merge: YES
 No Critical/Important. Cross-boundary data flow, dual-state sync, canvas non-regression, edge cases all verified sound. Minors (all non-blocking, self-healing): removeConnection from drawer doesn't prune projectConnectionCustomFields (lingers empty until tab re-entry); customFieldKeys O(n^2); redundant ?? '' ; unmemoized row recompute. Orphaned connection_custom_fields on soft-delete excluded by deleted_at filter (harmless, mirrors requirement-custom-fields precedent). PLAN COMPLETE — feature on main (f538750..8026b6f).
+
+---
+
+Plan: docs/superpowers/plans/2026-07-11-multiple-architectures.md
+Base commit: b0fdb2f
+
+## Tasks
+- [x] Task 1: complete (commits b0fdb2f..60700a2, review clean — 2 inherited minors: CreateArchitectureInput unused today; rename blind-reselect matches codebase convention)
+- [x] Task 2: complete (commits 60700a2..c922269, review clean — no issues; INSERT column/value alignment verified both handlers)
+- [x] Task 3: complete (commits c922269..1afd01b, review clean — no issues; fixture architectureId:null edits legit, both typechecks clean)
+- [x] Task 4: complete (commits 1afd01b..af406c3, review clean — all 5 checks pass, genuine RED→GREEN, removeElement still DB re-syncs, loadInterfaces left unfiltered; trivial nit: removeArchitecture relies on server last-arch guard, non-blocking)
+- [x] Task 5: complete (commits af406c3..6f7b402, review clean — all 7 checks pass, deviations benign (dropped unused describe import, additive App.test mock), 2/2 + 211 suite, typechecks clean)
+- [x] Task 6: complete (commits 6f7b402..83b3121, review clean — spec PASS, loadInterfaces stays unfiltered, column wired end-to-end, 6/6 + 212 suite, both typechecks + build clean; all 5 live-verify checks confirmed w/ screenshots)
+
+## ALL TASKS COMPLETE — pending final whole-branch review
+Minors (non-blocking, for final-review triage):
+- Task 1: CreateArchitectureInput exported but unused today (positional create args); renameArchitecture blind reselect (matches codebase convention).
+- Task 4/5: removeArchitecture uses non-optional architectures[0].id, safe by server last-arch guard (asymmetric with loadArchitectures' ?. but not reachable-empty).
+- Task 6 a11y (belongs to Task 5 tabs, not this diff): architecture sub-tabs are <div onClick> not <button>/role=tab — driver couldn't click by text; candidate for a batched a11y follow-up.
+LIVE-VERIFY (Task 6 implementer, Playwright driver, 2 launches, screenshots): (a) sub-tab strip + Default, (b) independent diagrams Comms isolated, (c) rename + delete (last tab no ×), (d) relaunch restores last-active, (e) Architecture column in Interfaces Columns toggle showing Default for ICN rows — ALL confirmed.
+
+## FINAL WHOLE-BRANCH REVIEW (opus) — Ready to merge: WITH FIXES → FIXES APPLIED
+Two cross-task findings at the register↔canvas seam (both fixed, commit cbe4b4e):
+- Important: register-created interface (Interfaces tab, Architecture never opened) stamped architectureId=null → orphan, swept to Default only on next migration. Root-cause fix in createConnection/createElement: derive non-null architecture (connection prefers source element's architecture, else getOrCreateDefaultArchitecture; element falls back to default). Live-verified with control — pre-fix build reproduced architecture_id=NULL, post-fix architecture_id=1 ("Default").
+- Minor: undo/redo stack not cleared on architecture switch → undo mutated hidden diagram. Fixed: setActiveArchitecture clears undoStack/redoStack (+ test assertion). architectures.test 4/4, both typechecks clean.
+Deferred (non-blocking): CreateArchitectureInput dead (could delete); renameArchitecture blind reselect (codebase convention); removeArchitecture non-optional architectures[0].id (safe by server guard); sub-tabs <div onClick> a11y → batched a11y follow-up ticket.
+PLAN COMPLETE — feature on main (60700a2..cbe4b4e).
