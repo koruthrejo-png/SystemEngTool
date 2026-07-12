@@ -270,6 +270,20 @@ export interface RequirementLink {
   childReqId: number
 }
 
+export interface Architecture {
+  id: number
+  projectId: number
+  name: string
+  position: number
+  deletedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+export interface CreateArchitectureInput {
+  projectId: number
+  name: string
+}
+
 export interface SearchResults {
   requirements: Requirement[]
   modules: Module[]

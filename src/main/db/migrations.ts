@@ -155,6 +155,16 @@ export function runMigrations(db: Database.Database): void {
       created_at    TEXT    NOT NULL,
       updated_at    TEXT    NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS architectures (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL REFERENCES projects(id),
+      name       TEXT    NOT NULL,
+      position   INTEGER NOT NULL DEFAULT 0,
+      deleted_at TEXT,
+      created_at TEXT    NOT NULL,
+      updated_at TEXT    NOT NULL
+    );
   `)
 
   addColumnIfMissing(db, 'projects', 'elem_id_prefix',    "TEXT NOT NULL DEFAULT 'SYS'")
@@ -169,6 +179,8 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'architecture_connections', 'source_handle', 'TEXT')
   addColumnIfMissing(db, 'architecture_connections', 'target_handle', 'TEXT')
   addColumnIfMissing(db, 'requirements', 'heading_id', 'INTEGER REFERENCES req_headings(id)')
+  addColumnIfMissing(db, 'architecture_elements', 'architecture_id', 'INTEGER REFERENCES architectures(id)')
+  addColumnIfMissing(db, 'architecture_connections', 'architecture_id', 'INTEGER REFERENCES architectures(id)')
 
   // One-time conversion: split legacy free-text acceptance_criteria into checklist items.
   // Per-row idempotent — each converted row is set to NULL, so re-runs are no-ops.
@@ -186,6 +198,32 @@ export function runMigrations(db: Database.Database): void {
         const lines = row.acceptance_criteria.split('\n').map((l) => l.trim()).filter((l) => l !== '')
         lines.forEach((line, i) => insert.run(row.id, line, 'Unverified', i, ts, ts))
         clear.run(row.id)
+      }
+    })()
+  }
+
+  // One-time: assign pre-existing elements/connections to a per-project "Default" architecture.
+  // Idempotent — only rows with NULL architecture_id are touched.
+  const projectsNeedingDefault = db
+    .prepare(`
+      SELECT DISTINCT project_id FROM (
+        SELECT project_id FROM architecture_elements WHERE architecture_id IS NULL AND deleted_at IS NULL
+        UNION
+        SELECT project_id FROM architecture_connections WHERE architecture_id IS NULL AND deleted_at IS NULL
+      )
+    `)
+    .all() as { project_id: number }[]
+  if (projectsNeedingDefault.length > 0) {
+    const mts = new Date().toISOString()
+    db.transaction(() => {
+      for (const { project_id } of projectsNeedingDefault) {
+        let arch = db.prepare('SELECT id FROM architectures WHERE project_id = ? AND deleted_at IS NULL ORDER BY position, id LIMIT 1').get(project_id) as { id: number } | undefined
+        if (!arch) {
+          const r = db.prepare('INSERT INTO architectures (project_id, name, position, created_at, updated_at) VALUES (?, ?, 0, ?, ?)').run(project_id, 'Default', mts, mts)
+          arch = { id: Number(r.lastInsertRowid) }
+        }
+        db.prepare('UPDATE architecture_elements SET architecture_id = ? WHERE project_id = ? AND architecture_id IS NULL').run(arch.id, project_id)
+        db.prepare('UPDATE architecture_connections SET architecture_id = ? WHERE project_id = ? AND architecture_id IS NULL').run(arch.id, project_id)
       }
     })()
   }
