@@ -3,11 +3,11 @@ import { useStore } from '../../store'
 import { Button, Select, SectionLabel } from '../ui'
 import { buildInterfaceRows, customFieldKeys, loadColumnVisibility, saveColumnVisibility, BUILTIN_OPTIONAL_COLUMNS } from './rows'
 
-const BUILTIN_LABELS: Record<string, string> = { name: 'Name', type: 'Type', description: 'Description' }
+const BUILTIN_LABELS: Record<string, string> = { name: 'Name', type: 'Type', description: 'Description', architecture: 'Architecture' }
 
 export default function InterfaceRegister(): JSX.Element {
   const {
-    project, connections, elements, connectionTypes, projectConnectionCustomFields,
+    project, connections, elements, connectionTypes, projectConnectionCustomFields, architectures,
     loadInterfaces, addConnection, selectConnection
   } = useStore() as any
 
@@ -18,7 +18,7 @@ export default function InterfaceRegister(): JSX.Element {
 
   useEffect(() => { loadInterfaces() }, [])
 
-  const rows = buildInterfaceRows(connections, elements, connectionTypes, projectConnectionCustomFields)
+  const rows = buildInterfaceRows(connections, elements, connectionTypes, projectConnectionCustomFields, architectures)
   const customKeys = customFieldKeys(projectConnectionCustomFields)
   const [vis, setVis] = useState<Record<string, boolean>>(() => loadColumnVisibility(customKeys))
 
@@ -43,6 +43,7 @@ export default function InterfaceRegister(): JSX.Element {
     if (col === 'name') return row.name
     if (col === 'type') return row.typeName
     if (col === 'description') return row.description
+    if (col === 'architecture') return row.architectureName
     return row.customValues[col] ?? ''
   }
 

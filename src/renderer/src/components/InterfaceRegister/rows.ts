@@ -1,4 +1,4 @@
-import type { ArchitectureConnection, ArchitectureElement, ConnectionType, ConnectionCustomField } from '../../../../types'
+import type { ArchitectureConnection, ArchitectureElement, ConnectionType, ConnectionCustomField, Architecture } from '../../../../types'
 
 export interface InterfaceRow {
   connectionId: number
@@ -8,10 +8,11 @@ export interface InterfaceRow {
   name: string
   typeName: string
   description: string
+  architectureName: string
   customValues: Record<string, string>
 }
 
-export const BUILTIN_OPTIONAL_COLUMNS = ['name', 'type', 'description'] as const
+export const BUILTIN_OPTIONAL_COLUMNS = ['name', 'type', 'description', 'architecture'] as const
 
 const COLUMN_VIS_KEY = 'reqarch.interfaceRegister.columns.v1'
 
@@ -19,10 +20,12 @@ export function buildInterfaceRows(
   connections: ArchitectureConnection[],
   elements: ArchitectureElement[],
   connectionTypes: ConnectionType[],
-  customFields: ConnectionCustomField[]
+  customFields: ConnectionCustomField[],
+  architectures: Architecture[]
 ): InterfaceRow[] {
   const elemById = new Map(elements.map((e) => [e.id, e]))
   const typeById = new Map(connectionTypes.map((t) => [t.id, t]))
+  const archById = new Map(architectures.map((a) => [a.id, a]))
   const fieldsByConn = new Map<number, ConnectionCustomField[]>()
   for (const f of customFields) {
     const arr = fieldsByConn.get(f.connectionId) ?? []
@@ -42,6 +45,7 @@ export function buildInterfaceRows(
       name: c.name ?? '',
       typeName: (c.connectionTypeId != null ? typeById.get(c.connectionTypeId)?.name : '') ?? '',
       description: c.description ?? '',
+      architectureName: (c.architectureId != null ? archById.get(c.architectureId)?.name : '') ?? '',
       customValues
     }
   })

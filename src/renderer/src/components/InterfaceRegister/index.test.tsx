@@ -16,7 +16,7 @@ const connections = [
 beforeEach(() => {
   localStorage.clear()
   ;(useStore as any).mockReturnValue({
-    connections, elements, connectionTypes: [], projectConnectionCustomFields: [],
+    connections, elements, connectionTypes: [], projectConnectionCustomFields: [], architectures: [],
     loadInterfaces: vi.fn(), addConnection: vi.fn(), setActiveTab: vi.fn(),
     selectRequirement: vi.fn(), selectedConnectionId: null,
     selectConnection: vi.fn(), project: { id: 1, name: 'P' }

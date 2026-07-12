@@ -331,14 +331,15 @@ export const useStore = create<Store>((set, get) => ({
   loadInterfaces: async () => {
     const { project } = get()
     if (!project) return
-    const [elements, connections, elementTypes, connectionTypes, projectConnectionCustomFields] = await Promise.all([
+    const [elements, connections, elementTypes, connectionTypes, projectConnectionCustomFields, architectures] = await Promise.all([
       window.api.elements.list(project.id),
       window.api.connections.list(project.id),
       window.api.elementTypes.list(project.id),
       window.api.connectionTypes.list(project.id),
-      window.api.connectionCustomFields.listByProject(project.id)
+      window.api.connectionCustomFields.listByProject(project.id),
+      window.api.architectures.list(project.id)
     ])
-    set({ elements, connections, elementTypes, connectionTypes, projectConnectionCustomFields })
+    set({ elements, connections, elementTypes, connectionTypes, projectConnectionCustomFields, architectures })
   },
 
   loadConnectionCustomFields: async (connectionId) => {
