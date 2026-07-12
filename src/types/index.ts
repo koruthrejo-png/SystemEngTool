@@ -177,6 +177,7 @@ export interface ConnectionType {
 export interface ArchitectureElement {
   id: number
   projectId: number
+  architectureId: number | null
   parentId: number | null
   blockId: string
   name: string
@@ -195,6 +196,7 @@ export interface ArchitectureElement {
 export interface ArchitectureConnection {
   id: number
   projectId: number
+  architectureId: number | null
   connId: string
   sourceId: number
   targetId: number
@@ -222,6 +224,7 @@ export interface CreateConnectionTypeInput {
 
 export interface CreateElementInput {
   projectId: number
+  architectureId?: number | null
   parentId?: number | null
   name?: string
   elementTypeId?: number | null
@@ -244,6 +247,7 @@ export interface UpdateElementInput {
 
 export interface CreateConnectionInput {
   projectId: number
+  architectureId?: number | null
   sourceId: number
   targetId: number
   sourceHandle?: string | null

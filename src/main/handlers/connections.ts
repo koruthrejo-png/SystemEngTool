@@ -6,7 +6,7 @@ function now(): string { return new Date().toISOString() }
 
 function rowToConnection(row: any): ArchitectureConnection {
   return {
-    id: row.id, projectId: row.project_id, connId: row.conn_id,
+    id: row.id, projectId: row.project_id, architectureId: row.architecture_id ?? null, connId: row.conn_id,
     sourceId: row.source_id, targetId: row.target_id,
     sourceHandle: row.source_handle ?? null, targetHandle: row.target_handle ?? null,
     name: row.name ?? null, connectionTypeId: row.connection_type_id ?? null,
@@ -15,10 +15,12 @@ function rowToConnection(row: any): ArchitectureConnection {
   }
 }
 
-export function listConnections(projectId: number): ArchitectureConnection[] {
-  return (getDatabase()
-    .prepare('SELECT * FROM architecture_connections WHERE project_id = ? AND deleted_at IS NULL ORDER BY id')
-    .all(projectId) as any[]).map(rowToConnection)
+export function listConnections(projectId: number, architectureId?: number | null): ArchitectureConnection[] {
+  const db = getDatabase()
+  if (architectureId != null) {
+    return (db.prepare('SELECT * FROM architecture_connections WHERE project_id = ? AND architecture_id = ? AND deleted_at IS NULL ORDER BY id').all(projectId, architectureId) as any[]).map(rowToConnection)
+  }
+  return (db.prepare('SELECT * FROM architecture_connections WHERE project_id = ? AND deleted_at IS NULL ORDER BY id').all(projectId) as any[]).map(rowToConnection)
 }
 
 export function createConnection(input: CreateConnectionInput): ArchitectureConnection {
@@ -37,10 +39,10 @@ export function createConnection(input: CreateConnectionInput): ArchitectureConn
 
     const r = db.prepare(`
       INSERT INTO architecture_connections
-        (project_id, conn_id, source_id, target_id, source_handle, target_handle, name, connection_type_id, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (project_id, architecture_id, conn_id, source_id, target_id, source_handle, target_handle, name, connection_type_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      input.projectId, connId, input.sourceId, input.targetId,
+      input.projectId, input.architectureId ?? null, connId, input.sourceId, input.targetId,
       input.sourceHandle ?? null, input.targetHandle ?? null,
       input.name ?? null, input.connectionTypeId ?? null, ts, ts
     )
@@ -81,7 +83,7 @@ export function restoreConnection(id: number): ArchitectureConnection {
 }
 
 export function registerConnectionHandlers(): void {
-  ipcMain.handle('connections:list', (_e, projectId: number) => listConnections(projectId))
+  ipcMain.handle('connections:list', (_e, projectId: number, architectureId?: number | null) => listConnections(projectId, architectureId))
   ipcMain.handle('connections:create', (_e, input: CreateConnectionInput) => createConnection(input))
   ipcMain.handle('connections:update', (_e, id: number, input: UpdateConnectionInput) => updateConnection(id, input))
   ipcMain.handle('connections:delete', (_e, id: number) => deleteConnection(id))

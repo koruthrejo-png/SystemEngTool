@@ -6,7 +6,7 @@ function now(): string { return new Date().toISOString() }
 
 function rowToElement(row: any): ArchitectureElement {
   return {
-    id: row.id, projectId: row.project_id, parentId: row.parent_id ?? null,
+    id: row.id, projectId: row.project_id, architectureId: row.architecture_id ?? null, parentId: row.parent_id ?? null,
     blockId: row.block_id, name: row.name, elementTypeId: row.element_type_id ?? null,
     description: row.description ?? null, color: row.color ?? null,
     posX: row.pos_x, posY: row.pos_y, width: row.width, height: row.height,
@@ -14,10 +14,12 @@ function rowToElement(row: any): ArchitectureElement {
   }
 }
 
-export function listElements(projectId: number): ArchitectureElement[] {
-  return (getDatabase()
-    .prepare('SELECT * FROM architecture_elements WHERE project_id = ? AND deleted_at IS NULL ORDER BY id')
-    .all(projectId) as any[]).map(rowToElement)
+export function listElements(projectId: number, architectureId?: number | null): ArchitectureElement[] {
+  const db = getDatabase()
+  if (architectureId != null) {
+    return (db.prepare('SELECT * FROM architecture_elements WHERE project_id = ? AND architecture_id = ? AND deleted_at IS NULL ORDER BY id').all(projectId, architectureId) as any[]).map(rowToElement)
+  }
+  return (db.prepare('SELECT * FROM architecture_elements WHERE project_id = ? AND deleted_at IS NULL ORDER BY id').all(projectId) as any[]).map(rowToElement)
 }
 
 export function createElement(input: CreateElementInput): ArchitectureElement {
@@ -36,10 +38,10 @@ export function createElement(input: CreateElementInput): ArchitectureElement {
 
     const r = db.prepare(`
       INSERT INTO architecture_elements
-        (project_id, parent_id, block_id, name, element_type_id, pos_x, pos_y, width, height, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 160, 80, ?, ?)
+        (project_id, architecture_id, parent_id, block_id, name, element_type_id, pos_x, pos_y, width, height, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 160, 80, ?, ?)
     `).run(
-      input.projectId, input.parentId ?? null, blockId,
+      input.projectId, input.architectureId ?? null, input.parentId ?? null, blockId,
       input.name ?? '', input.elementTypeId ?? null,
       input.posX ?? 100, input.posY ?? 100, ts, ts
     )
@@ -108,7 +110,7 @@ export function restoreElement(id: number): ArchitectureElement {
 }
 
 export function registerElementHandlers(): void {
-  ipcMain.handle('elements:list', (_e, projectId: number) => listElements(projectId))
+  ipcMain.handle('elements:list', (_e, projectId: number, architectureId?: number | null) => listElements(projectId, architectureId))
   ipcMain.handle('elements:create', (_e, input: CreateElementInput) => createElement(input))
   ipcMain.handle('elements:update', (_e, id: number, input: UpdateElementInput) => updateElement(id, input))
   ipcMain.handle('elements:delete', (_e, id: number) => deleteElement(id))
