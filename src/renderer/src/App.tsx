@@ -5,6 +5,7 @@ import ModuleTree from './components/ModuleTree'
 import RequirementsList from './components/RequirementsList'
 import RequirementDetail from './components/RequirementDetail'
 import ArchitectureCanvas from './components/ArchitectureCanvas'
+import ArchitectureTabs from './components/ArchitectureCanvas/ArchitectureTabs'
 import ElementPanel from './components/ElementPanel'
 import ConnectionPanel from './components/ConnectionPanel'
 import TraceabilityMatrix from './components/TraceabilityMatrix'
@@ -13,7 +14,7 @@ import GlobalSearch from './components/GlobalSearch'
 import InterfaceRegister from './components/InterfaceRegister'
 
 export default function App(): JSX.Element {
-  const { project, activeTab, setActiveTab, loadProject, loadArchitecture, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
+  const { project, activeTab, setActiveTab, loadProject, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -21,7 +22,7 @@ export default function App(): JSX.Element {
   useEffect(() => { loadProject() }, [])
 
   useEffect(() => {
-    if (activeTab === 'architecture' && project) loadArchitecture()
+    if (activeTab === 'architecture' && project) loadArchitectures()
   }, [activeTab, project?.id])
 
   useEffect(() => {
@@ -140,8 +141,11 @@ export default function App(): JSX.Element {
         </div>
       ) : (
         <div data-testid="panel-architecture" className="flex flex-1 overflow-hidden">
-          <div className="flex-1 overflow-hidden">
-            <ArchitectureCanvas />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <ArchitectureTabs />
+            <div className="flex-1 overflow-hidden">
+              <ArchitectureCanvas />
+            </div>
           </div>
           {(selectedElementId !== null || selectedConnectionId !== null) && (
             <Panel className="w-96 shrink-0 border-l overflow-y-auto">
