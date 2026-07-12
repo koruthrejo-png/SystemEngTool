@@ -5,7 +5,7 @@ import ModuleTree from './components/ModuleTree'
 import RequirementsList from './components/RequirementsList'
 import RequirementDetail from './components/RequirementDetail'
 import ArchitectureCanvas from './components/ArchitectureCanvas'
-import ArchitectureTabs from './components/ArchitectureCanvas/ArchitectureTabs'
+import ArchitectureNav from './components/ArchitectureCanvas/ArchitectureNav'
 import ElementPanel from './components/ElementPanel'
 import ConnectionPanel from './components/ConnectionPanel'
 import TraceabilityMatrix from './components/TraceabilityMatrix'
@@ -141,11 +141,9 @@ export default function App(): JSX.Element {
         </div>
       ) : (
         <div data-testid="panel-architecture" className="flex flex-1 overflow-hidden">
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <ArchitectureTabs />
-            <div className="flex-1 overflow-hidden">
-              <ArchitectureCanvas />
-            </div>
+          <ArchitectureNav />
+          <div className="flex-1 overflow-hidden">
+            <ArchitectureCanvas />
           </div>
           {(selectedElementId !== null || selectedConnectionId !== null) && (
             <Panel className="w-96 shrink-0 border-l overflow-y-auto">
