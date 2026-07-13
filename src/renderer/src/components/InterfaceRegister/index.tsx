@@ -94,7 +94,9 @@ export default function InterfaceRegister(): JSX.Element {
             <tr className="text-left">
               <th className="px-4 py-2"><SectionLabel>Interface ID</SectionLabel></th>
               <th className="px-4 py-2"><SectionLabel>From</SectionLabel></th>
+              <th className="px-4 py-2"><SectionLabel>From Name</SectionLabel></th>
               <th className="px-4 py-2"><SectionLabel>To</SectionLabel></th>
+              <th className="px-4 py-2"><SectionLabel>To Name</SectionLabel></th>
               {optionalCols.map((col) => (
                 <th key={col} className="px-4 py-2"><SectionLabel>{BUILTIN_LABELS[col] ?? col}</SectionLabel></th>
               ))}
@@ -109,14 +111,16 @@ export default function InterfaceRegister(): JSX.Element {
               >
                 <td className="px-4 py-2 font-mono text-ink">{row.interfaceId}</td>
                 <td className="px-4 py-2 font-mono text-ink-muted">{row.fromId}</td>
+                <td className="px-4 py-2 text-ink-muted">{row.fromName || '—'}</td>
                 <td className="px-4 py-2 font-mono text-ink-muted">{row.toId}</td>
+                <td className="px-4 py-2 text-ink-muted">{row.toName || '—'}</td>
                 {optionalCols.map((col) => (
                   <td key={col} className="px-4 py-2 text-ink-muted">{cellValue(row, col) || '—'}</td>
                 ))}
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={3 + optionalCols.length} className="px-4 py-6 text-center text-ink-faint">No interfaces yet.</td></tr>
+              <tr><td colSpan={5 + optionalCols.length} className="px-4 py-6 text-center text-ink-faint">No interfaces yet.</td></tr>
             )}
           </tbody>
         </table>

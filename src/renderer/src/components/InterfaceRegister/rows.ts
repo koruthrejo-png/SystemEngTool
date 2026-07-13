@@ -5,6 +5,9 @@ export interface InterfaceRow {
   interfaceId: string
   fromId: string
   toId: string
+  fromName: string
+  toName: string
+  architectureId: number | null
   name: string
   typeName: string
   description: string
@@ -42,6 +45,9 @@ export function buildInterfaceRows(
       interfaceId: c.connId,
       fromId: elemById.get(c.sourceId)?.blockId ?? '',
       toId: elemById.get(c.targetId)?.blockId ?? '',
+      fromName: elemById.get(c.sourceId)?.name ?? '',
+      toName: elemById.get(c.targetId)?.name ?? '',
+      architectureId: c.architectureId,
       name: c.name ?? '',
       typeName: (c.connectionTypeId != null ? typeById.get(c.connectionTypeId)?.name : '') ?? '',
       description: c.description ?? '',

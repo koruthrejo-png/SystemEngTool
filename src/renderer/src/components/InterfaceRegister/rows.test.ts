@@ -35,6 +35,19 @@ describe('buildInterfaceRows', () => {
     expect(rows[0]).toMatchObject({ fromId: '', toId: '', name: '', typeName: '', description: '' })
   })
 
+  it('maps fromName and toName from the source/target elements', () => {
+    const elements = [el(10, 'SYS-001'), el(20, 'SYS-002')]
+    const rows = buildInterfaceRows([conn(1, 'ICN-0001', 10, 20)], elements, [], [], [])
+    expect(rows[0].fromName).toBe('El SYS-001')
+    expect(rows[0].toName).toBe('El SYS-002')
+  })
+
+  it('leaves fromName/toName empty when the element is missing', () => {
+    const rows = buildInterfaceRows([conn(1, 'ICN-0002', 99, 98)], [], [], [], [])
+    expect(rows[0].fromName).toBe('')
+    expect(rows[0].toName).toBe('')
+  })
+
   it('maps architectureName from the architectures list', () => {
     const elements = [] as any[]
     const architectures: Architecture[] = [{ id: 7, projectId: 1, name: 'Comms', position: 0, deletedAt: null, createdAt: '', updatedAt: '' }]

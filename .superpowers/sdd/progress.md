@@ -246,5 +246,5 @@ Base commit: 8077fd6
 - [x] Task 1: complete (commits 8077fd6..6b858fe, review clean — spec PASS, all 6 checks; 2/2 + 43/43, typecheck clean; reset folded into loadProject set, no persistence)
 - [x] Task 2: complete (commits 6b858fe..7c2c252, review clean — spec PASS all 7 checks; strip + test deleted no leftover refs; 3/3 + 215 suite, both typechecks clean; inherited minor: Escape-then-blur could re-commit rename, carried from old strip, non-blocking)
 - [x] Task 3: complete (shelve Component Library + type-picker on + Object; both typechecks clean, renderer 215/215; index.test.tsx + Object assertion updated to include elementTypeId:null)
-- [ ] Task 4: mandatory From Name / To Name columns (+ InterfaceRow.architectureId)
+- [x] Task 4: complete (fromName/toName/architectureId on InterfaceRow; mandatory From Name/To Name columns Interface ID|From|From Name|To|To Name; colSpan 5; both typechecks clean, register 9/9)
 - [ ] Task 5: InterfaceNav per-architecture filter + scoped create + live-verify
