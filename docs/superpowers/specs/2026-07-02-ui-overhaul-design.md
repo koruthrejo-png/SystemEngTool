@@ -112,6 +112,15 @@ Current white header + separate gray tab row merge into one 56px navy bar:
 
 Recorded so they can be planned as future feature work:
 
+> **★ TOP PRIORITY (item 20)** — Rework the Architecture `+ Object` toolbar. The
+> type-picker `<Select>` (added 2026-07-12 Task 3) is unwanted and renders full-width
+> (its `w-40` is overridden by the `Select` primitive's `w-full`), stretching across the
+> toolbar and looking unpolished. Remove the type dropdown from the toolbar entirely;
+> new blocks are created untyped and the type is set afterward in the properties panel
+> (ElementPanel already has a Type select). Then re-space the `+ Object` / undo-redo /
+> hint toolbar row (`ArchitectureCanvas/index.tsx:189-212`) to look sharp and tight —
+> consistent gaps, no orphaned wide control. UI-only.
+
 1. Status field on requirements + colored status chips (Approved/Draft/Review/Rejected)
 2. Priority field + chips (High/Medium/Low)
 3. Filter toolbar (status, priority, More Filters)
@@ -129,6 +138,8 @@ Recorded so they can be planned as future feature work:
 15. Undo/redo on the architecture canvas
 16. ~~Node port-count indicators and typed component library, including the Component Library left palette panel from spec §4~~ — DONE 2026-07-08 (commits ee93fad..7589d28; palette click-to-add typed node, type name in node header, ⇆N connection-count badge)
 17. ~~Restyle React Flow zoom/fit controls~~ — DONE 2026-07-08 (custom `CanvasControls`, commit 574cb9c)
+18. Drag-and-drop requirements into a section. Requirement rows in `RequirementsList/index.tsx` become `draggable`; heading rows become drop targets; on drop call the existing `updateRequirement(reqId, { headingId })` (same store action the drawer "Section" select uses). Native HTML5 DnD — no dnd library. Dropping onto the module root (no heading) clears `headingId`.
+19. Multi-level subheadings with hierarchical dotted numbering. Allow headings nested deeper than today's 2 levels; number by depth `1` → `1.1` → `1.1.1` … Touches: DB depth guard `headings.ts:27-33` (`parent.parent_id != null` throw is the only "max 2 levels" enforcement), make `buildOutline` (`RequirementsList/outline.ts`, currently `depth: 0|1` + fixed two-deep loop) recursive for dotted numbers at any depth, drop the `row.depth === 0` gate on "+ Sub", depth-proportional indent, full dotted path in the drawer Section select. `deleteHeading` already reparents generically; `moveHeading` swaps within a `parent_id` so unaffected.
 
 ### Ratified deviations from the mockups (accepted at final review, 2026-07-03)
 

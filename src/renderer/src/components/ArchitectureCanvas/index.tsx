@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import {
   ReactFlow, Background, BackgroundVariant, Panel, ReactFlowProvider,
   useNodesState, useEdgesState, useReactFlow, useViewport, ConnectionMode,
@@ -8,7 +8,7 @@ import '@xyflow/react/dist/style.css'
 import { useStore } from '../../store'
 import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
-import { Button, Select } from '../ui'
+import { Button } from '../ui'
 import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
 
 const nodeTypes = { block: BlockNode }
@@ -69,7 +69,6 @@ function CanvasInner(): JSX.Element {
     selectElement, selectConnection, undo, redo, undoStack, redoStack
   } = useStore()
 
-  const [newTypeId, setNewTypeId] = useState<string>('')
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { getInternalNode } = useReactFlow()
@@ -136,7 +135,7 @@ function CanvasInner(): JSX.Element {
     if (!project) return
     addElement({
       projectId: project.id,
-      elementTypeId: newTypeId ? Number(newTypeId) : null,
+      elementTypeId: null,
       posX: 100 + Math.random() * 200,
       posY: 100 + Math.random() * 200
     })
@@ -186,12 +185,9 @@ function CanvasInner(): JSX.Element {
   return (
     <div className="flex h-full">
       <div className="flex flex-col flex-1 min-w-0">
-        <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
+        <div className="flex items-center gap-2 px-4 h-12 bg-white border-b border-line shrink-0">
           <Button onClick={handleAddBlock}>+ Object</Button>
-          <Select value={newTypeId} onChange={(e) => setNewTypeId(e.target.value)} className="w-40">
-            <option value="">Untyped</option>
-            {elementTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </Select>
+          <div className="w-px h-5 bg-line" />
           <div className="flex items-center gap-1">
             <button
               onClick={() => void undo()}
@@ -208,7 +204,7 @@ function CanvasInner(): JSX.Element {
               className="p-1.5 rounded hover:bg-workspace text-ink-muted leading-none text-base disabled:opacity-40 disabled:hover:bg-transparent"
             >↷</button>
           </div>
-          <span className="text-xs text-ink-faint">Drag from a block's edge to connect</span>
+          <span className="ml-auto text-xs text-ink-faint">Drag from a block's edge to connect</span>
         </div>
         <div className="flex-1">
           <ReactFlow
