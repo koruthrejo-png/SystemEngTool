@@ -54,6 +54,32 @@ describe('buildOutline', () => {
     const rows = buildOutline([heading({ id: 11, parentId: 99, position: 0 })], [])
     expect(shape(rows)).toEqual(['1 H11'])
   })
+
+  it('numbers arbitrarily deep subheadings with a dotted path (1.1.1)', () => {
+    const rows = buildOutline(
+      [
+        heading({ id: 10, position: 0 }),
+        heading({ id: 11, parentId: 10, position: 0 }),
+        heading({ id: 12, parentId: 11, position: 0 }),
+        heading({ id: 20, position: 1 })
+      ],
+      []
+    )
+    expect(shape(rows)).toEqual(['1 H10', '1.1 H11', '1.1.1 H12', '2 H20'])
+  })
+
+  it('reports depth per nesting level', () => {
+    const rows = buildOutline(
+      [
+        heading({ id: 10, position: 0 }),
+        heading({ id: 11, parentId: 10, position: 0 }),
+        heading({ id: 12, parentId: 11, position: 0 })
+      ],
+      []
+    )
+    const depths = rows.filter((r) => r.kind === 'heading').map((r) => (r as { depth: number }).depth)
+    expect(depths).toEqual([0, 1, 2])
+  })
 })
 
 describe('visibleRows', () => {

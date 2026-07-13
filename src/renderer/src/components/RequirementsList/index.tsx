@@ -198,7 +198,8 @@ export default function RequirementsList(): JSX.Element {
               <div
                 key={`h-${row.heading.id}`}
                 data-testid={`heading-row-${row.heading.id}`}
-                className={`flex items-center gap-2 px-4 py-2 border-b border-line bg-workspace group/h ${row.depth === 1 ? 'pl-10' : ''}`}
+                style={row.depth > 0 ? { paddingLeft: `${1 + row.depth * 1.5}rem` } : undefined}
+                className="flex items-center gap-2 px-4 py-2 border-b border-line bg-workspace group/h"
               >
                 <button
                   aria-label={collapsedHeadingIds.includes(row.heading.id) ? 'Expand section' : 'Collapse section'}
@@ -227,15 +228,13 @@ export default function RequirementsList(): JSX.Element {
                   >
                     + Req
                   </button>
-                  {row.depth === 0 && (
-                    <button
-                      aria-label="Add subheading"
-                      onClick={() => addHeading({ moduleId: selectedModuleId!, parentId: row.heading.id })}
-                      className="text-action hover:text-action-hover font-medium whitespace-nowrap"
-                    >
-                      + Sub
-                    </button>
-                  )}
+                  <button
+                    aria-label="Add subheading"
+                    onClick={() => addHeading({ moduleId: selectedModuleId!, parentId: row.heading.id })}
+                    className="text-action hover:text-action-hover font-medium whitespace-nowrap"
+                  >
+                    + Sub
+                  </button>
                   <button aria-label="Delete section" onClick={() => removeHeading(row.heading.id)} className="text-ink-faint hover:text-error text-base leading-none">×</button>
                 </span>
               </div>

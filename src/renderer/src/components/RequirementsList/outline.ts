@@ -1,31 +1,34 @@
 import type { ReqHeading, Requirement } from '../../../../types'
 
 export type OutlineRow =
-  | { kind: 'heading'; heading: ReqHeading; number: string; depth: 0 | 1 }
+  | { kind: 'heading'; heading: ReqHeading; number: string; depth: number }
   | { kind: 'requirement'; requirement: Requirement }
 
 // Display order: ungrouped requirements first, then each top-level heading
-// (numbered 1..N by position), its requirements, then its subheadings
-// (numbered N.1..) each with their requirements.
+// (numbered 1..N by position), its requirements, then its subheadings — nested
+// to any depth with a dotted path (1, 1.1, 1.1.1…) — each with their requirements.
 export function buildOutline(headings: ReqHeading[], requirements: Requirement[]): OutlineRow[] {
   const rows: OutlineRow[] = []
   const byPosition = (a: ReqHeading, b: ReqHeading): number => a.position - b.position || a.id - b.id
   const reqsUnder = (headingId: number | null): Requirement[] =>
     requirements.filter((r) => r.headingId === headingId)
+  const childrenOf = (parentId: number): ReqHeading[] =>
+    headings.filter((h) => h.parentId === parentId).sort(byPosition)
 
   for (const r of reqsUnder(null)) rows.push({ kind: 'requirement', requirement: r })
 
   const ids = new Set(headings.map((h) => h.id))
   const tops = headings.filter((h) => h.parentId === null || !ids.has(h.parentId)).sort(byPosition)
-  tops.forEach((top, i) => {
-    rows.push({ kind: 'heading', heading: top, number: `${i + 1}`, depth: 0 })
-    for (const r of reqsUnder(top.id)) rows.push({ kind: 'requirement', requirement: r })
-    const subs = headings.filter((h) => h.parentId === top.id).sort(byPosition)
-    subs.forEach((sub, j) => {
-      rows.push({ kind: 'heading', heading: sub, number: `${i + 1}.${j + 1}`, depth: 1 })
-      for (const r of reqsUnder(sub.id)) rows.push({ kind: 'requirement', requirement: r })
-    })
-  })
+
+  const seen = new Set<number>() // guard against malformed cyclic parent chains
+  const walk = (heading: ReqHeading, number: string, depth: number): void => {
+    if (seen.has(heading.id)) return
+    seen.add(heading.id)
+    rows.push({ kind: 'heading', heading, number, depth })
+    for (const r of reqsUnder(heading.id)) rows.push({ kind: 'requirement', requirement: r })
+    childrenOf(heading.id).forEach((child, k) => walk(child, `${number}.${k + 1}`, depth + 1))
+  }
+  tops.forEach((top, i) => walk(top, `${i + 1}`, 0))
   return rows
 }
 
