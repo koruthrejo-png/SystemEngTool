@@ -247,4 +247,16 @@ Base commit: 8077fd6
 - [x] Task 2: complete (commits 6b858fe..7c2c252, review clean — spec PASS all 7 checks; strip + test deleted no leftover refs; 3/3 + 215 suite, both typechecks clean; inherited minor: Escape-then-blur could re-commit rename, carried from old strip, non-blocking)
 - [x] Task 3: complete (shelve Component Library + type-picker on + Object; both typechecks clean, renderer 215/215; index.test.tsx + Object assertion updated to include elementTypeId:null)
 - [x] Task 4: complete (fromName/toName/architectureId on InterfaceRow; mandatory From Name/To Name columns Interface ID|From|From Name|To|To Name; colSpan 5; both typechecks clean, register 9/9)
-- [ ] Task 5: InterfaceNav per-architecture filter + scoped create + live-verify
+- [x] Task 5: complete (InterfaceNav sidebar + client-side interfaceArchFilter + scoped create + scoped pickers; App.tsx panel-interfaces rewired; both typechecks clean, renderer 220/220 incl. 3 new InterfaceNav tests)
+
+## ALL TASKS COMPLETE — build clean + live-verify PASS
+Build: electron-vite clean (736 kB bundle). Live-verify (Playwright driver, scratch project "thermal", 3 architectures Default/test 1/test 2):
+1. Architecture tab — left ArchitectureNav sidebar (no top strip); Default/test 1/test 2 rows; clicking test 1 vs Default swaps canvas (test 1 = SYS-001/002/003, Default = SYS-004), diagrams isolated; × delete shown (>1 arch).
+2. Component Library gone — no left palette; toolbar has type Select (Untyped/System/Subsystem/Component/Function/External); pick System + `+ Object` → node header "SYSTEM" (SYS-004); untyped path still works.
+3. Interfaces tab — left InterfaceNav "All architectures" + Default/test 1/test 2; All=2, Default=0 ("No interfaces yet."), test 1=2 → client-side filter works.
+4. Object-name columns — headers exactly INTERFACE ID | FROM | FROM NAME | TO | TO NAME | …optional; blank names render "—"; after naming SYS-001 "Radio" on canvas, ICN-0002 To Name=Radio + ICN-0003 From Name=Radio populate.
+5. Scoped create — test 1 selected: pickers list only SYS-001/002/003; created ICN-0003 SYS-001→SYS-003 shows Architecture=test 1, count 2→3, absent from Default filter.
+Driver note: ArchitectureNav/InterfaceNav rows are <div onClick> (a11y deferred), so click-text can't reach them — clicked via eval; element name commit needs a real focusout event (synthetic 'blur' insufficient, matches prior ledger note).
+
+## FINAL WHOLE-BRANCH REVIEW (controller, 8077fd6..HEAD) — Ready to merge: YES
+Renderer-only as designed: no window.api/handler/preload/src/types edits. interfaceArchFilter session-only + reset in loadProject. InterfaceRow.architectureId consumed only by Task 5 filter. ComponentLibrary retained (unmounted), ArchitectureTabs deleted. Minors (non-blocking, deferred): nav rows <div onClick> a11y → batched a11y follow-up ticket (carried); visibleRows/pickElements recomputed per render (trivial at desktop scale). PLAN COMPLETE — feature on main (8077fd6..HEAD).
