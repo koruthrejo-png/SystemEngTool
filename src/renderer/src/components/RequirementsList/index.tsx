@@ -41,13 +41,25 @@ export default function RequirementsList(): JSX.Element {
     priorityFilter, setPriorityFilter,
     typeFilter, setTypeFilter,
     selectedRequirementId, selectRequirement,
-    addRequirement, removeRequirement, restoreRequirement,
+    addRequirement, updateRequirement, removeRequirement, restoreRequirement,
     checkedIds, toggleChecked, setChecked,
     updateRequirements, removeRequirements,
     headings, collapsedHeadingIds, toggleHeadingCollapsed,
     addHeading, renameHeading, moveHeading, removeHeading
   } = useStore()
   const [colWidths, setColWidths] = useState<number[]>(loadWidths)
+  const [dragReqId, setDragReqId] = useState<number | null>(null)
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null)
+
+  // Drag a requirement row onto a heading (or another req) to move it into that section.
+  function moveReqToHeading(headingId: number | null): void {
+    const id = dragReqId
+    setDragReqId(null)
+    setDragOverKey(null)
+    if (id == null) return
+    const dragged = requirements.find((r) => r.id === id)
+    if (dragged && dragged.headingId !== headingId) updateRequirement(id, { headingId })
+  }
 
   function startResize(e: ReactMouseEvent, index: number): void {
     e.preventDefault()
@@ -199,7 +211,10 @@ export default function RequirementsList(): JSX.Element {
                 key={`h-${row.heading.id}`}
                 data-testid={`heading-row-${row.heading.id}`}
                 style={row.depth > 0 ? { paddingLeft: `${1 + row.depth * 1.5}rem` } : undefined}
-                className="flex items-center gap-2 px-4 py-2 border-b border-line bg-workspace group/h"
+                onDragOver={(e) => { if (dragReqId != null) { e.preventDefault(); setDragOverKey(`h-${row.heading.id}`) } }}
+                onDragLeave={() => setDragOverKey((k) => (k === `h-${row.heading.id}` ? null : k))}
+                onDrop={(e) => { e.preventDefault(); moveReqToHeading(row.heading.id) }}
+                className={`flex items-center gap-2 px-4 py-2 border-b border-line bg-workspace group/h ${dragOverKey === `h-${row.heading.id}` ? 'ring-2 ring-inset ring-action' : ''}`}
               >
                 <button
                   aria-label={collapsedHeadingIds.includes(row.heading.id) ? 'Expand section' : 'Collapse section'}
@@ -242,11 +257,22 @@ export default function RequirementsList(): JSX.Element {
               (() => {
                 const req = row.requirement
                 return (
-                  <div key={req.id} onClick={() => !showDeleted && selectRequirement(req.id)} style={gridStyle} className={[
+                  <div
+                    key={req.id}
+                    onClick={() => !showDeleted && selectRequirement(req.id)}
+                    draggable={!showDeleted}
+                    onDragStart={(e) => { setDragReqId(req.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move' }}
+                    onDragEnd={() => { setDragReqId(null); setDragOverKey(null) }}
+                    onDragOver={(e) => { if (dragReqId != null && dragReqId !== req.id) { e.preventDefault(); setDragOverKey(`r-${req.id}`) } }}
+                    onDragLeave={() => setDragOverKey((k) => (k === `r-${req.id}` ? null : k))}
+                    onDrop={(e) => { e.preventDefault(); moveReqToHeading(req.headingId) }}
+                    style={gridStyle}
+                    className={[
                     'grid',
                     'gap-x-3 items-start px-4 py-3 border-b border-line/60 group border-l-2',
                     i % 2 === 1 ? 'bg-workspace/50' : 'bg-white',
                     showDeleted ? 'opacity-60 border-l-transparent' : 'cursor-pointer hover:bg-action-tint/20',
+                    dragOverKey === `r-${req.id}` ? 'ring-2 ring-inset ring-action' : '',
                     !showDeleted && selectedRequirementId === req.id
                       ? '!bg-action-tint/40 border-l-action'
                       : 'border-l-transparent'

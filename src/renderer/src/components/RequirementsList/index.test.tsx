@@ -35,6 +35,7 @@ beforeEach(() => {
     selectedRequirementId: null,
     selectRequirement: vi.fn(),
     addRequirement: vi.fn().mockResolvedValue(undefined),
+    updateRequirement: vi.fn().mockResolvedValue(undefined),
     removeRequirement: vi.fn().mockResolvedValue(undefined),
     restoreRequirement: vi.fn().mockResolvedValue(undefined),
     setShowDeleted: vi.fn().mockResolvedValue(undefined),
@@ -284,6 +285,28 @@ describe('RequirementsList', () => {
 
     await userEvent.click(screen.getByLabelText('Delete section'))
     expect(storeState.removeHeading).toHaveBeenCalledWith(5)
+  })
+
+  it('moves a requirement into a section by dragging its row onto a heading', () => {
+    Object.assign(storeState, { headings: [headingFixture], requirements: [req2] })
+    render(<RequirementsList />)
+    const reqRow = screen.getByText('SRS-0002').closest('[draggable="true"]')!
+    const headingRow = screen.getByTestId('heading-row-5')
+    fireEvent.dragStart(reqRow)
+    fireEvent.dragOver(headingRow)
+    fireEvent.drop(headingRow)
+    expect(storeState.updateRequirement).toHaveBeenCalledWith(2, { headingId: 5 })
+  })
+
+  it('dragging a grouped requirement onto an ungrouped requirement moves it to the module root', () => {
+    Object.assign(storeState, { headings: [headingFixture], requirements: [req1, { ...req2, headingId: 5 }] })
+    render(<RequirementsList />)
+    const grouped = screen.getByText('SRS-0002').closest('[draggable="true"]')!
+    const ungrouped = screen.getByText('SRS-0001').closest('[draggable="true"]')!
+    fireEvent.dragStart(grouped)
+    fireEvent.dragOver(ungrouped)
+    fireEvent.drop(ungrouped)
+    expect(storeState.updateRequirement).toHaveBeenCalledWith(2, { headingId: null })
   })
 
   it('collapse toggle calls the store and collapsed heading hides its requirements', () => {
