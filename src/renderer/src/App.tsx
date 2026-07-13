@@ -12,6 +12,7 @@ import TraceabilityMatrix from './components/TraceabilityMatrix'
 import Dashboard from './components/Dashboard'
 import GlobalSearch from './components/GlobalSearch'
 import InterfaceRegister from './components/InterfaceRegister'
+import InterfaceNav from './components/InterfaceRegister/InterfaceNav'
 
 export default function App(): JSX.Element {
   const { project, activeTab, setActiveTab, loadProject, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
@@ -130,6 +131,7 @@ export default function App(): JSX.Element {
         </div>
       ) : activeTab === 'interfaces' ? (
         <div data-testid="panel-interfaces" className="flex flex-1 overflow-hidden">
+          <InterfaceNav />
           <div className="flex-1 overflow-hidden">
             <InterfaceRegister />
           </div>

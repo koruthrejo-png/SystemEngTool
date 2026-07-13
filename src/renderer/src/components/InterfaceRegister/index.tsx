@@ -8,7 +8,7 @@ const BUILTIN_LABELS: Record<string, string> = { name: 'Name', type: 'Type', des
 export default function InterfaceRegister(): JSX.Element {
   const {
     project, connections, elements, connectionTypes, projectConnectionCustomFields, architectures,
-    loadInterfaces, addConnection, selectConnection
+    interfaceArchFilter, loadInterfaces, addConnection, selectConnection
   } = useStore() as any
 
   const [showColumns, setShowColumns] = useState(false)
@@ -19,6 +19,8 @@ export default function InterfaceRegister(): JSX.Element {
   useEffect(() => { loadInterfaces() }, [])
 
   const rows = buildInterfaceRows(connections, elements, connectionTypes, projectConnectionCustomFields, architectures)
+  const visibleRows = interfaceArchFilter === 'all' ? rows : rows.filter((r) => r.architectureId === interfaceArchFilter)
+  const pickElements = interfaceArchFilter === 'all' ? elements : elements.filter((el: any) => el.architectureId === interfaceArchFilter)
   const customKeys = customFieldKeys(projectConnectionCustomFields)
   const [vis, setVis] = useState<Record<string, boolean>>(() => loadColumnVisibility(customKeys))
 
@@ -34,7 +36,8 @@ export default function InterfaceRegister(): JSX.Element {
 
   async function createInterface(): Promise<void> {
     if (!project || !sourceId || !targetId) return
-    await addConnection({ projectId: project.id, sourceId: Number(sourceId), targetId: Number(targetId) })
+    const arch = interfaceArchFilter === 'all' ? {} : { architectureId: interfaceArchFilter }
+    await addConnection({ projectId: project.id, sourceId: Number(sourceId), targetId: Number(targetId), ...arch })
     await loadInterfaces()
     setShowNew(false); setSourceId(''); setTargetId('')
   }
@@ -50,7 +53,7 @@ export default function InterfaceRegister(): JSX.Element {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 px-5 py-3 border-b border-line shrink-0">
-        <span className="text-sm text-ink-muted">{rows.length} interfaces</span>
+        <span className="text-sm text-ink-muted">{visibleRows.length} interfaces</span>
         <div className="ml-auto flex items-center gap-2 relative">
           <Button variant="secondary" onClick={() => setShowColumns((v) => !v)}>Columns</Button>
           <Button onClick={() => setShowNew((v) => !v)}>+ New Interface</Button>
@@ -73,14 +76,14 @@ export default function InterfaceRegister(): JSX.Element {
             <SectionLabel className="block mb-1">From</SectionLabel>
             <Select value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
               <option value="">— Source —</option>
-              {elements.map((el: any) => <option key={el.id} value={el.id}>{el.blockId} — {el.name}</option>)}
+              {pickElements.map((el: any) => <option key={el.id} value={el.id}>{el.blockId} — {el.name}</option>)}
             </Select>
           </div>
           <div className="flex-1">
             <SectionLabel className="block mb-1">To</SectionLabel>
             <Select value={targetId} onChange={(e) => setTargetId(e.target.value)}>
               <option value="">— Target —</option>
-              {elements.map((el: any) => <option key={el.id} value={el.id}>{el.blockId} — {el.name}</option>)}
+              {pickElements.map((el: any) => <option key={el.id} value={el.id}>{el.blockId} — {el.name}</option>)}
             </Select>
           </div>
           <Button onClick={createInterface} disabled={!sourceId || !targetId}>Create</Button>
@@ -103,7 +106,7 @@ export default function InterfaceRegister(): JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
+            {visibleRows.map((row, i) => (
               <tr
                 key={row.connectionId}
                 onClick={() => selectConnection(row.connectionId)}
@@ -119,7 +122,7 @@ export default function InterfaceRegister(): JSX.Element {
                 ))}
               </tr>
             ))}
-            {rows.length === 0 && (
+            {visibleRows.length === 0 && (
               <tr><td colSpan={5 + optionalCols.length} className="px-4 py-6 text-center text-ink-faint">No interfaces yet.</td></tr>
             )}
           </tbody>
