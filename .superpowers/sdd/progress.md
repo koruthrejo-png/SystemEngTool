@@ -236,3 +236,15 @@ Two cross-task findings at the register↔canvas seam (both fixed, commit cbe4b4
 - Minor: undo/redo stack not cleared on architecture switch → undo mutated hidden diagram. Fixed: setActiveArchitecture clears undoStack/redoStack (+ test assertion). architectures.test 4/4, both typechecks clean.
 Deferred (non-blocking): CreateArchitectureInput dead (could delete); renameArchitecture blind reselect (codebase convention); removeArchitecture non-optional architectures[0].id (safe by server guard); sub-tabs <div onClick> a11y → batched a11y follow-up ticket.
 PLAN COMPLETE — feature on main (60700a2..cbe4b4e).
+
+---
+
+Plan: docs/superpowers/plans/2026-07-12-architecture-nav-and-per-architecture-interfaces.md
+Base commit: 8077fd6
+
+## Tasks
+- [x] Task 1: complete (commits 8077fd6..6b858fe, review clean — spec PASS, all 6 checks; 2/2 + 43/43, typecheck clean; reset folded into loadProject set, no persistence)
+- [x] Task 2: complete (commits 6b858fe..7c2c252, review clean — spec PASS all 7 checks; strip + test deleted no leftover refs; 3/3 + 215 suite, both typechecks clean; inherited minor: Escape-then-blur could re-commit rename, carried from old strip, non-blocking)
+- [x] Task 3: complete (shelve Component Library + type-picker on + Object; both typechecks clean, renderer 215/215; index.test.tsx + Object assertion updated to include elementTypeId:null)
+- [ ] Task 4: mandatory From Name / To Name columns (+ InterfaceRow.architectureId)
+- [ ] Task 5: InterfaceNav per-architecture filter + scoped create + live-verify

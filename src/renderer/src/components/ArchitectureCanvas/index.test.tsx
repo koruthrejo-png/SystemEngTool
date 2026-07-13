@@ -65,7 +65,7 @@ describe('ArchitectureCanvas', () => {
   it('calls addElement when + Block is clicked', async () => {
     render(<ArchitectureCanvas />)
     await userEvent.click(screen.getByRole('button', { name: /\+ object/i }))
-    expect(mockAddElement).toHaveBeenCalledWith({ projectId: 1, posX: expect.any(Number), posY: expect.any(Number) })
+    expect(mockAddElement).toHaveBeenCalledWith({ projectId: 1, elementTypeId: null, posX: expect.any(Number), posY: expect.any(Number) })
   })
 
   it('renders the connect hint', () => {

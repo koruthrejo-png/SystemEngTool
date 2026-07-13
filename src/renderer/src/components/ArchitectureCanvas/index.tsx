@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ReactFlow, Background, BackgroundVariant, Panel, ReactFlowProvider,
   useNodesState, useEdgesState, useReactFlow, useViewport, ConnectionMode,
@@ -8,9 +8,8 @@ import '@xyflow/react/dist/style.css'
 import { useStore } from '../../store'
 import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
-import { Button } from '../ui'
+import { Button, Select } from '../ui'
 import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
-import ComponentLibrary from './ComponentLibrary'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -70,6 +69,7 @@ function CanvasInner(): JSX.Element {
     selectElement, selectConnection, undo, redo, undoStack, redoStack
   } = useStore()
 
+  const [newTypeId, setNewTypeId] = useState<string>('')
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { getInternalNode } = useReactFlow()
@@ -134,7 +134,12 @@ function CanvasInner(): JSX.Element {
 
   function handleAddBlock(): void {
     if (!project) return
-    addElement({ projectId: project.id, posX: 100 + Math.random() * 200, posY: 100 + Math.random() * 200 })
+    addElement({
+      projectId: project.id,
+      elementTypeId: newTypeId ? Number(newTypeId) : null,
+      posX: 100 + Math.random() * 200,
+      posY: 100 + Math.random() * 200
+    })
   }
 
   function onNodeClick(_: React.MouseEvent, node: Node): void {
@@ -180,10 +185,13 @@ function CanvasInner(): JSX.Element {
 
   return (
     <div className="flex h-full">
-      <ComponentLibrary />
       <div className="flex flex-col flex-1 min-w-0">
         <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-line shrink-0">
           <Button onClick={handleAddBlock}>+ Object</Button>
+          <Select value={newTypeId} onChange={(e) => setNewTypeId(e.target.value)} className="w-40">
+            <option value="">Untyped</option>
+            {elementTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </Select>
           <div className="flex items-center gap-1">
             <button
               onClick={() => void undo()}
