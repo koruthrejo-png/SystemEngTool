@@ -17,7 +17,7 @@ export default function NewModuleForm({ projectId, parentId, onSubmit, onCancel 
   async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
     if (!name.trim() || !prefix.trim()) return
-    await onSubmit({ projectId, parentId, name: name.trim(), idPrefix: prefix.trim().toUpperCase(), idPadding: padding })
+    await onSubmit({ projectId, parentId, name: name.trim(), idPrefix: prefix.trim().toUpperCase(), idPadding: padding, kind: 'module' })
   }
 
   return (
