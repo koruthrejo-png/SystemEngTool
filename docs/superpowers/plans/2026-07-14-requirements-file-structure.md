@@ -770,6 +770,16 @@ sqlite3 <path-to.reqarch> "SELECT id,module_id,req_id FROM requirements WHERE de
 
 If no dev project has a nested module, **make one first** on the pre-change build (`git stash` is unsafe here — see the worktree note in the environment; instead check out `main` in a scratch clone, or simply create the nesting through the UI before merging this branch). Record the rows — you are proving the split against them.
 
+- [ ] **Step 2b: Check for legacy rows the migration deliberately skips**
+
+The migration only converts parents that are themselves live (`deleted_at IS NULL`). `deleteModule` reparents live children to the grandparent before soft-deleting, so a soft-deleted row should never still have live children — but builds predating that behavior could have left some. Confirm none exist:
+
+```bash
+sqlite3 <path-to.reqarch> "SELECT COUNT(*) FROM modules p WHERE p.deleted_at IS NOT NULL AND p.kind='module' AND EXISTS (SELECT 1 FROM modules c WHERE c.parent_id=p.id AND c.deleted_at IS NULL);"
+```
+
+Expected: `0`. If it is not 0, stop and report — those children are attached to a soft-deleted module that will never become a folder, and the fix belongs in the migration, not the UI.
+
 - [ ] **Step 3: Live-verify in the running app**
 
 Launch with the Playwright driver (`.claude/skills/run-app/driver.mjs`) and check all seven:
