@@ -10,6 +10,7 @@ import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
 import { Button } from '../ui'
 import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
+import LayerPanel from './LayerPanel'
 import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from './layers'
 
 const nodeTypes = { block: BlockNode }
@@ -248,6 +249,7 @@ function CanvasInner(): JSX.Element {
           >
             <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
             <CanvasControls />
+            <Panel position="top-right"><LayerPanel /></Panel>
           </ReactFlow>
         </div>
       </div>
