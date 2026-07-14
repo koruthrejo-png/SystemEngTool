@@ -316,3 +316,10 @@ Task 2: complete (commit 9defe73, review clean — spec ✅ PASS, quality PASS, 
     - migrations.ts:280 new module inserted at position 0 — where siblings have position > 0 it sorts FIRST (ORDER BY position, id), ahead of folders it used to sit above. `MAX(position)+1` (as headings.ts:31-33 does) would preserve visual order. Cosmetic; fix if Task 6 surfaces odd ordering.
     - modules.ts:78 (out of diff, Task 1 gap): restoreModule clears deleted_at with no assertFolderParent check — restoring a child under a kind='module' parent reintroduces the violation. Mitigated: session-scoped only, because the migration self-heals the tree at next launch.
   ⚠️ resolved by controller: reviewer's "legacy rows predating deleteModule's reparenting" query is now folded into the plan's Task 6 as Step 2b (expect COUNT = 0), instead of a note nobody runs.
+Task 3: complete (commit 873ff1d, review clean — spec ✅ full compliance, quality no Critical/Important, zero ⚠️)
+  Controller-verified test claim independently: renderer 253 passed / 37 files / 0 failed. Reviewer re-ran both tsc targets (node exit 0; web unchanged 5 errors, Task 5 Step 4 owns them).
+  Reviewer verified: submit guards (`if (!name.trim()) return` then `if (!isFolder && !prefix.trim()) return`), `idPrefix: ''` for folders end-to-end, no state leak (form conditionally rendered = fresh mount per open), all 3 tests fail for the right reason, toggle matches Dashboard/index.tsx:325-334 pattern. `type="button"` flagged as correct deliberate deviation (buttons inside a real `<form>` would submit).
+  Minor (carry to final-review triage):
+    - `idPadding` still submitted for folders (harmless — backend ignores it for kind='folder').
+    - Form inputs rely on placeholder as their only label — pre-existing project-wide pattern, folds into the batched a11y follow-up.
+  Note: the Task 3 subagent ran without the opus safety classifier (unavailable); its conclusions match the controller's own verified test run.
