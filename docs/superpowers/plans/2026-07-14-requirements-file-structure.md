@@ -641,11 +641,12 @@ git commit -m "feat(modules): folders expand, modules select — kind-aware tree
 Add to `src/renderer/src/components/Dashboard/stats.test.ts`. Match the file's existing fixture helpers — if it already has a `mod`/`module` factory, extend that one with `kind` instead of adding a second:
 
 ```ts
-  it('perModule ignores folders', () => {
+  it('perModule ignores folders even when rows still point at one', () => {
     const folder: any = { id: 1, projectId: 1, parentId: null, kind: 'folder', name: 'Vehicle', idPrefix: '', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
     const module: any = { ...folder, id: 2, parentId: 1, kind: 'module', name: 'Chassis', idPrefix: 'CHS' }
-    const reqs = [req(1, 2), req(2, 2)] // both in module 2
-    const stats = computeStats(reqs, [], [], [folder, module])
+    // req(1, 1) points at the folder — a pre-migration leftover. Without the kind filter the
+    // folder has total > 0 and survives into perModule, so this fails for the right reason.
+    const stats = computeStats([req(1, 1), req(2, 2)], [], [], [folder, module])
     expect(stats.perModule.map((m) => m.moduleId)).toEqual([2])
   })
 ```
@@ -659,7 +660,7 @@ export PATH="/Users/rejopckoruth/Library/Application Support/Logi/LogiPluginServ
 ./node_modules/.bin/vitest run src/renderer/src/components/Dashboard/stats.test.ts
 ```
 
-Expected: FAIL — the folder currently survives into `perModule`. (It has 0 requirements, so today's `.filter((m) => m.total > 0)` may already drop it; if the test passes here, keep it anyway as a regression guard and still make the change in Step 3 — the filter must not depend on a folder being empty.)
+Expected: FAIL — `perModule` returns `[1, 2]`; the folder survives because it has a requirement pointing at it. Do not "fix" the test by emptying the folder: an empty folder is already dropped by the existing `.filter((m) => m.total > 0)`, which would make this test pass before the change and prove nothing.
 
 - [ ] **Step 3: Apply the four filters**
 
