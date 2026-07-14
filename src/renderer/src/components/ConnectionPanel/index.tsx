@@ -7,7 +7,8 @@ export default function ConnectionPanel(): JSX.Element {
     selectedConnectionId, connections, connectionTypes, projectRequirements,
     updateConnection, removeConnection, addConnectionLink, removeConnectionLink,
     connectionCustomFields, loadConnectionCustomFields,
-    addConnectionCustomField, updateConnectionCustomField, removeConnectionCustomField
+    addConnectionCustomField, updateConnectionCustomField, removeConnectionCustomField,
+    layers, connectionLayers, toggleConnectionLayer
   } = useStore()
   const conn = connections.find((c) => c.id === selectedConnectionId) ?? null
 
@@ -137,6 +138,21 @@ export default function ConnectionPanel(): JSX.Element {
             )}
           </div>
         </Field>
+        {layers.length > 0 && (
+          <Field label="Layers">
+            <div className="space-y-1">
+              {layers.map((l) => {
+                const assigned = connectionLayers.some((m) => m.connectionId === conn!.id && m.layerId === l.id)
+                return (
+                  <label key={l.id} className="flex items-center gap-2 px-1 py-1 text-xs text-ink cursor-pointer">
+                    <input type="checkbox" aria-label={l.name} checked={assigned} onChange={() => toggleConnectionLayer(conn!.id, l.id)} />
+                    {l.name}
+                  </label>
+                )
+              })}
+            </div>
+          </Field>
+        )}
       </div>
     </div>
   )

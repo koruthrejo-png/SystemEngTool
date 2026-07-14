@@ -30,7 +30,10 @@ vi.mock('../../store', () => ({
     updateElement: mockUpdateElement,
     removeElement: mockRemoveElement,
     addElementLink: mockAddElementLink,
-    removeElementLink: mockRemoveElementLink
+    removeElementLink: mockRemoveElementLink,
+    layers: [],
+    elementLayers: [],
+    toggleElementLayer: vi.fn()
   })
 }))
 

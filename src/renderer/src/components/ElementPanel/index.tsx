@@ -5,7 +5,8 @@ import { Input, Textarea, Select, SectionLabel, Button } from '../ui'
 export default function ElementPanel(): JSX.Element {
   const {
     selectedElementId, elements, elementTypes, projectRequirements,
-    updateElement, removeElement, addElementLink, removeElementLink
+    updateElement, removeElement, addElementLink, removeElementLink,
+    layers, elementLayers, toggleElementLayer
   } = useStore()
   const el = elements.find((e) => e.id === selectedElementId) ?? null
 
@@ -113,6 +114,21 @@ export default function ElementPanel(): JSX.Element {
             )}
           </div>
         </Field>
+        {layers.length > 0 && (
+          <Field label="Layers">
+            <div className="space-y-1">
+              {layers.map((l) => {
+                const assigned = elementLayers.some((m) => m.elementId === el!.id && m.layerId === l.id)
+                return (
+                  <label key={l.id} className="flex items-center gap-2 px-1 py-1 text-xs text-ink cursor-pointer">
+                    <input type="checkbox" aria-label={l.name} checked={assigned} onChange={() => toggleElementLayer(el!.id, l.id)} />
+                    {l.name}
+                  </label>
+                )
+              })}
+            </div>
+          </Field>
+        )}
       </div>
     </div>
   )

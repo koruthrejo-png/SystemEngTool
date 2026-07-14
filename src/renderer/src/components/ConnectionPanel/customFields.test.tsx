@@ -22,7 +22,8 @@ it('renders custom fields and an Add Field button', () => {
     connectionCustomFields: [{ id: 7, connectionId: 1, key: 'Protocol', value: 'CAN 2.0', position: 0, createdAt: '', updatedAt: '' }],
     loadConnectionCustomFields: vi.fn(), addConnectionCustomField, updateConnectionCustomField: vi.fn(),
     removeConnectionCustomField: vi.fn(), updateConnection: vi.fn(), removeConnection: vi.fn(),
-    addConnectionLink: vi.fn(), removeConnectionLink: vi.fn()
+    addConnectionLink: vi.fn(), removeConnectionLink: vi.fn(),
+    layers: [], connectionLayers: [], toggleConnectionLayer: vi.fn()
   })
   render(<ConnectionPanel />)
   expect(screen.getByDisplayValue('Protocol')).toBeInTheDocument()
