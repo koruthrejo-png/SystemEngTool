@@ -1,6 +1,7 @@
 import type { Node } from '@xyflow/react'
 import type { ArchitectureElement, ElementType, ArchitectureConnection } from '../../../../types'
 import type { BlockNodeData } from './BlockNode'
+import type { Visibility } from './layers'
 
 export function absolutePosition(
   el: ArchitectureElement,
@@ -59,7 +60,8 @@ export function buildNodes(
   elementTypes: ElementType[],
   connections: ArchitectureConnection[],
   selectedId: number | null,
-  onResizeEnd: (id: number, x: number, y: number, width: number, height: number) => void
+  onResizeEnd: (id: number, x: number, y: number, width: number, height: number) => void,
+  visibilityById: Map<number, Visibility>
 ): Node[] {
   const typeName = new Map(elementTypes.map((t) => [t.id, t.name]))
   const byId = new Map(elements.map((e) => [e.id, e]))
@@ -68,7 +70,15 @@ export function buildNodes(
   const hasParent = (el: ArchitectureElement): boolean =>
     el.parentId !== null && byId.has(el.parentId)
 
-  let remaining = elements
+  const hidden = new Set<number>()
+  for (const el of elements) {
+    if (visibilityById.get(el.id) === 'hidden') {
+      hidden.add(el.id)
+      for (const d of descendantIds(el.id, elements)) hidden.add(d)
+    }
+  }
+
+  let remaining = elements.filter((el) => !hidden.has(el.id))
   while (remaining.length > 0) {
     const ready = remaining.filter((el) => !hasParent(el) || placed.has(el.parentId!))
     if (ready.length === 0) break // parentId cycle in data — render the rest as-is
@@ -95,9 +105,10 @@ export function buildNodes(
       typeName: el.elementTypeId != null ? typeName.get(el.elementTypeId) ?? null : null,
       // ponytail: O(elements×connections) count, fine at desktop canvas scale
       connectionCount: connections.filter((c) => c.sourceId === el.id || c.targetId === el.id).length,
+      faded: visibilityById.get(el.id) === 'faded',
       onResizeEnd: (x: number, y: number, w: number, h: number) => onResizeEnd(el.id, x, y, w, h)
     } satisfies BlockNodeData,
-    style: { width: el.width, height: el.height }
+    style: { width: el.width, height: el.height, ...(visibilityById.get(el.id) === 'faded' ? { opacity: 0.35 } : {}) }
   }))
 }
 

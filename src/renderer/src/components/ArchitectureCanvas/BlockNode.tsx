@@ -10,6 +10,7 @@ export type BlockNodeData = {
   childCount: number
   typeName: string | null
   connectionCount: number
+  faded: boolean
   onResizeEnd: (x: number, y: number, width: number, height: number) => void
 }
 

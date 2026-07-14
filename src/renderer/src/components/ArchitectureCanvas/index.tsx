@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import {
   ReactFlow, Background, BackgroundVariant, Panel, ReactFlowProvider,
   useNodesState, useEdgesState, useReactFlow, useViewport, ConnectionMode,
@@ -10,6 +10,7 @@ import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
 import { Button } from '../ui'
 import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
+import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from './layers'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -65,6 +66,7 @@ export default function ArchitectureCanvas(): JSX.Element {
 function CanvasInner(): JSX.Element {
   const {
     project, elements, connections, elementTypes, selectedElementId, selectedConnectionId,
+    layers, elementLayers, connectionLayers,
     addElement, updateElement, removeElement, addConnection, removeConnection,
     selectElement, selectConnection, undo, redo, undoStack, redoStack
   } = useStore()
@@ -72,6 +74,15 @@ function CanvasInner(): JSX.Element {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { getInternalNode } = useReactFlow()
+
+  const visById = useMemo(() => {
+    const layersById = new Map(layers.map((l) => [l.id, l]))
+    const memberIds = new Map<number, number[]>()
+    for (const { elementId, layerId } of elementLayers) {
+      const arr = memberIds.get(elementId) ?? []; arr.push(layerId); memberIds.set(elementId, arr)
+    }
+    return new Map<number, Visibility>(elements.map((e) => [e.id, effectiveVisibility(memberIds.get(e.id) ?? [], layersById)]))
+  }, [elements, elementLayers, layers])
 
   useEffect(() => {
     setNodes(buildNodes(elements, elementTypes, connections, selectedElementId, (id, x, y, width, height) => {
@@ -87,23 +98,33 @@ function CanvasInner(): JSX.Element {
         return
       }
       updateElement(id, { posX: x, posY: y, width, height })
-    }))
-  }, [elements, elementTypes, connections, selectedElementId])
+    }, visById))
+  }, [elements, elementTypes, connections, selectedElementId, visById])
 
   useEffect(() => {
+    const layersById = new Map(layers.map((l) => [l.id, l]))
+    const connMemberIds = new Map<number, number[]>()
+    for (const { connectionId, layerId } of connectionLayers) {
+      const arr = connMemberIds.get(connectionId) ?? []; arr.push(layerId); connMemberIds.set(connectionId, arr)
+    }
     setEdges(
-      connections.map((c) => ({
-        id: String(c.id),
-        source: String(c.sourceId),
-        target: String(c.targetId),
-        sourceHandle: c.sourceHandle ?? 'right',
-        targetHandle: c.targetHandle ?? 'left',
-        type: 'labeled' as const,
-        data: { label: c.name ?? '' },
-        selected: c.id === selectedConnectionId
-      }))
+      connections.map((c) => {
+        const own = effectiveVisibility(connMemberIds.get(c.id) ?? [], layersById)
+        const vis = resolveConnectorVisibility(own, visById.get(c.sourceId) ?? 'normal', visById.get(c.targetId) ?? 'normal')
+        return {
+          id: String(c.id),
+          source: String(c.sourceId),
+          target: String(c.targetId),
+          sourceHandle: c.sourceHandle ?? 'right',
+          targetHandle: c.targetHandle ?? 'left',
+          type: 'labeled' as const,
+          data: { label: c.name ?? '', faded: vis === 'faded' },
+          selected: c.id === selectedConnectionId,
+          hidden: vis === 'hidden'
+        }
+      })
     )
-  }, [connections, selectedConnectionId])
+  }, [connections, selectedConnectionId, connectionLayers, layers, visById])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {

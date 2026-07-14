@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
 import type { ArchitectureElement } from '../../../../types'
+import type { Visibility } from './layers'
 
 function el(partial: Partial<ArchitectureElement> & { id: number }): ArchitectureElement {
   return {
@@ -15,26 +16,26 @@ function el(partial: Partial<ArchitectureElement> & { id: number }): Architectur
 describe('buildNodes', () => {
   it('orders parents before children regardless of input order', () => {
     const els = [el({ id: 3, parentId: 2 }), el({ id: 2, parentId: 1 }), el({ id: 1 })]
-    const ids = buildNodes(els, [], [], null, vi.fn()).map((n) => n.id)
+    const ids = buildNodes(els, [], [], null, vi.fn(), new Map()).map((n) => n.id)
     expect(ids).toEqual(['1', '2', '3'])
   })
 
   it('sets parentId without extent so children can be dragged out', () => {
-    const nodes = buildNodes([el({ id: 1 }), el({ id: 2, parentId: 1 })], [], [], null, vi.fn())
+    const nodes = buildNodes([el({ id: 1 }), el({ id: 2, parentId: 1 })], [], [], null, vi.fn(), new Map())
     const child = nodes.find((n) => n.id === '2')!
     expect(child.parentId).toBe('1')
     expect(child.extent).toBeUndefined()
   })
 
   it('renders an element whose parent is missing as a root (orphan guard)', () => {
-    const nodes = buildNodes([el({ id: 2, parentId: 99 })], [], [], null, vi.fn())
+    const nodes = buildNodes([el({ id: 2, parentId: 99 })], [], [], null, vi.fn(), new Map())
     expect(nodes).toHaveLength(1)
     expect(nodes[0].parentId).toBeUndefined()
   })
 
   it('wires onResizeEnd through node data with the element id', () => {
     const spy = vi.fn()
-    const nodes = buildNodes([el({ id: 7 })], [], [], null, spy)
+    const nodes = buildNodes([el({ id: 7 })], [], [], null, spy, new Map())
     ;(nodes[0].data as { onResizeEnd: (x: number, y: number, w: number, h: number) => void }).onResizeEnd(10, 20, 300, 200)
     expect(spy).toHaveBeenCalledWith(7, 10, 20, 300, 200)
   })
@@ -45,7 +46,8 @@ describe('buildNodes', () => {
       [],
       [],
       null,
-      vi.fn()
+      vi.fn(),
+      new Map()
     )
     const byId = Object.fromEntries(nodes.map((n) => [n.id, n.data as { nested: boolean; childCount: number }]))
     expect(byId['1']).toMatchObject({ nested: false, childCount: 2 })
@@ -57,7 +59,7 @@ describe('buildNodes', () => {
     const types = [{ id: 5, projectId: 1, name: 'Sensor', color: null, isBuiltIn: true, deletedAt: null, createdAt: '', updatedAt: '' }]
     const nodes = buildNodes(
       [el({ id: 1, elementTypeId: 5 }), el({ id: 2, elementTypeId: 99 }), el({ id: 3, elementTypeId: null })],
-      types as any, [], null, vi.fn()
+      types as any, [], null, vi.fn(), new Map()
     )
     expect((nodes[0].data as any).typeName).toBe('Sensor')
     expect((nodes[1].data as any).typeName).toBeNull() // unknown id
@@ -72,12 +74,36 @@ describe('buildNodes', () => {
     ]
     const nodes = buildNodes(
       [el({ id: 1 }), el({ id: 2 }), el({ id: 3 })],
-      [], conns as any, null, vi.fn()
+      [], conns as any, null, vi.fn(), new Map()
     )
     const count = (id: string) => (nodes.find((n) => n.id === id)!.data as any).connectionCount
     expect(count('1')).toBe(3) // conn 1 (source) + conn 2 (target) + conn 3 (self, once)
     expect(count('2')).toBe(1)
     expect(count('3')).toBe(1)
+  })
+
+  it('omits hidden elements and fades faded ones', () => {
+    const els = [
+      { id: 1, projectId: 1, architectureId: 1, parentId: null, blockId: 'SYS-001', name: 'A', elementTypeId: null, description: null, color: null, posX: 0, posY: 0, width: 140, height: 60, deletedAt: null, createdAt: '', updatedAt: '' },
+      { id: 2, projectId: 1, architectureId: 1, parentId: null, blockId: 'SYS-002', name: 'B', elementTypeId: null, description: null, color: null, posX: 0, posY: 0, width: 140, height: 60, deletedAt: null, createdAt: '', updatedAt: '' },
+      { id: 3, projectId: 1, architectureId: 1, parentId: null, blockId: 'SYS-003', name: 'C', elementTypeId: null, description: null, color: null, posX: 0, posY: 0, width: 140, height: 60, deletedAt: null, createdAt: '', updatedAt: '' }
+    ] as any[]
+    const vis = new Map<number, Visibility>([[1, 'normal'], [2, 'faded'], [3, 'hidden']])
+    const nodes = buildNodes(els, [], [], null, () => {}, vis)
+    expect(nodes.map((n) => n.id)).toEqual(['1', '2'])              // 3 (hidden) omitted
+    expect((nodes[1].data as any).faded).toBe(true)                  // 2 faded
+    expect((nodes[1].style as any).opacity).toBeLessThan(1)
+    expect((nodes[0].data as any).faded).toBe(false)
+  })
+
+  it('omits descendants of a hidden container', () => {
+    const els = [
+      { id: 1, projectId: 1, architectureId: 1, parentId: null, blockId: 'P', name: 'P', elementTypeId: null, description: null, color: null, posX: 0, posY: 0, width: 300, height: 200, deletedAt: null, createdAt: '', updatedAt: '' },
+      { id: 2, projectId: 1, architectureId: 1, parentId: 1, blockId: 'C', name: 'C', elementTypeId: null, description: null, color: null, posX: 20, posY: 40, width: 140, height: 60, deletedAt: null, createdAt: '', updatedAt: '' }
+    ] as any[]
+    const vis = new Map<number, Visibility>([[1, 'hidden'], [2, 'normal']])
+    const nodes = buildNodes(els, [], [], null, () => {}, vis)
+    expect(nodes.map((n) => n.id)).toEqual([])                       // child dropped with hidden parent
   })
 })
 
