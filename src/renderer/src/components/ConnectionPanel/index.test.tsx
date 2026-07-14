@@ -66,6 +66,6 @@ describe('ConnectionPanel', () => {
 
   it('renders type dropdown', () => {
     render(<ConnectionPanel />)
-    expect(screen.getAllByRole('combobox').length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('Type')).toBeInTheDocument()
   })
 })

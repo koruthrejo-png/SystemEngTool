@@ -75,6 +75,7 @@ export default function ConnectionPanel(): JSX.Element {
         </Field>
         <Field label="Type">
           <Select
+            aria-label="Type"
             value={connectionTypeId ?? ''}
             onChange={(e) => {
               const newTypeId = e.target.value ? Number(e.target.value) : null
