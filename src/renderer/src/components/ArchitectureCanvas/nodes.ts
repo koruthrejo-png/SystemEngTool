@@ -33,6 +33,26 @@ function descendantIds(rootId: number, elements: ArchitectureElement[]): Set<num
   return ids
 }
 
+// Single source of truth for "effective" visibility: folds each element's own
+// visibility together with the hidden-descendant cascade (a child of a Hidden
+// container is hidden too, even though its OWN layer membership says 'normal').
+// Both the node builder and the connector-visibility effect must read through
+// this map, so a connector to a container-hidden child resolves to 'hidden'
+// via resolveConnectorVisibility instead of merely vanishing when React Flow
+// drops an edge whose endpoint node was omitted.
+export function withHiddenCascade(
+  elements: ArchitectureElement[],
+  ownVisibilityById: Map<number, Visibility>
+): Map<number, Visibility> {
+  const result = new Map(ownVisibilityById)
+  for (const el of elements) {
+    if (ownVisibilityById.get(el.id) === 'hidden') {
+      for (const d of descendantIds(el.id, elements)) result.set(d, 'hidden')
+    }
+  }
+  return result
+}
+
 export const NEST_PADDING = 12
 export const HEADER_HEIGHT = 24
 

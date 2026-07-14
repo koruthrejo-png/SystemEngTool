@@ -43,3 +43,17 @@ it('adds a layer via the + affordance', () => {
   fireEvent.keyDown(input, { key: 'Enter' })
   expect(addLayer).toHaveBeenCalledWith('Thermal')
 })
+
+it('does not double-commit when Enter is followed by a blur on the same input', () => {
+  const addLayer = vi.fn()
+  ;(useStore as any).mockReturnValue({
+    layers: [], addLayer, renameLayer: vi.fn(), cycleLayerState: vi.fn(), removeLayer: vi.fn()
+  })
+  render(<LayerPanel />)
+  fireEvent.click(screen.getByLabelText('New layer'))
+  const input = screen.getByPlaceholderText('Layer name')
+  fireEvent.change(input, { target: { value: 'Thermal' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+  fireEvent.blur(input) // simulates the unmount-triggered blur that follows Enter's commit
+  expect(addLayer).toHaveBeenCalledTimes(1)
+})

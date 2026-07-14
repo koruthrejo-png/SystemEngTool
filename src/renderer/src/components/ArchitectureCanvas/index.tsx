@@ -9,7 +9,7 @@ import { useStore } from '../../store'
 import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
 import { Button } from '../ui'
-import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
+import { buildNodes, resolveDrop, fitChildInParent, withHiddenCascade } from './nodes'
 import LayerPanel from './LayerPanel'
 import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from './layers'
 
@@ -76,14 +76,16 @@ function CanvasInner(): JSX.Element {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { getInternalNode } = useReactFlow()
 
+  const layersById = useMemo(() => new Map(layers.map((l) => [l.id, l])), [layers])
+
   const visById = useMemo(() => {
-    const layersById = new Map(layers.map((l) => [l.id, l]))
     const memberIds = new Map<number, number[]>()
     for (const { elementId, layerId } of elementLayers) {
       const arr = memberIds.get(elementId) ?? []; arr.push(layerId); memberIds.set(elementId, arr)
     }
-    return new Map<number, Visibility>(elements.map((e) => [e.id, effectiveVisibility(memberIds.get(e.id) ?? [], layersById)]))
-  }, [elements, elementLayers, layers])
+    const own = new Map<number, Visibility>(elements.map((e) => [e.id, effectiveVisibility(memberIds.get(e.id) ?? [], layersById)]))
+    return withHiddenCascade(elements, own)
+  }, [elements, elementLayers, layersById])
 
   useEffect(() => {
     setNodes(buildNodes(elements, elementTypes, connections, selectedElementId, (id, x, y, width, height) => {
@@ -103,7 +105,6 @@ function CanvasInner(): JSX.Element {
   }, [elements, elementTypes, connections, selectedElementId, visById])
 
   useEffect(() => {
-    const layersById = new Map(layers.map((l) => [l.id, l]))
     const connMemberIds = new Map<number, number[]>()
     for (const { connectionId, layerId } of connectionLayers) {
       const arr = connMemberIds.get(connectionId) ?? []; arr.push(layerId); connMemberIds.set(connectionId, arr)
@@ -125,7 +126,7 @@ function CanvasInner(): JSX.Element {
         }
       })
     )
-  }, [connections, selectedConnectionId, connectionLayers, layers, visById])
+  }, [connections, selectedConnectionId, connectionLayers, layersById, visById])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
-import { buildNodes, resolveDrop, fitChildInParent } from './nodes'
+import { buildNodes, resolveDrop, fitChildInParent, withHiddenCascade } from './nodes'
 import type { ArchitectureElement } from '../../../../types'
-import type { Visibility } from './layers'
+import { resolveConnectorVisibility, type Visibility } from './layers'
 
 function el(partial: Partial<ArchitectureElement> & { id: number }): ArchitectureElement {
   return {
@@ -104,6 +104,31 @@ describe('buildNodes', () => {
     const vis = new Map<number, Visibility>([[1, 'hidden'], [2, 'normal']])
     const nodes = buildNodes(els, [], [], null, () => {}, vis)
     expect(nodes.map((n) => n.id)).toEqual([])                       // child dropped with hidden parent
+  })
+})
+
+describe('withHiddenCascade', () => {
+  it('resolves a connector into a container-hidden child to hidden, not merely dropped', () => {
+    // Container (1) is hidden; child (2) has no own layer membership (own visibility 'normal').
+    // Regression: previously the edge's visById lookup used OWN visibility only, so
+    // resolveConnectorVisibility('normal', 'normal', 'normal') => 'normal' — the edge only
+    // disappeared because React Flow silently drops edges whose endpoint node is missing,
+    // not because the resolver decided 'hidden'.
+    const els = [
+      el({ id: 1 }),
+      el({ id: 2, parentId: 1 })
+    ]
+    const ownVisibility = new Map<number, Visibility>([[1, 'hidden'], [2, 'normal']])
+
+    const cascaded = withHiddenCascade(els, ownVisibility)
+    expect(cascaded.get(2)).toBe('hidden')
+
+    const edgeVis = resolveConnectorVisibility(
+      'normal',
+      cascaded.get(1) ?? 'normal',
+      cascaded.get(2) ?? 'normal'
+    )
+    expect(edgeVis).toBe('hidden')
   })
 })
 

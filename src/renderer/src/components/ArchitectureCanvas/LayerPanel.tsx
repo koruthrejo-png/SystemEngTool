@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useStore } from '../../store'
 import { SectionLabel } from '../ui'
 import type { LayerState } from '../../../../types'
@@ -11,13 +11,29 @@ export default function LayerPanel(): JSX.Element {
   const [addValue, setAddValue] = useState('')
   const [renamingId, setRenamingId] = useState<number | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  // Enter commits and unmounts the input, which can also fire onBlur — guard so
+  // Enter+blur can't double-commit (duplicate add / redundant rename).
+  const addCommittedRef = useRef(false)
+  const renameCommittedRef = useRef(false)
 
+  function startAdd(): void {
+    addCommittedRef.current = false
+    setAdding(true)
+  }
   function commitAdd(): void {
+    if (addCommittedRef.current) return
+    addCommittedRef.current = true
     const v = addValue.trim()
     if (v) addLayer(v)
     setAdding(false); setAddValue('')
   }
+  function startRename(id: number, name: string): void {
+    renameCommittedRef.current = false
+    setRenamingId(id); setRenameValue(name)
+  }
   function commitRename(id: number): void {
+    if (renameCommittedRef.current) return
+    renameCommittedRef.current = true
     const v = renameValue.trim()
     if (v) renameLayer(id, v)
     setRenamingId(null)
@@ -27,7 +43,7 @@ export default function LayerPanel(): JSX.Element {
     <div className="bg-white/95 backdrop-blur border border-line rounded-lg shadow-md w-52 max-h-80 overflow-y-auto">
       <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
         <SectionLabel>Layers</SectionLabel>
-        <button aria-label="New layer" onClick={() => setAdding(true)} className="text-ink-muted hover:text-ink leading-none text-base px-1">+</button>
+        <button aria-label="New layer" onClick={startAdd} className="text-ink-muted hover:text-ink leading-none text-base px-1">+</button>
       </div>
       {adding && (
         <div className="px-2 pb-2">
@@ -35,7 +51,7 @@ export default function LayerPanel(): JSX.Element {
             autoFocus placeholder="Layer name" value={addValue}
             onChange={(e) => setAddValue(e.target.value)}
             onBlur={commitAdd}
-            onKeyDown={(e) => { if (e.key === 'Enter') commitAdd(); if (e.key === 'Escape') { setAdding(false); setAddValue('') } }}
+            onKeyDown={(e) => { if (e.key === 'Enter') commitAdd(); if (e.key === 'Escape') { addCommittedRef.current = true; setAdding(false); setAddValue('') } }}
             className="w-full px-2 py-1 text-sm rounded border border-action bg-white text-ink"
           />
         </div>
@@ -48,7 +64,7 @@ export default function LayerPanel(): JSX.Element {
               key={l.id} autoFocus value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
               onBlur={() => commitRename(l.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter') commitRename(l.id); if (e.key === 'Escape') setRenamingId(null) }}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitRename(l.id); if (e.key === 'Escape') { renameCommittedRef.current = true; setRenamingId(null) } }}
               className="w-full px-2 py-1 text-sm rounded border border-action bg-white text-ink"
             />
           ) : (
@@ -59,7 +75,7 @@ export default function LayerPanel(): JSX.Element {
                 title={l.state}
                 className={`leading-none w-4 text-center ${l.state === 'hidden' ? 'text-ink-faint' : 'text-action'}`}
               >{DOT[l.state as LayerState]}</button>
-              <span className="flex-1 truncate text-ink" onDoubleClick={() => { setRenamingId(l.id); setRenameValue(l.name) }}>{l.name}</span>
+              <span className="flex-1 truncate text-ink" onDoubleClick={() => startRename(l.id, l.name)}>{l.name}</span>
               <button
                 aria-label={`Delete ${l.name}`}
                 onClick={() => { if (window.confirm('Delete this layer? Objects stay, they just lose this layer.')) removeLayer(l.id) }}
