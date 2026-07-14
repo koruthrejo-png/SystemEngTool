@@ -19,7 +19,7 @@ import type {
 import { summarize, type AcSummaryEntry } from './acSummary'
 
 const ELEMENT_PROP_KEYS = ['name', 'color', 'elementTypeId', 'description', 'blockId'] as const
-const CONNECTION_PROP_KEYS = ['name', 'connectionTypeId', 'description', 'connId'] as const
+const CONNECTION_PROP_KEYS = ['name', 'connectionTypeId', 'description', 'connId', 'lineStyle', 'markerStart', 'markerEnd'] as const
 
 interface UndoCommand {
   undo: () => Promise<void>
