@@ -296,3 +296,6 @@ Task 2: complete (commit e1e14a5, review clean — spec ✅, no Critical/Importa
   Reviewer traced RED path: without the 3 keys, editKeys=[] -> changed=false -> undoStack stays 0, test fails for the stated reason. Not a false-positive.
   Correct brief deviation: test import path 4-up -> 3-up ('../../../types') matching every sibling in store/. Brief's path was wrong. (Same fix as the Layers Task 2 note.)
   Minor (carry): 2nd test asserts only undoStack.length for markerStart/markerEnd, not the captured prev values — generic code path already value-verified by the lineStyle case; one more toHaveBeenLastCalledWith would close it.
+Task 3: complete (commit cd3ff57, review clean — spec ✅, no Critical/Important)
+  Reviewer verified against @xyflow/system enums that the mapping is NOT inverted: 'arrow'->MarkerType.Arrow (open V), 'arrowclosed'->MarkerType.ArrowClosed (filled). Legacy fallbacks confirmed: dashArray(null)/edgeMarker(null|undefined|'none') -> undefined = bare solid line, no arrowheads.
+  Import path 4-up ('../../../../types') is CORRECT here (ArchitectureCanvas/ is one level deeper than store/, which uses 3-up). Different depth from Task 2 — not an inconsistency.
