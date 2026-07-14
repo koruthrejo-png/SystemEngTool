@@ -260,3 +260,29 @@ Driver note: ArchitectureNav/InterfaceNav rows are <div onClick> (a11y deferred)
 
 ## FINAL WHOLE-BRANCH REVIEW (controller, 8077fd6..HEAD) — Ready to merge: YES
 Renderer-only as designed: no window.api/handler/preload/src/types edits. interfaceArchFilter session-only + reset in loadProject. InterfaceRow.architectureId consumed only by Task 5 filter. ComponentLibrary retained (unmounted), ArchitectureTabs deleted. Minors (non-blocking, deferred): nav rows <div onClick> a11y → batched a11y follow-up ticket (carried); visibleRows/pickElements recomputed per render (trivial at desktop scale). PLAN COMPLETE — feature on main (8077fd6..HEAD).
+
+## Architecture Layers (plan 2026-07-13-architecture-layers.md) — base a2dc791
+Task 1: complete (commit 6ace570, review clean — spec ✅, no Critical/Important)
+  Minors (carry to final review): deleteLayer no existence-check (plan-provided, mirrors nothing—architectures throws); no CHECK constraint on state column (TS-only enforcement, codebase convention); row:any casts (codebase convention).
+Task 2: complete (commit 870fe73, review clean — spec ✅, no Critical/Important)
+  Minors (carry): toggle actions read membership pre-await (race only on rapid double-click, single-user desktop — plan pattern); no try/catch on api.layers.* calls (matches codebase; folds into known error-surfacing pass). Note: brief test import path 4→3 levels fixed correctly.
+Task 3: complete (commit 777a6fb, review clean — spec ✅, no Critical/Important; truth table hand-traced correct, not inverted)
+Task 4: complete (commit 2990c9d, review clean — spec ✅, no Critical/Important; hidden-set true transitive closure, endpoint-wins verified, faded stays selectable, all 8 buildNodes call sites updated)
+  Minors (carry): layersById Map built twice (visById memo + edge effect — hoist to shared useMemo; trivial, not hot path); no index.tsx edge-integration test (in brief scope — nodes.test only). Plus 2 legit out-of-brief fixture fixes: BlockNode.test.tsx faded:false, index.test.tsx store mock.
+Task 5: complete (commit 040b8d1, review clean — spec ✅, no Critical/Important; aria-labels exact, add/rename commit paths + Escape + confirm-gate all wired, 3/3 tests meaningful)
+  Minor (carry): useStore() as any cast (brief-sanctioned) ripples to layers.map((l:any)) — l.state as LayerState untyped; type as (l: Layer) in follow-up.
+Task 6: complete (commit dfb7b07, review clean — spec ✅, ZERO issues; true ConnectionPanel mirror w/ conn var, no crossed wires, mock ripple strictly additive across 3 files, renderer 241/241)
+Task 7: complete (verification + live-verify). Full gate: both typechecks clean, renderer 241/241, electron-vite build clean.
+  Live-verify (Playwright driver, thermal project / test-1 architecture, 3 blocks SYS-001/002/003 + 3 edges):
+  1. Created Power + Comms layers via top-right panel; assigned SYS-001 + SYS-003 to Power via drawer checkboxes (SYS-002 left base/no-layer). ✓
+  2. Cycle Power Visible→Faded→Hidden: members op 1→0.35→omitted; base SYS-002 stayed op=1 throughout; dot ●→◐→○. ✓
+  3. Power=Hidden → all 3 connectors (endpoints on SYS-001/003) removed; Power=Faded → all 3 edges render op=0.3 (endpoint-wins). ✓
+  4. Faded SYS-001 (op=0.35) still clickable — drawer opened (Properties, Power=true). ✓
+  5. Switch to Default arch → SYS-004, zero layers ("No layers yet."); back to test 1 → Power(faded)/Comms restored; RELAUNCH → names+states+membership persisted (SYS-001 op=0.35, Power=true checkbox). ✓
+  All 5 checks pass. Layers feature COMPLETE. (Left Power/Comms scratch layers on thermal dev project — harmless, consistent w/ prior scratch data.)
+
+Final whole-branch review (opus, a2dc791..dfb7b07): "ready to merge WITH FIXES". No Critical. 1 Important (#1): connectors to a container-hidden CHILD resolved to hidden only via RF dropping missing-endpoint edges, not via the resolver — endpoint-wins invariant half-satisfied, untested, fragile.
+Fix commit d0ae1b8: added pure `withHiddenCascade(elements, ownVisibilityMap)` in nodes.ts (folds transitive descendants of hidden elements to 'hidden' via existing descendantIds); index.tsx computes visById = withHiddenCascade(own) as ONE shared cascade-aware map consumed by both buildNodes AND the edge effect; hoisted layersById to a single useMemo (was built twice). Also guarded LayerPanel add/rename Enter+blur double-commit with committed-refs. New RED→GREEN test; renderer 243/243, both typechecks clean.
+Fix re-review (sonnet, dfb7b07..d0ae1b8): Fixes Verified YES — cascade transitive, single source of truth (no divergence), node-omission not regressed, ref-guard correct, no deferred item touched. 1 minor: new test's edge assertion was trivial (container-own-hidden endpoint).
+Test strengthen commit 7792f16: reroute the cascade-edge assertion from container→child to cascade-hidden-child→visible-sibling so only the cascade makes it hidden (real regression guard). nodes.test 17/17.
+LAYERS FEATURE COMPLETE — HEAD 7792f16. All work on main.
