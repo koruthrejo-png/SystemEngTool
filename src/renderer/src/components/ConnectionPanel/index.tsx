@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import { Input, Textarea, Select, SectionLabel, Button } from '../ui'
+import type { LineStyle, EdgeMarker } from '../../../../types'
 
 export default function ConnectionPanel(): JSX.Element {
   const {
@@ -85,6 +86,39 @@ export default function ConnectionPanel(): JSX.Element {
             {connectionTypes.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
+          </Select>
+        </Field>
+        <Field label="Line style">
+          <Select
+            aria-label="Line style"
+            value={conn.lineStyle ?? 'solid'}
+            onChange={(e) => updateConnection(conn!.id, { lineStyle: e.target.value as LineStyle })}
+          >
+            <option value="solid">Solid</option>
+            <option value="dashed">Dashed</option>
+            <option value="dotted">Dotted</option>
+          </Select>
+        </Field>
+        <Field label="Arrow start">
+          <Select
+            aria-label="Arrow start"
+            value={conn.markerStart ?? 'none'}
+            onChange={(e) => updateConnection(conn!.id, { markerStart: e.target.value as EdgeMarker })}
+          >
+            <option value="none">None</option>
+            <option value="arrow">Open</option>
+            <option value="arrowclosed">Filled</option>
+          </Select>
+        </Field>
+        <Field label="Arrow end">
+          <Select
+            aria-label="Arrow end"
+            value={conn.markerEnd ?? 'none'}
+            onChange={(e) => updateConnection(conn!.id, { markerEnd: e.target.value as EdgeMarker })}
+          >
+            <option value="none">None</option>
+            <option value="arrow">Open</option>
+            <option value="arrowclosed">Filled</option>
           </Select>
         </Field>
         <Field label="Description">
