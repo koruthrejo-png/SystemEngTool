@@ -13,6 +13,7 @@ import { buildNodes, resolveDrop, fitChildInParent, withHiddenCascade } from './
 import LayerPanel from './LayerPanel'
 import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from './layers'
 import { edgeMarker } from './edgeStyle'
+import { shouldDeleteConnection } from './deleteKey'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -135,6 +136,15 @@ function CanvasInner(): JSX.Element {
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
       if (e.repeat) return
+
+      // Delete / Backspace → remove the selected connection (connections only; never a block)
+      if (shouldDeleteConnection(e, useStore.getState().selectedConnectionId)) {
+        e.preventDefault()
+        void removeConnection(useStore.getState().selectedConnectionId as number)
+        return
+      }
+
+      // Cmd/Ctrl+Z undo/redo
       if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
@@ -144,7 +154,7 @@ function CanvasInner(): JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [undo, redo])
+  }, [undo, redo, removeConnection])
 
   const onConnect = useCallback((params: Connection) => {
     if (!project) return
