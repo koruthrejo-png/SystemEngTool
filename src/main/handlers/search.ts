@@ -27,7 +27,7 @@ export function searchProject(projectId: number, term: string): SearchResults {
 
   const modules = (db.prepare(`
     SELECT * FROM modules
-    WHERE project_id = ? AND deleted_at IS NULL AND name LIKE ? ESCAPE '\\'
+    WHERE project_id = ? AND deleted_at IS NULL AND kind = 'module' AND name LIKE ? ESCAPE '\\'
     ORDER BY name LIMIT 10
   `).all(projectId, like) as any[]).map(rowToModule)
 

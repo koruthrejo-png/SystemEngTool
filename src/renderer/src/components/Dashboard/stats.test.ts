@@ -65,9 +65,9 @@ describe('computeStats', () => {
 
   it('computes per-module coverage and omits requirement-less modules', () => {
     const modules = [
-      { id: 1, name: 'SRS', position: 0 } as any,
-      { id: 2, name: 'HW', position: 1 } as any,
-      { id: 3, name: 'Empty', position: 2 } as any
+      { id: 1, name: 'SRS', kind: 'module', position: 0 } as any,
+      { id: 2, name: 'HW', kind: 'module', position: 1 } as any,
+      { id: 3, name: 'Empty', kind: 'module', position: 2 } as any
     ]
     const s = computeStats(
       [req({ id: 1, moduleId: 1 }), req({ id: 2, moduleId: 1 }), req({ id: 3, moduleId: 2 })],
@@ -79,6 +79,15 @@ describe('computeStats', () => {
       { moduleId: 1, name: 'SRS', total: 2, linked: 1, pct: 50 },
       { moduleId: 2, name: 'HW', total: 1, linked: 0, pct: 0 }
     ])
+  })
+
+  it('perModule ignores folders even when rows still point at one', () => {
+    const folder: any = { id: 1, projectId: 1, parentId: null, kind: 'folder', name: 'Vehicle', idPrefix: '', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
+    const module: any = { ...folder, id: 2, parentId: 1, kind: 'module', name: 'Chassis', idPrefix: 'CHS' }
+    // req 1 points at the folder — a pre-migration leftover. Without the kind filter the
+    // folder has total > 0 and survives into perModule, so this fails for the right reason.
+    const stats = computeStats([req({ id: 1, moduleId: 1 }), req({ id: 2, moduleId: 2 })], [], [], [folder, module])
+    expect(stats.perModule.map((m) => m.moduleId)).toEqual([2])
   })
 
   it('collects high-priority unallocated requirements as critical gaps', () => {

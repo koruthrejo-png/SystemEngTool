@@ -62,6 +62,7 @@ export function computeStats(
     createdThisWeek: requirements.filter((r) => new Date(r.createdAt).getTime() >= weekAgo).length,
     subsystemCount: elements.filter((e) => e.parentId === null).length,
     perModule: modules
+      .filter((m) => m.kind === 'module')
       .map((m) => {
         const reqs = requirements.filter((r) => r.moduleId === m.id)
         const linked = reqs.filter((r) => linkedIds.has(r.id)).length

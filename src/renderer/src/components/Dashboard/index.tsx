@@ -318,7 +318,7 @@ function DerivationCard({
             className="text-xs border border-line rounded px-1.5 py-1 bg-white text-ink focus:outline-none focus:border-action"
           >
             <option value="">All modules</option>
-            {flattenTree(modules).map(({ module: m, depth }) => (
+            {flattenTree(modules).filter(({ module: m }) => m.kind === 'module').map(({ module: m, depth }) => (
               <option key={m.id} value={m.id}>{' '.repeat(depth * 2)}{m.name}</option>
             ))}
           </select>

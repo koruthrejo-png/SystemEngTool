@@ -326,7 +326,7 @@ function TraceabilitySection({ req }: { req: Requirement }): JSX.Element {
             <Select aria-label="Link module" value={pickModuleId}
               onChange={(e) => { setPickModuleId(e.target.value); setPickReqId('') }} className="flex-1">
               <option value="">Pick module…</option>
-              {flattenTree(modules).map(({ module: m, depth }) => (
+              {flattenTree(modules).filter(({ module: m }) => m.kind === 'module').map(({ module: m, depth }) => (
                 <option key={m.id} value={m.id}>{' '.repeat(depth * 2)}{m.name}</option>
               ))}
             </Select>
