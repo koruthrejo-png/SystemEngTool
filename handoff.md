@@ -1,6 +1,6 @@
 # Handoff: ReqArch2 — Current State
 
-## What's Been Built (as of 2026-07-11)
+## What's Been Built (as of 2026-07-14)
 
 ### Core App — Working
 The app launches, creates/opens projects, manages modules, and all IPC is wired. Key fixes that unblocked everything:
@@ -214,8 +214,27 @@ Spec: `docs/superpowers/specs/2026-07-14-connection-line-editing-design.md` (`9d
 - Post-review nits (unfixed, cosmetic — from a follow-up read of the shipped code): `index.tsx:140` comment still says "connections only; never a block", which contradicts the shipped behavior after your "keep blocks deletable" call — reword, don't re-fix the code; `index.tsx:138` early-returns on `e.repeat` and `deleteKey.ts:6` checks it again (the predicate's own guard is dead in this caller, kept because the predicate is standalone-tested); `index.tsx:141/143` calls `useStore.getState()` twice and casts `as number` (hoist to a const and the cast narrows naturally); `connections.ts:56` hardcodes the `'solid'/'none'/'arrowclosed'` create defaults and `CreateConnectionInput` has no style fields — a caller that ever passes style at create would be silently ignored.
 - Behavioral asymmetry worth knowing (intended, not a bug): **Backspace deletes a connection but not a block** — the custom predicate accepts Delete+Backspace, RF's `deleteKeyCode` is wired to `"Delete"` alone. Matches the spec's connection wording.
 
-## Next Step: PLANNING + REFINING (user directive)
-User wants focus on **planning and refining what we have currently**, not net-new build. Both remaining backlog items are now EXECUTED and shipped: item **22** (connection line editing) and item **21** (requirements file-structure rework — folders contain modules, brainstorm → spec → plan → subagent-driven-development, final whole-branch review "ready to merge: YES", all 7 live-verify checks pass). See both COMPLETE sections above. **Every planned §6 feature item is now shipped.** The **Layers** plan is also EXECUTED and shipped. The one open backlog item is **§6 item 23 — migration regression tests for the item-21 folder split**, and it is **blocked on a prerequisite**: all 52 main-process tests are dark with `ERR_DLOPEN_FAILED` (better-sqlite3 built for Electron `NODE_MODULE_VERSION 125`, test runner node is `127`), so tests written today would fail on arrival. The real task is making the main-process suite runnable (rebuild better-sqlite3 for node under a test-only install, or run that suite under Electron) — after which item 23's three tests *and the existing 52* all come alive. Size it as test infrastructure. Other follow-ups (no plan yet): codebase-wide promise error-surfacing pass; batched `aria-pressed`/`role`-and-keyboard a11y pass (ArchitectureNav/InterfaceNav/LayerPanel + ModuleTree rows are `<div onClick>`); heading-anchor on search section clicks; reconciling §6's stale strikethroughs (see the note above). New-feature flow stays: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
+## ⏸️ NEXT SESSION — PICK UP HERE: user's manual testing of item 21 (PENDING)
+
+**The user asked to be reminded to continue their hands-on testing of the item-21 folder/module rework.** Session 2026-07-14 ended with the app launched for them to test and **no results reported yet**. This is a human sanity pass, **not a known defect** — every automated gate is green (renderer 265/265, both typechecks clean, build clean) and all 7 scripted live-verify checks passed against the real `thermal` DB, and the final whole-branch review (opus) returned "ready to merge: YES" with no Critical/Important. Item 21 is already merged to main (`73ccf7c`); the testing is confirmation, not a gate.
+
+What they were checking, in the `thermal` project (already migrated):
+- Folder `Test` (folder icon + twisty) holding modules `Test 2` and `Test` — the migration split.
+- **Folder click expands/collapses and NEVER blanks the requirements pane** — the load-bearing invariant, the one thing most worth a human eye.
+- `+ New` → the Folder | Module toggle (Folder hides the ID prefix/padding inputs).
+- Module rows show no `+` (leaves); folders show `Add to <name>`.
+- `⇄` move picker lists folders only + `(top level)`.
+- Search: folder names deliberately return "No matches"; module names still hit.
+
+Practical notes:
+- **Relaunch the app:** `npm` is broken here (Logi node22 shim) — run `./node_modules/electron/dist/Electron.app/Contents/MacOS/Electron .` from the repo root.
+- Scratch data left on `thermal` by verification: folder `Avionics` + requirement `SRS-TRS--8`. Safe to delete.
+- `SmokeTest.reqarch` holds a richer **un-migrated** legacy tree (module `SRS`, 16 reqs, 4 headings, 1 child) — a better second test case. **Opening it migrates it in place and the UI cannot undo that**; copy the `.reqarch` file first if a fallback is wanted.
+
+If the testing surfaces nothing, item 21 is fully closed and the section below is the real next step.
+
+## Next Step (after that): PLANNING + REFINING (user directive)
+User wants focus on **planning and refining what we have currently**, not net-new build. Both remaining backlog items are now EXECUTED and shipped: item **22** (connection line editing) and item **21** (requirements file-structure rework — folders contain modules, brainstorm → spec → plan → subagent-driven-development, final whole-branch review "ready to merge: YES", all 7 live-verify checks pass). See both COMPLETE sections above. **Every planned §6 feature item is now shipped.** The **Layers** plan is also EXECUTED and shipped. The one open backlog item is **§6 item 23 — migration regression tests for the item-21 folder split**, and it is **blocked on a prerequisite**: all 52 main-process tests are dark with `ERR_DLOPEN_FAILED` (better-sqlite3 built for Electron `NODE_MODULE_VERSION 125`, test runner node is `127`), so tests written today would fail on arrival. The real task is making the main-process suite runnable (rebuild better-sqlite3 for node under a test-only install, or run that suite under Electron) — after which item 23's three tests *and the existing 52* all come alive. Size it as test infrastructure. §6 also still carries the genuinely unbuilt items **11** (admin area), **12** (nav notification/settings/help/profile icons), **13** (last-modified *user* attribution — under-specified: there is no user/account concept in this single-user app, so it needs a product decision first) and **14** (export PDF from architecture view); all four were verified absent from `src/` on 2026-07-14, not assumed. Other follow-ups (no plan yet): codebase-wide promise error-surfacing pass; batched `aria-pressed`/`role`-and-keyboard a11y pass (ArchitectureNav/InterfaceNav/LayerPanel + ModuleTree rows are `<div onClick>`); heading-anchor on search section clicks. (§6's stale strikethroughs were reconciled 2026-07-14 — that cleanup is done.) New-feature flow stays: brainstorm spec → superpowers:writing-plans → subagent-driven-development (append new ledger section).
 
 Known deferrals from final reviews (all triaged non-blocking, recorded in the ledger): only 3/7 chip mappings test-asserted; no change-test for the Type select; optional DB `CHECK` constraint on enum columns if write paths multiply; unawaited fire-and-forget mutation promises (singular + bulk) — a codebase-wide error-surfacing pass is the right home; batched `aria-pressed` pass for toggle-group buttons; `requirement_links(child_req_id)` index if link volume grows.
 
