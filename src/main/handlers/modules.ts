@@ -1,12 +1,22 @@
 import { ipcMain } from 'electron'
+import Database from 'better-sqlite3'
 import { getDatabase } from '../db/connection'
-import type { Module, CreateModuleInput, UpdateModuleInput } from '../../types'
+import type { Module, ModuleKind, CreateModuleInput, UpdateModuleInput } from '../../types'
 
 function now(): string { return new Date().toISOString() }
+
+// Invariant: only a folder may contain folders or modules. Guarded here, not by the schema.
+function assertFolderParent(db: Database.Database, parentId: number | null): void {
+  if (parentId == null) return
+  const parent = db.prepare('SELECT kind FROM modules WHERE id = ?').get(parentId) as any
+  if (!parent) throw new Error(`Module ${parentId} not found`)
+  if ((parent.kind ?? 'module') !== 'folder') throw new Error('Only folders can contain folders or modules')
+}
 
 export function rowToModule(row: any): Module {
   return {
     id: row.id, projectId: row.project_id, parentId: row.parent_id ?? null,
+    kind: (row.kind ?? 'module') as ModuleKind,
     name: row.name, idPrefix: row.id_prefix, idPadding: row.id_padding,
     nextCounter: row.next_counter, position: row.position,
     deletedAt: row.deleted_at ?? null, createdAt: row.created_at, updatedAt: row.updated_at
@@ -22,10 +32,11 @@ export function listModules(projectId: number): Module[] {
 export function createModule(input: CreateModuleInput): Module {
   const db = getDatabase()
   const ts = now()
+  assertFolderParent(db, input.parentId ?? null)
   const result = db.prepare(`
-    INSERT INTO modules (project_id, parent_id, name, id_prefix, id_padding, next_counter, position, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?)
-  `).run(input.projectId, input.parentId ?? null, input.name, input.idPrefix, input.idPadding, ts, ts)
+    INSERT INTO modules (project_id, parent_id, kind, name, id_prefix, id_padding, next_counter, position, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 1, 0, ?, ?)
+  `).run(input.projectId, input.parentId ?? null, input.kind, input.name, input.idPrefix, input.idPadding, ts, ts)
   return rowToModule(db.prepare('SELECT * FROM modules WHERE id = ?').get(result.lastInsertRowid))
 }
 
@@ -47,6 +58,7 @@ export function moveModule(id: number, newParentId: number | null): Module {
       cur = row.parent_id ?? null
     }
   }
+  assertFolderParent(db, newParentId)
   db.prepare('UPDATE modules SET parent_id = ?, updated_at = ? WHERE id = ?').run(newParentId, now(), id)
   return rowToModule(db.prepare('SELECT * FROM modules WHERE id = ?').get(id))
 }
