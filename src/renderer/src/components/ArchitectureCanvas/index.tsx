@@ -215,10 +215,6 @@ function CanvasInner(): JSX.Element {
     deleted.forEach((n) => removeElement(Number(n.id)))
   }
 
-  function onEdgesDelete(deleted: Edge[]): void {
-    deleted.forEach((e) => removeConnection(Number(e.id)))
-  }
-
   return (
     <div className="flex h-full">
       <div className="flex flex-col flex-1 min-w-0">
@@ -257,7 +253,6 @@ function CanvasInner(): JSX.Element {
             onPaneClick={onPaneClick}
             onNodeDragStop={onNodeDragStop}
             onNodesDelete={onNodesDelete}
-            onEdgesDelete={onEdgesDelete}
             deleteKeyCode="Delete"
             connectionMode={ConnectionMode.Loose}
             fitView
