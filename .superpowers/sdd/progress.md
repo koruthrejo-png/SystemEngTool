@@ -286,3 +286,9 @@ Fix commit d0ae1b8: added pure `withHiddenCascade(elements, ownVisibilityMap)` i
 Fix re-review (sonnet, dfb7b07..d0ae1b8): Fixes Verified YES — cascade transitive, single source of truth (no divergence), node-omission not regressed, ref-guard correct, no deferred item touched. 1 minor: new test's edge assertion was trivial (container-own-hidden endpoint).
 Test strengthen commit 7792f16: reroute the cascade-edge assertion from container→child to cascade-hidden-child→visible-sibling so only the cascade makes it hidden (real regression guard). nodes.test 17/17.
 LAYERS FEATURE COMPLETE — HEAD 7792f16. All work on main.
+
+## Connection Line Editing (plan 2026-07-14-connection-line-editing.md) — base cfeff64
+Task 1: complete (commit 467d9e5, review clean — spec ✅, quality approved)
+  Carry to final review (PLAN-MANDATED, needs human call): updateConnection's 3 new style args use `'k' in input ? input.k : existing.col` (plan Step 5 verbatim) without the `?? null` coalesce the sibling name/connectionTypeId/description args use. An explicit `{ lineStyle: undefined }` would bind undefined -> better-sqlite3 TypeError instead of falling back to existing. INERT today (Task 5 selects always pass a real value); reviewer confirmed non-blocking.
+  Minor (carry): UpdateConnectionInput style fields are `?: LineStyle` (no `| null`) unlike `connectionTypeId?: number | null` — no typed way to reset a style to unset. Fine per brief; revisit only if a "reset to default" affordance lands.
+  Note: 2 forced test-mock ripples (InterfaceRegister/rows.test.ts, store/index.test.ts) — 3 new required fields on ArchitectureConnection; reviewer judged minimum-necessary, not scope creep.
