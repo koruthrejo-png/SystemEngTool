@@ -193,6 +193,12 @@ export interface ArchitectureElement {
   updatedAt: string
 }
 
+export const LINE_STYLES = ['solid', 'dashed', 'dotted'] as const
+export type LineStyle = (typeof LINE_STYLES)[number]
+
+export const EDGE_MARKERS = ['none', 'arrow', 'arrowclosed'] as const
+export type EdgeMarker = (typeof EDGE_MARKERS)[number]
+
 export interface ArchitectureConnection {
   id: number
   projectId: number
@@ -204,6 +210,9 @@ export interface ArchitectureConnection {
   targetHandle: string | null
   name: string | null
   connectionTypeId: number | null
+  lineStyle: LineStyle | null
+  markerStart: EdgeMarker | null
+  markerEnd: EdgeMarker | null
   description: string | null
   deletedAt: string | null
   createdAt: string
@@ -261,6 +270,9 @@ export interface UpdateConnectionInput {
   name?: string | null
   connectionTypeId?: number | null
   description?: string | null
+  lineStyle?: LineStyle
+  markerStart?: EdgeMarker
+  markerEnd?: EdgeMarker
 }
 
 export interface ElementRequirementLink {

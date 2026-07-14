@@ -9,7 +9,7 @@ const el = (id: number, blockId: string): ArchitectureElement => ({
 })
 const conn = (id: number, connId: string, s: number, t: number, extra: Partial<ArchitectureConnection> = {}): ArchitectureConnection => ({
   id, projectId: 1, architectureId: null, connId, sourceId: s, targetId: t, sourceHandle: null, targetHandle: null,
-  name: null, connectionTypeId: null, description: null, deletedAt: null, createdAt: '', updatedAt: '', ...extra
+  name: null, connectionTypeId: null, lineStyle: null, markerStart: null, markerEnd: null, description: null, deletedAt: null, createdAt: '', updatedAt: '', ...extra
 })
 const ccf = (id: number, connectionId: number, key: string, value: string, position = 0): ConnectionCustomField => ({
   id, connectionId, key, value, position, createdAt: '', updatedAt: ''
