@@ -342,3 +342,21 @@ Task 5: complete (commit 8cacaed, review clean — spec ✅ PASS, quality no Cri
   Minor (carry to final-review triage):
     - Dashboard/index.tsx:321 and RequirementDetail/index.tsx:329 duplicate the identical `flattenTree(modules).filter(({module: m}) => m.kind === 'module')`. Two occurrences don't earn a helper; hoist `moduleOptions(modules)` into moduleTree.ts if a third picker appears.
     - headings.ts:21 `createHeading` has NO folder guard, unlike requirements.ts:36-38 which rejects folders. Unreachable via UI (headings are only created from selectedModuleId, now folder-free) and the migration moves headings off converted parents — defense-in-depth asymmetry, not a live bug.
+Task 6: complete (verification + docs, controller-run — ALL 7 LIVE-VERIFY CHECKS PASS)
+  Step 1 gate: renderer 256/256; both typechecks exit 0; electron-vite build clean (3-target, 750 kB bundle).
+  **Main-suite baseline corrected — the brief's "47-48" was STALE.** Actual: 52 failed, every one in src/main/*, every one ERR_DLOPEN_FAILED (NODE_MODULE_VERSION 125 vs 127), zero renderer failures. Delta proven, not assumed: ran the suite at base ae0b6ae in a throwaway worktree = 49 failures. 49 + 4 new modules.test.ts tests - 1 deleted = 52. The deleted test was `supports nested modules via parentId` — it asserted exactly the nesting item 21 forbids, so removing it is correct. NOT a regression. (The old "+1 ArchitectureCanvas" baseline failure is also gone — renderer is 37/37 files.)
+  Step 2 snapshot (real legacy data, `thermal` dev DB — none of the 4 on-disk DBs had the kind column, i.e. migration had never run): modules `1||Test|SRS-TRS-|8` (live parent, 7 reqs + 5 headings) and `2|1|Test 2|SRS-TRS|2`. DBs backed up before launch.
+  Step 2b orphan check: 0 on BOTH thermal and SmokeTest (adapted — the kind column doesn't exist pre-migration, so the equivalent "soft-deleted parent with live children" query was run). No legacy rows the migration would skip.
+  Step 3 live-verify (Playwright driver, all 7 PASS):
+    1. SPLIT — folder `Test` (id_prefix='', counter 1) + NEW module id 3 `Test` (inherited SRS-TRS- + counter 8) + original child untouched. All 7 req_ids byte-identical to snapshot (diff empty). All 5 headings repointed 1->3. 0 reqs AND 0 headings left on the folder.
+    2. IDEMPOTENCE — relaunch, module count stays 3, no second split.
+    3. COUNTER CONTINUITY — new req minted `SRS-TRS--8` (continues old sequence), counter -> 9.
+    4. CREATE FOLDER — `Avionics` kind='folder', id_prefix='' (quoted ''), counter 1; prefix+padding inputs verifiably absent after toggling Folder.
+    5. FOLDER CLICK — pane still showed SRS-TRS--2,3,4 after clicking the folder (never blanked) AND child rows dropped to 0 (collapsed). Both halves of the invariant proven.
+    6. LEAF — aria-label sweep: only the 2 folders expose `Add to X`; all 4 rows expose Move. Move picker for module `Test 2` = exactly ["(top level)","Test","Avionics"] (folders only; sibling MODULE `Test` correctly absent).
+    7. SEARCH — folder `Avionics` -> "No matches."; control module `Test 2` -> still hits under MODULES. Filter is exclusive without being over-broad.
+  Driver notes (carry): tree rows are <div onClick> so `click <text>` returns NOT_FOUND — click via eval + closest("div"). The worktree has no node_modules, so the driver can't find the Electron binary — symlink `node_modules` -> main repo before launching, remove after (it's gitignored). Driver process dies with the app on quit/relaunch; restart it rather than reusing the FIFO. Text input needs the native value setter + `input` event.
+  Scratch data left on `thermal` (consistent with prior sessions): folder `Avionics` + requirement `SRS-TRS--8`. The DB is also now permanently migrated — that is the shipped behavior, not damage. Pre-migration backups are in the job tmp dir (ephemeral).
+  Step 4 docs: handoff.md COMPLETE section (incl. the DO-NOT-REGRESS note on selectedModuleId + folders-excluded-from-search); backlog §6 item 21 struck with the commit range, matching the 16/17 convention; both stale "item 21 is open / use plan mode" pointers updated.
+
+## ALL 6 TASKS COMPLETE — pending final whole-branch review
