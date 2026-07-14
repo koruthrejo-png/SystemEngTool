@@ -116,17 +116,22 @@ describe('withHiddenCascade', () => {
     // not because the resolver decided 'hidden'.
     const els = [
       el({ id: 1 }),
-      el({ id: 2, parentId: 1 })
+      el({ id: 2, parentId: 1 }),
+      el({ id: 3 })
     ]
-    const ownVisibility = new Map<number, Visibility>([[1, 'hidden'], [2, 'normal']])
+    const ownVisibility = new Map<number, Visibility>([[1, 'hidden'], [2, 'normal'], [3, 'normal']])
 
     const cascaded = withHiddenCascade(els, ownVisibility)
     expect(cascaded.get(2)).toBe('hidden')
 
+    // Edge between the cascade-hidden child (2) and an unrelated VISIBLE sibling (3):
+    // its endpoints' OWN visibility are both 'normal', so under the pre-fix own-only
+    // logic this resolves to 'normal'. Only the cascade makes it 'hidden' — proving the
+    // edge effect must read the cascade-aware map, not RF's missing-endpoint drop.
     const edgeVis = resolveConnectorVisibility(
       'normal',
-      cascaded.get(1) ?? 'normal',
-      cascaded.get(2) ?? 'normal'
+      cascaded.get(2) ?? 'normal',
+      cascaded.get(3) ?? 'normal'
     )
     expect(edgeVis).toBe('hidden')
   })
