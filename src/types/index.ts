@@ -270,9 +270,9 @@ export interface UpdateConnectionInput {
   name?: string | null
   connectionTypeId?: number | null
   description?: string | null
-  lineStyle?: LineStyle
-  markerStart?: EdgeMarker
-  markerEnd?: EdgeMarker
+  lineStyle?: LineStyle | null
+  markerStart?: EdgeMarker | null
+  markerEnd?: EdgeMarker | null
 }
 
 export interface ElementRequirementLink {

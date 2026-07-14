@@ -12,8 +12,8 @@ import { Button } from '../ui'
 import { buildNodes, resolveDrop, fitChildInParent, withHiddenCascade } from './nodes'
 import LayerPanel from './LayerPanel'
 import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from './layers'
-import { edgeMarker } from './edgeStyle'
-import { shouldDeleteConnection } from './deleteKey'
+import { edgeMarker, EDGE_STROKE, EDGE_STROKE_SELECTED } from './edgeStyle'
+import { shouldDeleteConnection, isTyping } from './deleteKey'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -115,7 +115,7 @@ function CanvasInner(): JSX.Element {
       connections.map((c) => {
         const own = effectiveVisibility(connMemberIds.get(c.id) ?? [], layersById)
         const vis = resolveConnectorVisibility(own, visById.get(c.sourceId) ?? 'normal', visById.get(c.targetId) ?? 'normal')
-        const strokeColor = c.id === selectedConnectionId ? '#42682d' : '#94a3b8'
+        const strokeColor = c.id === selectedConnectionId ? EDGE_STROKE_SELECTED : EDGE_STROKE
         return {
           id: String(c.id),
           source: String(c.sourceId),
@@ -146,8 +146,7 @@ function CanvasInner(): JSX.Element {
 
       // Cmd/Ctrl+Z undo/redo
       if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      if (isTyping(e)) return
       e.preventDefault()
       if (e.shiftKey) void redo()
       else void undo()

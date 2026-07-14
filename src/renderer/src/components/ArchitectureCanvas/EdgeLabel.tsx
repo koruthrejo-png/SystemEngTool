@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react'
-import { dashArray } from './edgeStyle'
+import { dashArray, EDGE_STROKE, EDGE_STROKE_SELECTED } from './edgeStyle'
 import type { LineStyle } from '../../../../types'
 
 export default memo(function EdgeLabel({
@@ -19,7 +19,7 @@ export default memo(function EdgeLabel({
         markerStart={markerStart}
         markerEnd={markerEnd}
         style={{
-          stroke: selected ? '#42682d' : '#94a3b8',
+          stroke: selected ? EDGE_STROKE_SELECTED : EDGE_STROKE,
           strokeWidth: selected ? 2 : 1.5,
           opacity: faded ? 0.3 : 1,
           strokeDasharray: dashArray(lineStyle)

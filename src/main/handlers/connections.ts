@@ -76,9 +76,9 @@ export function updateConnection(id: number, input: UpdateConnectionInput): Arch
     'name' in input ? (input.name ?? null) : existing.name,
     'connectionTypeId' in input ? (input.connectionTypeId ?? null) : existing.connection_type_id,
     'description' in input ? (input.description ?? null) : existing.description,
-    'lineStyle' in input ? input.lineStyle : existing.line_style,
-    'markerStart' in input ? input.markerStart : existing.marker_start,
-    'markerEnd' in input ? input.markerEnd : existing.marker_end,
+    'lineStyle' in input ? (input.lineStyle ?? null) : existing.line_style,
+    'markerStart' in input ? (input.markerStart ?? null) : existing.marker_start,
+    'markerEnd' in input ? (input.markerEnd ?? null) : existing.marker_end,
     now(), id
   )
   return rowToConnection(db.prepare('SELECT * FROM architecture_connections WHERE id = ?').get(id))

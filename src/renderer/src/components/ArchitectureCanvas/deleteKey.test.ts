@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shouldDeleteConnection } from './deleteKey'
+import { shouldDeleteConnection, isTyping } from './deleteKey'
 
 const ev = (key: string, tag = 'DIV', contentEditable = false): KeyboardEvent =>
   ({ key, repeat: false, target: { tagName: tag, isContentEditable: contentEditable } } as unknown as KeyboardEvent)
@@ -24,5 +24,15 @@ describe('shouldDeleteConnection', () => {
   it('key autorepeat → false', () => {
     const e = { key: 'Delete', repeat: true, target: { tagName: 'DIV', isContentEditable: false } } as unknown as KeyboardEvent
     expect(shouldDeleteConnection(e, 5)).toBe(false)
+  })
+})
+
+describe('isTyping', () => {
+  it('form fields and contenteditable → true; anything else → false', () => {
+    expect(isTyping(ev('z', 'INPUT'))).toBe(true)
+    expect(isTyping(ev('z', 'TEXTAREA'))).toBe(true)
+    expect(isTyping(ev('z', 'SELECT'))).toBe(true)
+    expect(isTyping(ev('z', 'DIV', true))).toBe(true)
+    expect(isTyping(ev('z', 'DIV'))).toBe(false)
   })
 })
