@@ -15,7 +15,8 @@ beforeEach(() => {
     connections: { list: vi.fn().mockResolvedValue([]) },
     elementTypes: { list: vi.fn().mockResolvedValue([]) },
     connectionTypes: { list: vi.fn().mockResolvedValue([]) },
-    requirements: { listByProject: vi.fn().mockResolvedValue([]) }
+    requirements: { listByProject: vi.fn().mockResolvedValue([]) },
+    layers: { list: vi.fn().mockResolvedValue([]), assignments: vi.fn().mockResolvedValue({ elementLayers: [], connectionLayers: [] }) }
   }
   useStore.setState({ project: { id: 1, name: 'P' } as any, architectures: [], activeArchitectureId: null })
 })

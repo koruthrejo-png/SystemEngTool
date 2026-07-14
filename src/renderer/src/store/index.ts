@@ -13,7 +13,8 @@ import type {
   RequirementStatus, RequirementPriority, RequirementType,
   ReqHeading, CreateHeadingInput,
   ElementRequirementLink, RequirementLink,
-  AcceptanceCriterion, UpdateAcceptanceCriterionInput
+  AcceptanceCriterion, UpdateAcceptanceCriterionInput,
+  Layer, LayerState, ElementLayerLink, ConnectionLayerLink
 } from '../../../types'
 import { summarize, type AcSummaryEntry } from './acSummary'
 
@@ -62,6 +63,9 @@ interface Store {
   checkedIds: number[]
   traceLinks: ElementRequirementLink[]
   reqLinks: RequirementLink[]
+  layers: Layer[]
+  elementLayers: ElementLayerLink[]
+  connectionLayers: ConnectionLayerLink[]
   undoStack: UndoCommand[]
   redoStack: UndoCommand[]
   undo: () => Promise<void>
@@ -123,6 +127,13 @@ interface Store {
   addArchitecture: (name: string) => Promise<void>
   renameArchitecture: (id: number, name: string) => Promise<void>
   removeArchitecture: (id: number) => Promise<void>
+  loadLayers: () => Promise<void>
+  addLayer: (name: string) => Promise<void>
+  renameLayer: (id: number, name: string) => Promise<void>
+  cycleLayerState: (id: number) => Promise<void>
+  removeLayer: (id: number) => Promise<void>
+  toggleElementLayer: (elementId: number, layerId: number) => Promise<void>
+  toggleConnectionLayer: (connectionId: number, layerId: number) => Promise<void>
   selectElement: (id: number | null) => void
   selectConnection: (id: number | null) => void
   setInterfaceArchFilter: (f: number | 'all') => void
@@ -149,6 +160,7 @@ export const useStore = create<Store>((set, get) => ({
   acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
   traceLinks: [], reqLinks: [],
+  layers: [], elementLayers: [], connectionLayers: [],
   undoStack: [], redoStack: [],
 
   loadProject: async () => {
@@ -409,6 +421,7 @@ export const useStore = create<Store>((set, get) => ({
       window.api.requirements.listByProject(project.id)
     ])
     set({ elements, connections, elementTypes, connectionTypes, projectRequirements })
+    await get().loadLayers()
   },
 
   loadArchitectures: async () => {
@@ -450,6 +463,55 @@ export const useStore = create<Store>((set, get) => ({
     if (activeArchitectureId === id) {
       await get().setActiveArchitecture(architectures[0].id)
     }
+  },
+
+  loadLayers: async () => {
+    const { activeArchitectureId } = get()
+    if (activeArchitectureId == null) { set({ layers: [], elementLayers: [], connectionLayers: [] }); return }
+    const [layers, assignments] = await Promise.all([
+      window.api.layers.list(activeArchitectureId),
+      window.api.layers.assignments(activeArchitectureId)
+    ])
+    set({ layers, elementLayers: assignments.elementLayers, connectionLayers: assignments.connectionLayers })
+  },
+
+  addLayer: async (name) => {
+    const { activeArchitectureId } = get()
+    if (activeArchitectureId == null) return
+    await window.api.layers.create(activeArchitectureId, name)
+    await get().loadLayers()
+  },
+
+  renameLayer: async (id, name) => {
+    await window.api.layers.rename(id, name)
+    await get().loadLayers()
+  },
+
+  cycleLayerState: async (id) => {
+    const layer = get().layers.find((l) => l.id === id)
+    if (!layer) return
+    const next: LayerState = layer.state === 'visible' ? 'faded' : layer.state === 'faded' ? 'hidden' : 'visible'
+    await window.api.layers.setState(id, next)
+    await get().loadLayers()
+  },
+
+  removeLayer: async (id) => {
+    await window.api.layers.delete(id)
+    await get().loadLayers()
+  },
+
+  toggleElementLayer: async (elementId, layerId) => {
+    const member = get().elementLayers.some((l) => l.elementId === elementId && l.layerId === layerId)
+    if (member) await window.api.layers.unassignElement(elementId, layerId)
+    else await window.api.layers.assignElement(elementId, layerId)
+    await get().loadLayers()
+  },
+
+  toggleConnectionLayer: async (connectionId, layerId) => {
+    const member = get().connectionLayers.some((l) => l.connectionId === connectionId && l.layerId === layerId)
+    if (member) await window.api.layers.unassignConnection(connectionId, layerId)
+    else await window.api.layers.assignConnection(connectionId, layerId)
+    await get().loadLayers()
   },
 
   loadTraceability: async () => {
