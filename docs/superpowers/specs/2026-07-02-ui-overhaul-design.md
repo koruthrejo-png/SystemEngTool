@@ -110,36 +110,42 @@ Current white header + separate gray tab row merge into one 56px navy bar:
 
 ## 6. Deferred Backlog (shown in mockups, NOT in this pass)
 
-Recorded so they can be planned as future feature work:
+Recorded so they can be planned as future feature work.
 
-> **★ TOP PRIORITY (item 20)** — Rework the Architecture `+ Object` toolbar. The
-> type-picker `<Select>` (added 2026-07-12 Task 3) is unwanted and renders full-width
-> (its `w-40` is overridden by the `Select` primitive's `w-full`), stretching across the
-> toolbar and looking unpolished. Remove the type dropdown from the toolbar entirely;
-> new blocks are created untyped and the type is set afterward in the properties panel
-> (ElementPanel already has a Type select). Then re-space the `+ Object` / undo-redo /
-> hint toolbar row (`ArchitectureCanvas/index.tsx:189-212`) to look sharp and tight —
-> consistent gaps, no orphaned wide control. UI-only.
+> **Status as of 2026-07-14** (reconciled against the code and the handoff — the strikes had
+> drifted badly and most of 1-15 were done but unstruck). **Done: 1-10, 15-22.**
+> **Open: 11** (admin area), **12** (nav notification/settings/help/profile icons),
+> **13** (last-modified *user* attribution — blocked on there being no user concept at all),
+> **14** (export PDF from architecture view), **23** (item-21 migration regression tests —
+> blocked on the main-process test suite being runnable at all).
+> Every item struck below was verified against the code or a named commit, not assumed.
+> Items 11/12/14 were verified **absent** from `src/` rather than left ambiguous.
 
-1. Status field on requirements + colored status chips (Approved/Draft/Review/Rejected)
-2. Priority field + chips (High/Medium/Low)
-3. Filter toolbar (status, priority, More Filters)
-4. Global search box in the nav bar
-5. Row checkboxes + bulk actions
-6. Requirement Type field (Functional / Non-Functional, …)
-7. Acceptance criteria as a structured checklist (currently free text)
-8. "Trace to Architecture" linking UI in the detail drawer
-9. Traceability Matrix screen (new tab)
-10. Dashboard screen (metrics, status charts, activity feed)
-11. Admin area
-12. Notifications / settings / help / profile icons in nav
-13. Last-modified attribution (user + timestamp) on requirements
-14. Export PDF from architecture view
-15. Undo/redo on the architecture canvas
+> **~~★ TOP PRIORITY (item 20)~~ — DONE 2026-07-13 (`2a280ca`).** Reworked the Architecture
+> `+ Object` toolbar: removed the unwanted full-width type-picker `<Select>` entirely (new
+> blocks are created untyped; the type is set afterward in the properties panel, which
+> already has a Type select), then re-spaced the toolbar row — `+ Object` | divider |
+> undo/redo, hint right-aligned. UI-only, as scoped.
+
+1. ~~Status field on requirements + colored status chips (Approved/Draft/Review/Rejected)~~ — DONE 2026-07-03 (`546f4d7..a6eb0c8`, with items 2/3/6)
+2. ~~Priority field + chips (High/Medium/Low)~~ — DONE 2026-07-03 (`546f4d7..a6eb0c8`, with items 1/3/6)
+3. ~~Filter toolbar (status, priority, More Filters)~~ — DONE 2026-07-03 (`546f4d7..a6eb0c8`, with items 1/2/6)
+4. ~~Global search box in the nav bar~~ — DONE 2026-07-07 (`f4fc503..4927f32`; design `docs/superpowers/specs/2026-07-07-global-search-design.md`)
+5. ~~Row checkboxes + bulk actions~~ — DONE 2026-07-04 (`96da68a..cec91c7`)
+6. ~~Requirement Type field (Functional / Non-Functional, …)~~ — DONE 2026-07-03 (`546f4d7..a6eb0c8`, with items 1/2/3)
+7. ~~Acceptance criteria as a structured checklist (currently free text)~~ — DONE 2026-07-07 (`8a8830c..438041a`; migration converts legacy free text to checklist items)
+8. ~~"Trace to Architecture" linking UI in the detail drawer~~ — DONE 2026-07-07 (`f9a31a7..f96ba65`)
+9. ~~Traceability Matrix screen (new tab)~~ — DONE 2026-07-05 (`2f6be32..a004223`, with item 10)
+10. ~~Dashboard screen (metrics, status charts, activity feed)~~ — DONE 2026-07-05 (`2f6be32..a004223`, with item 9), restyled 2026-07-06 (`61cb1ab..72b1a30`)
+11. Admin area — **NOT STARTED** (verified 2026-07-14: zero `admin` references in `src/`)
+12. Notifications / settings / help / profile icons in nav — **NOT STARTED** (verified 2026-07-14: the nav holds only tabs + GlobalSearch + project name + Open + New Project; `App.tsx:63-80`)
+13. Last-modified attribution (user + timestamp) on requirements — **NOT STARTED** (verified 2026-07-14: `updatedAt` exists, but there is no user/author concept anywhere — no `updated_by`/`author` field, and the app is single-user with no accounts. The *user* half is unbuilt; needs a product decision on what identity even means here before it can be planned.)
+14. Export PDF from architecture view — **NOT STARTED** (verified 2026-07-14: no PDF library or export path in `src/`)
+15. ~~Undo/redo on the architecture canvas~~ — DONE 2026-07-09 (`38d1d82..e4e522c`, merged at `bab0c1e`)
 16. ~~Node port-count indicators and typed component library, including the Component Library left palette panel from spec §4~~ — DONE 2026-07-08 (commits ee93fad..7589d28; palette click-to-add typed node, type name in node header, ⇆N connection-count badge)
 17. ~~Restyle React Flow zoom/fit controls~~ — DONE 2026-07-08 (custom `CanvasControls`, commit 574cb9c)
-18. Drag-and-drop requirements into a section. Requirement rows in `RequirementsList/index.tsx` become `draggable`; heading rows become drop targets; on drop call the existing `updateRequirement(reqId, { headingId })` (same store action the drawer "Section" select uses). Native HTML5 DnD — no dnd library. Dropping onto the module root (no heading) clears `headingId`.
-19. Multi-level subheadings with hierarchical dotted numbering. Allow headings nested deeper than today's 2 levels; number by depth `1` → `1.1` → `1.1.1` … Touches: DB depth guard `headings.ts:27-33` (`parent.parent_id != null` throw is the only "max 2 levels" enforcement), make `buildOutline` (`RequirementsList/outline.ts`, currently `depth: 0|1` + fixed two-deep loop) recursive for dotted numbers at any depth, drop the `row.depth === 0` gate on "+ Sub", depth-proportional indent, full dotted path in the drawer Section select. `deleteHeading` already reparents generically; `moveHeading` swaps within a `parent_id` so unaffected.
+18. ~~Drag-and-drop requirements into a section. Requirement rows become `draggable`; heading rows become drop targets; on drop call the existing `updateRequirement(reqId, { headingId })`. Native HTML5 DnD — no dnd library~~ — DONE 2026-07-13 (`25f8400`; dropping on an ungrouped requirement moves it to the module root. Unit-tested only — Playwright's mouse cannot fire native HTML5 drag events, so there is no live-drag verification).
+19. ~~Multi-level subheadings with hierarchical dotted numbering, nested deeper than the original 2 levels; number by depth `1` → `1.1` → `1.1.1`~~ — DONE 2026-07-13 (`f0f89e3`; dropped the 2-level depth guard in `createHeading`, made `buildOutline` recursive and cycle-guarded, `+ Sub` on every heading, depth-proportional indent. Live-verified 3 → 3.1 → 3.1.1).
 21. ~~**Rework requirements file structure**. Today the requirements tree is "modules nested inside modules" (submodules). The user wants organization by **pure container files/folders that requirement modules live inside**~~ — DONE 2026-07-14 (commits 5d1292e..8cacaed; `modules.kind` `'folder' | 'module'` single-table model, folders nest to any depth and modules are leaves, idempotent split migration converts each legacy parent into a folder + same-name module so requirement IDs never change). Design: `docs/superpowers/specs/2026-07-14-requirements-file-structure-design.md`.
 22. ~~**Connection line editing**. From the canvas/ConnectionPanel: easily **delete** a connection, and change the **line style** — dotted/dashed/solid — and **arrow/marker types** at either end~~ — DONE 2026-07-14 (`467d9e5..07e1487`; `line_style`/`marker_start`/`marker_end` on `architecture_connections`, drawer selects, Delete/Backspace removal, `edgeStyle.ts` render helpers). Design: `docs/superpowers/specs/2026-07-14-connection-line-editing-design.md`.
 23. **Migration regression tests for the item-21 folder split** — raised by item 21's final whole-branch review (opus, 2026-07-14) as its only new finding. `src/main/db/migrations.test.ts` already holds 5 migration tests, so the home exists. The item-21 design spec's Testing section mandated three: the **split** case (parent with both requirements and children → folder + same-name module, prefix/counter preserved, requirements repointed), the **flip-only** case (parent owning neither requirements nor headings → flipped to folder, no split), and a **second run proving idempotence**. The plan overrode that (plan line 243, "vitest cannot open the DB") and substituted live-verify. The trade was legitimate, but it left real gaps: live-verify exercised exactly **one** shape — a 2-level tree taking the split branch. The **flip-only branch** and **3+ level nesting** have two independent hand-traces (implementer + reviewer) but **no empirical evidence and no automated coverage**.
