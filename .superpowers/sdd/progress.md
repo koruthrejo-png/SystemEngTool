@@ -296,3 +296,16 @@ Task 2: complete (commit e1e14a5, review clean — spec ✅, no Critical/Importa
   Reviewer traced RED path: without the 3 keys, editKeys=[] -> changed=false -> undoStack stays 0, test fails for the stated reason. Not a false-positive.
   Correct brief deviation: test import path 4-up -> 3-up ('../../../types') matching every sibling in store/. Brief's path was wrong. (Same fix as the Layers Task 2 note.)
   Minor (carry): 2nd test asserts only undoStack.length for markerStart/markerEnd, not the captured prev values — generic code path already value-verified by the lineStyle case; one more toHaveBeenLastCalledWith would close it.
+
+## Requirements File Structure — folders contain modules (item 21)
+Plan: `docs/superpowers/plans/2026-07-14-requirements-file-structure.md`. Base `ae0b6ae`.
+Task 1: complete (commits 5d1292e + fix 7edb9ae, review clean — spec ✅ PASS, no Critical/Important open)
+  Brief file-list defect (correctly caught by implementer): 3 more main-process test files call createModule (requirements/connectionLinks/elementLinks.test.ts) — needed `kind: 'module'` for the binding tsconfig.node clean gate. Not scope creep.
+  Important (fixed, 7edb9ae): NewModuleForm.tsx built CreateModuleInput without `kind` -> web typecheck + `npm run build` red. Brief's Step 5 predicted "test fixtures only" — wrong, this one was production. Form hard-requires a prefix so `kind: 'module'` preserves behavior exactly; Task 3 still rewrites the file.
+  Controller-verified (fix subagent MISREPORTED tests as "6 failed, pre-existing env issues" — false): actual ModuleTree 10/10 pass, renderer suite 250 passed, tsc node clean, tsc web = 5 errors all in test fixtures (Task 5 Step 4 owns them). Do not trust that fix report's test line.
+  Minor (carry to final-review triage):
+    - `?? 'module'` fallbacks at modules.ts:13,19 + requirements.ts:37 are dead (column is NOT NULL DEFAULT 'module'; addColumnIfMissing runs on fresh+legacy DBs alike) and deviate from sibling enum reads (requirements.ts status, layers.ts state have no fallback). Brief-verbatim.
+    - modules.test.ts:36 name "defaults a folder to no prefix" asserts no such thing; nothing enforces `id_prefix=''` for folders — `createModule({kind:'folder', idPrefix:'ABC'})` succeeds today. Constraint currently has no owner.
+    - assertFolderParent's not-found branch is unreachable from moveModule (cycle guard throws first) — two messages for one condition. Live on the createModule path.
+    - `kind` unvalidated at the IPC boundary (modules.ts:83) — same as existing status/priority/state convention, single-user desktop app.
+  Sequencing note (reviewer): between Task 1 and Task 2's migration, every legacy row backfills to kind='module', so a real nested tree is un-editable (createModule/moveModule throw). Task 2 must land before any live-verify against real data.
