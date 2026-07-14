@@ -12,6 +12,7 @@ import { Button } from '../ui'
 import { buildNodes, resolveDrop, fitChildInParent, withHiddenCascade } from './nodes'
 import LayerPanel from './LayerPanel'
 import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from './layers'
+import { edgeMarker } from './edgeStyle'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -113,6 +114,7 @@ function CanvasInner(): JSX.Element {
       connections.map((c) => {
         const own = effectiveVisibility(connMemberIds.get(c.id) ?? [], layersById)
         const vis = resolveConnectorVisibility(own, visById.get(c.sourceId) ?? 'normal', visById.get(c.targetId) ?? 'normal')
+        const strokeColor = c.id === selectedConnectionId ? '#42682d' : '#94a3b8'
         return {
           id: String(c.id),
           source: String(c.sourceId),
@@ -120,7 +122,9 @@ function CanvasInner(): JSX.Element {
           sourceHandle: c.sourceHandle ?? 'right',
           targetHandle: c.targetHandle ?? 'left',
           type: 'labeled' as const,
-          data: { label: c.name ?? '', faded: vis === 'faded' },
+          markerStart: edgeMarker(c.markerStart, strokeColor),
+          markerEnd: edgeMarker(c.markerEnd, strokeColor),
+          data: { label: c.name ?? '', faded: vis === 'faded', lineStyle: c.lineStyle ?? null },
           selected: c.id === selectedConnectionId,
           hidden: vis === 'hidden'
         }

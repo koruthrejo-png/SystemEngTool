@@ -1,16 +1,30 @@
 import { memo } from 'react'
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react'
+import { dashArray } from './edgeStyle'
+import type { LineStyle } from '../../../../types'
 
 export default memo(function EdgeLabel({
   id, sourceX, sourceY, targetX, targetY,
-  sourcePosition, targetPosition, data, selected
+  sourcePosition, targetPosition, data, selected, markerStart, markerEnd
 }: EdgeProps) {
   const [edgePath, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
   const label = (data as any)?.label as string | undefined
   const faded = (data as any)?.faded === true
+  const lineStyle = ((data as any)?.lineStyle ?? null) as LineStyle | null
   return (
     <>
-      <BaseEdge id={id} path={edgePath} style={{ stroke: selected ? '#42682d' : '#94a3b8', strokeWidth: selected ? 2 : 1.5, opacity: faded ? 0.3 : 1 }} />
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        markerStart={markerStart}
+        markerEnd={markerEnd}
+        style={{
+          stroke: selected ? '#42682d' : '#94a3b8',
+          strokeWidth: selected ? 2 : 1.5,
+          opacity: faded ? 0.3 : 1,
+          strokeDasharray: dashArray(lineStyle)
+        }}
+      />
       {label && (
         <EdgeLabelRenderer>
           <div
