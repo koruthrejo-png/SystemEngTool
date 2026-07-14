@@ -16,6 +16,7 @@ import { registerConnectionLinkHandlers } from './handlers/connectionLinks'
 import { registerRequirementLinkHandlers } from './handlers/requirementLinks'
 import { registerSearchHandlers } from './handlers/search'
 import { registerArchitectureHandlers } from './handlers/architectures'
+import { registerLayerHandlers } from './handlers/layers'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -51,6 +52,7 @@ app.whenReady().then(() => {
   registerRequirementLinkHandlers()
   registerSearchHandlers()
   registerArchitectureHandlers()
+  registerLayerHandlers()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

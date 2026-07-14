@@ -109,6 +109,29 @@ export function runMigrations(db: Database.Database): void {
       PRIMARY KEY (connection_id, requirement_id)
     );
 
+    CREATE TABLE IF NOT EXISTS layers (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      architecture_id INTEGER NOT NULL REFERENCES architectures(id),
+      name            TEXT    NOT NULL,
+      state           TEXT    NOT NULL DEFAULT 'visible',
+      position        INTEGER NOT NULL DEFAULT 0,
+      deleted_at      TEXT,
+      created_at      TEXT    NOT NULL,
+      updated_at      TEXT    NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS element_layers (
+      element_id INTEGER NOT NULL REFERENCES architecture_elements(id),
+      layer_id   INTEGER NOT NULL REFERENCES layers(id),
+      PRIMARY KEY (element_id, layer_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS connection_layers (
+      connection_id INTEGER NOT NULL REFERENCES architecture_connections(id),
+      layer_id      INTEGER NOT NULL REFERENCES layers(id),
+      PRIMARY KEY (connection_id, layer_id)
+    );
+
     CREATE TABLE IF NOT EXISTS requirement_custom_fields (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
       requirement_id INTEGER NOT NULL REFERENCES requirements(id),

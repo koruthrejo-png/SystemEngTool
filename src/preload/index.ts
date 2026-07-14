@@ -12,7 +12,8 @@ import type {
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
   ElementRequirementLink, RequirementLink, SearchResults,
-  ConnectionCustomField, UpdateConnectionCustomFieldInput
+  ConnectionCustomField, UpdateConnectionCustomFieldInput,
+  Layer, LayerState, LayerAssignments
 } from '../types'
 
 contextBridge.exposeInMainWorld('api', {
@@ -74,6 +75,18 @@ contextBridge.exposeInMainWorld('api', {
     create: (projectId: number, name: string): Promise<Architecture> => ipcRenderer.invoke('architectures:create', projectId, name),
     rename: (id: number, name: string): Promise<Architecture> => ipcRenderer.invoke('architectures:rename', id, name),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('architectures:delete', id)
+  },
+  layers: {
+    list: (architectureId: number): Promise<Layer[]> => ipcRenderer.invoke('layers:list', architectureId),
+    create: (architectureId: number, name: string): Promise<Layer> => ipcRenderer.invoke('layers:create', architectureId, name),
+    rename: (id: number, name: string): Promise<Layer> => ipcRenderer.invoke('layers:rename', id, name),
+    setState: (id: number, state: LayerState): Promise<Layer> => ipcRenderer.invoke('layers:setState', id, state),
+    delete: (id: number): Promise<void> => ipcRenderer.invoke('layers:delete', id),
+    assignments: (architectureId: number): Promise<LayerAssignments> => ipcRenderer.invoke('layers:assignments', architectureId),
+    assignElement: (elementId: number, layerId: number): Promise<void> => ipcRenderer.invoke('layers:assignElement', elementId, layerId),
+    unassignElement: (elementId: number, layerId: number): Promise<void> => ipcRenderer.invoke('layers:unassignElement', elementId, layerId),
+    assignConnection: (connectionId: number, layerId: number): Promise<void> => ipcRenderer.invoke('layers:assignConnection', connectionId, layerId),
+    unassignConnection: (connectionId: number, layerId: number): Promise<void> => ipcRenderer.invoke('layers:unassignConnection', connectionId, layerId)
   },
   elements: {
     list: (projectId: number, architectureId?: number | null): Promise<ArchitectureElement[]> => ipcRenderer.invoke('elements:list', projectId, architectureId),

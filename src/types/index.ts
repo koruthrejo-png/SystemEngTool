@@ -268,6 +268,27 @@ export interface ElementRequirementLink {
   requirementId: number
 }
 
+export const LAYER_STATES = ['visible', 'faded', 'hidden'] as const
+export type LayerState = (typeof LAYER_STATES)[number]
+
+export interface Layer {
+  id: number
+  architectureId: number
+  name: string
+  state: LayerState
+  position: number
+  deletedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ElementLayerLink { elementId: number; layerId: number }
+export interface ConnectionLayerLink { connectionId: number; layerId: number }
+export interface LayerAssignments {
+  elementLayers: ElementLayerLink[]
+  connectionLayers: ConnectionLayerLink[]
+}
+
 // Derivation link: child requirement derives from parent requirement.
 export interface RequirementLink {
   parentReqId: number

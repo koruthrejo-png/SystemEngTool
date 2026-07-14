@@ -11,7 +11,8 @@ import type {
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
   ElementRequirementLink, RequirementLink, SearchResults,
-  ConnectionCustomField, UpdateConnectionCustomFieldInput
+  ConnectionCustomField, UpdateConnectionCustomFieldInput,
+  Layer, LayerState, LayerAssignments
 } from './index'
 
 declare global {
@@ -75,6 +76,18 @@ declare global {
         create(projectId: number, name: string): Promise<Architecture>
         rename(id: number, name: string): Promise<Architecture>
         delete(id: number): Promise<void>
+      }
+      layers: {
+        list(architectureId: number): Promise<Layer[]>
+        create(architectureId: number, name: string): Promise<Layer>
+        rename(id: number, name: string): Promise<Layer>
+        setState(id: number, state: LayerState): Promise<Layer>
+        delete(id: number): Promise<void>
+        assignments(architectureId: number): Promise<LayerAssignments>
+        assignElement(elementId: number, layerId: number): Promise<void>
+        unassignElement(elementId: number, layerId: number): Promise<void>
+        assignConnection(connectionId: number, layerId: number): Promise<void>
+        unassignConnection(connectionId: number, layerId: number): Promise<void>
       }
       elements: {
         list(projectId: number, architectureId?: number | null): Promise<ArchitectureElement[]>
