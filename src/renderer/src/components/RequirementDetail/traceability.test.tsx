@@ -16,7 +16,7 @@ const req = (id: number, moduleId: number, text: string): any => ({
 })
 
 const mod = (id: number, parentId: number | null, name: string): any => ({
-  id, projectId: 1, parentId, name, idPrefix: 'M', idPadding: 4,
+  id, projectId: 1, parentId, kind: 'module', name, idPrefix: 'M', idPadding: 4,
   nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: ''
 })
 

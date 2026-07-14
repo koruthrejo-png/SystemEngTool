@@ -15,7 +15,7 @@ describe('requirements handler', () => {
     tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
     openDatabase(join(tempDir, 'test.reqarch'))
     const project = createProject('Test')
-    moduleId = createModule({ projectId: project.id, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4 }).id
+    moduleId = createModule({ projectId: project.id, parentId: null, kind: 'module', name: 'SRS', idPrefix: 'SRS', idPadding: 4 }).id
   })
 
   afterEach(() => {
@@ -80,7 +80,7 @@ describe('requirements handler', () => {
   it('listRequirementsByProject returns all active requirements across modules', async () => {
     const { listRequirementsByProject } = await import('./requirements')
     const project2 = createProject('Other')
-    const mod2 = createModule({ projectId: project2.id, parentId: null, name: 'HRS', idPrefix: 'HRS', idPadding: 4 })
+    const mod2 = createModule({ projectId: project2.id, parentId: null, kind: 'module', name: 'HRS', idPrefix: 'HRS', idPadding: 4 })
     createRequirement({ moduleId, text: 'Req A' })
     createRequirement({ moduleId: mod2.id, text: 'Req B' })
     const all = listRequirementsByProject(project2.id)

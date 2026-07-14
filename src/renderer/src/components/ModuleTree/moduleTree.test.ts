@@ -3,7 +3,7 @@ import { topLevelModules, childrenOf, descendantIds, flattenTree } from './modul
 import type { Module } from '../../../../types'
 
 const mod = (id: number, parentId: number | null, name = `M${id}`): Module => ({
-  id, projectId: 1, parentId, name, idPrefix: 'M', idPadding: 4,
+  id, projectId: 1, parentId, kind: 'module', name, idPrefix: 'M', idPadding: 4,
   nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: ''
 })
 

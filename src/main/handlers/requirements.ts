@@ -33,8 +33,9 @@ export function createRequirement(input: CreateRequirementInput): Requirement {
   const ts = now()
 
   const row = db.transaction(() => {
-    const mod = db.prepare('SELECT id_prefix, id_padding, next_counter FROM modules WHERE id = ?').get(input.moduleId) as any
+    const mod = db.prepare('SELECT id_prefix, id_padding, next_counter, kind FROM modules WHERE id = ?').get(input.moduleId) as any
     if (!mod) throw new Error(`Module ${input.moduleId} not found`)
+    if ((mod.kind ?? 'module') === 'folder') throw new Error('Folders cannot own requirements')
     const reqId = `${mod.id_prefix}-${String(mod.next_counter).padStart(mod.id_padding, '0')}`
     db.prepare('UPDATE modules SET next_counter = ?, updated_at = ? WHERE id = ?')
       .run(mod.next_counter + 1, ts, input.moduleId)

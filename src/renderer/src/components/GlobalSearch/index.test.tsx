@@ -24,7 +24,7 @@ const req: Requirement = {
   status: 'Draft', priority: 'Medium', reqType: 'Functional', headingId: null,
   deletedAt: null, createdAt: '', updatedAt: ''
 }
-const mod: Module = { id: 3, projectId: 1, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
+const mod: Module = { id: 3, projectId: 1, parentId: null, kind: 'module', name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 const heading: ReqHeading = { id: 9, moduleId: 3, parentId: null, title: 'Performance', position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 
 beforeEach(() => {

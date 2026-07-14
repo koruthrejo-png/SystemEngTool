@@ -11,10 +11,14 @@ export interface Project {
   updatedAt: string
 }
 
+export const MODULE_KINDS = ['folder', 'module'] as const
+export type ModuleKind = (typeof MODULE_KINDS)[number]
+
 export interface Module {
   id: number
   projectId: number
   parentId: number | null
+  kind: ModuleKind
   name: string
   idPrefix: string
   idPadding: number
@@ -94,6 +98,7 @@ export interface UpdateHeadingInput {
 export interface CreateModuleInput {
   projectId: number
   parentId: number | null
+  kind: ModuleKind
   name: string
   idPrefix: string
   idPadding: number

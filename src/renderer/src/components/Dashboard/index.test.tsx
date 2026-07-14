@@ -28,7 +28,7 @@ beforeEach(() => {
       { id: 1, projectId: 1, parentId: null, blockId: 'SYS-001', name: '', elementTypeId: null, description: null, color: null, posX: 0, posY: 0, width: 160, height: 80, deletedAt: null, createdAt: '', updatedAt: '' },
       { id: 2, projectId: 1, parentId: 1, blockId: 'SYS-002', name: '', elementTypeId: null, description: null, color: null, posX: 0, posY: 0, width: 160, height: 80, deletedAt: null, createdAt: '', updatedAt: '' }
     ],
-    modules: [{ id: 1, name: 'SRS', position: 0 }],
+    modules: [{ id: 1, name: 'SRS', kind: 'module', position: 0 }],
     traceLinks: [{ elementId: 1, requirementId: 1 }],
     reqLinks: [{ parentReqId: 1, childReqId: 2 }],
     loadTraceability: vi.fn().mockResolvedValue(undefined),

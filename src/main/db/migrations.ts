@@ -207,6 +207,7 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'requirements', 'heading_id', 'INTEGER REFERENCES req_headings(id)')
   addColumnIfMissing(db, 'architecture_elements', 'architecture_id', 'INTEGER REFERENCES architectures(id)')
   addColumnIfMissing(db, 'architecture_connections', 'architecture_id', 'INTEGER REFERENCES architectures(id)')
+  addColumnIfMissing(db, 'modules', 'kind', "TEXT NOT NULL DEFAULT 'module'")
 
   // One-time conversion: split legacy free-text acceptance_criteria into checklist items.
   // Per-row idempotent — each converted row is set to NULL, so re-runs are no-ops.
@@ -250,6 +251,41 @@ export function runMigrations(db: Database.Database): void {
         }
         db.prepare('UPDATE architecture_elements SET architecture_id = ? WHERE project_id = ? AND architecture_id IS NULL').run(arch.id, project_id)
         db.prepare('UPDATE architecture_connections SET architecture_id = ? WHERE project_id = ? AND architecture_id IS NULL').run(arch.id, project_id)
+      }
+    })()
+  }
+
+  // One-time: folders contain modules (backlog item 21). A module with children becomes a
+  // folder; if it also owns requirements or headings, those move to a new same-name module
+  // inside it that inherits the prefix + counter, so req IDs never change.
+  // Idempotent — afterwards no kind='module' row has children, so re-runs match nothing.
+  const parentsToConvert = db
+    .prepare(`
+      SELECT * FROM modules p
+      WHERE p.deleted_at IS NULL AND p.kind = 'module'
+        AND EXISTS (SELECT 1 FROM modules c WHERE c.parent_id = p.id AND c.deleted_at IS NULL)
+    `)
+    .all() as any[]
+  if (parentsToConvert.length > 0) {
+    const kts = new Date().toISOString()
+    db.transaction(() => {
+      for (const p of parentsToConvert) {
+        const owned = db.prepare(`
+          SELECT (SELECT COUNT(*) FROM requirements WHERE module_id = ?)
+               + (SELECT COUNT(*) FROM req_headings WHERE module_id = ?) AS n
+        `).get(p.id, p.id) as { n: number }
+        if (owned.n > 0) {
+          const r = db.prepare(`
+            INSERT INTO modules (project_id, parent_id, kind, name, id_prefix, id_padding, next_counter, position, created_at, updated_at)
+            VALUES (?, ?, 'module', ?, ?, ?, ?, 0, ?, ?)
+          `).run(p.project_id, p.id, p.name, p.id_prefix, p.id_padding, p.next_counter, kts, kts)
+          const newId = Number(r.lastInsertRowid)
+          // Soft-deleted rows move too — they must follow their requirements' module.
+          db.prepare('UPDATE requirements SET module_id = ? WHERE module_id = ?').run(newId, p.id)
+          db.prepare('UPDATE req_headings SET module_id = ? WHERE module_id = ?').run(newId, p.id)
+        }
+        db.prepare("UPDATE modules SET kind = 'folder', id_prefix = '', next_counter = 1, updated_at = ? WHERE id = ?")
+          .run(kts, p.id)
       }
     })()
   }

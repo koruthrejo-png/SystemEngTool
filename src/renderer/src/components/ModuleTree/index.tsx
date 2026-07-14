@@ -24,7 +24,7 @@ export default function ModuleTree(): JSX.Element {
       </div>
       <div className="flex-1 overflow-y-auto pb-2">
         {topLevel.length === 0 && (
-          <div className="px-4 py-2 text-sm text-ink-faint">No modules yet.</div>
+          <div className="px-4 py-2 text-sm text-ink-faint">Nothing here yet.</div>
         )}
         {topLevel.map((mod) => (
           <ModuleNode key={mod.id} module={mod} allModules={modules} depth={0}
@@ -42,7 +42,7 @@ export default function ModuleTree(): JSX.Element {
           onCancel={() => setShowForm(false)} />
       ) : (
         <div className="p-3 border-t border-line">
-          <Button className="w-full" onClick={() => setShowForm(true)}>+ New Module</Button>
+          <Button className="w-full" onClick={() => setShowForm(true)}>+ New</Button>
         </div>
       )}
     </div>

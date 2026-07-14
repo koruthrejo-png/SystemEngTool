@@ -25,10 +25,12 @@ export default function ModuleNode({
   const [renameValue, setRenameValue] = useState(module.name)
   const [addingChild, setAddingChild] = useState(false)
   const [moving, setMoving] = useState(false)
-  const children = childrenOf(allModules, module.id)
-  const isSelected = selectedModuleId === module.id
+  const isFolder = module.kind === 'folder'
+  const children = isFolder ? childrenOf(allModules, module.id) : []
+  const isSelected = !isFolder && selectedModuleId === module.id
   const excluded = descendantIds(allModules, module.id)
-  const moveTargets = allModules.filter((m) => m.id !== module.id && !excluded.has(m.id))
+  // Only folders can hold anything, so only folders are move targets.
+  const moveTargets = allModules.filter((m) => m.kind === 'folder' && m.id !== module.id && !excluded.has(m.id))
 
   function handleContextMenu(e: React.MouseEvent): void {
     e.preventDefault()
@@ -43,16 +45,26 @@ export default function ModuleNode({
         style={{ paddingLeft: `${(depth + 1) * 12}px` }}
         className={`group flex items-center gap-1.5 pr-2 py-1.5 mx-2 my-0.5 cursor-pointer text-sm rounded select-none transition-colors
           ${isSelected ? 'bg-action-tint text-ink font-medium' : 'hover:bg-workspace text-ink-muted'}`}
-        onClick={() => onSelect(module.id)}
+        onClick={() => (isFolder ? setExpanded(!expanded) : onSelect(module.id))}
         onContextMenu={handleContextMenu}
       >
-        <button className="w-4 shrink-0 text-ink-faint hover:text-ink-muted"
-          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}>
-          {children.length > 0 ? (expanded ? '▾' : '▸') : ''}
-        </button>
-        <svg className="w-3.5 h-3.5 shrink-0 text-ink-faint" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path d="M2 5.5A1.5 1.5 0 013.5 4h4.379a1.5 1.5 0 011.06.44l1.122 1.12a1.5 1.5 0 001.06.44H16.5A1.5 1.5 0 0118 7.5v7A1.5 1.5 0 0116.5 16h-13A1.5 1.5 0 012 14.5v-9z" />
-        </svg>
+        {isFolder ? (
+          <button className="w-4 shrink-0 text-ink-faint hover:text-ink-muted"
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}>
+            {children.length > 0 ? (expanded ? '▾' : '▸') : ''}
+          </button>
+        ) : (
+          <span className="w-4 shrink-0" />
+        )}
+        {isFolder ? (
+          <svg className="w-3.5 h-3.5 shrink-0 text-ink-faint" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M2 5.5A1.5 1.5 0 013.5 4h4.379a1.5 1.5 0 011.06.44l1.122 1.12a1.5 1.5 0 001.06.44H16.5A1.5 1.5 0 0118 7.5v7A1.5 1.5 0 0116.5 16h-13A1.5 1.5 0 012 14.5v-9z" />
+          </svg>
+        ) : (
+          <svg className="w-3.5 h-3.5 shrink-0 text-ink-faint" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm7 0v3h3l-3-3z" />
+          </svg>
+        )}
         {renaming ? (
           <form onSubmit={(e) => { e.preventDefault(); if (renameValue.trim()) onRename(module.id, renameValue.trim()); setRenaming(false) }}
             onClick={(e) => e.stopPropagation()}>
@@ -65,14 +77,16 @@ export default function ModuleNode({
         )}
         {!renaming && (
           <span className="hidden group-hover:flex items-center gap-0.5 shrink-0">
-            <button
-              aria-label={`Add submodule to ${module.name}`}
-              title="Add submodule"
-              className="px-1 text-ink-faint hover:text-action leading-none"
-              onClick={(e) => { e.stopPropagation(); setAddingChild(true); setExpanded(true) }}
-            >
-              +
-            </button>
+            {isFolder && (
+              <button
+                aria-label={`Add to ${module.name}`}
+                title="New folder or module"
+                className="px-1 text-ink-faint hover:text-action leading-none"
+                onClick={(e) => { e.stopPropagation(); setAddingChild(true); setExpanded(true) }}
+              >
+                +
+              </button>
+            )}
             <button
               aria-label={`Move ${module.name}`}
               title="Move to…"

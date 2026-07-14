@@ -19,7 +19,7 @@ describe('connectionLinks handler', () => {
     tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
     openDatabase(join(tempDir, 'test.reqarch'))
     const project = createProject('Test')
-    const mod = createModule({ projectId: project.id, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4 })
+    const mod = createModule({ projectId: project.id, parentId: null, kind: 'module', name: 'SRS', idPrefix: 'SRS', idPadding: 4 })
     requirementId = createRequirement({ moduleId: mod.id, text: 'Req A' }).id
     const src = createElement({ projectId: project.id })
     const tgt = createElement({ projectId: project.id })
