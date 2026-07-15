@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import { Input, Textarea, Select, SectionLabel, Button } from '../ui'
+import type { LineStyle } from '../../../../types'
 
 export default function ElementPanel(): JSX.Element {
   const {
@@ -74,6 +75,7 @@ export default function ElementPanel(): JSX.Element {
         </Field>
         <Field label="Type">
           <Select
+            aria-label="Type"
             value={elementTypeId ?? ''}
             onChange={(e) => {
               const newTypeId = e.target.value ? Number(e.target.value) : null
@@ -93,6 +95,17 @@ export default function ElementPanel(): JSX.Element {
         <Field label="Color">
           <input type="color" value={color || '#ffffff'} onChange={(e) => setColor(e.target.value)} onBlur={save}
             className="h-9 w-full rounded border border-line cursor-pointer" />
+        </Field>
+        <Field label="Line style">
+          <Select
+            aria-label="Line style"
+            value={el.lineStyle ?? 'solid'}
+            onChange={(e) => updateElement(el!.id, { lineStyle: e.target.value as LineStyle })}
+          >
+            <option value="solid">Solid</option>
+            <option value="dashed">Dashed</option>
+            <option value="dotted">Dotted</option>
+          </Select>
         </Field>
         <Field label="Requirements">
           <Input placeholder="Filter by ID or text…" value={reqSearch} onChange={(e) => setReqSearch(e.target.value)} className="!py-1.5 !text-xs mb-2" />

@@ -69,6 +69,6 @@ describe('ElementPanel', () => {
 
   it('renders type dropdown', () => {
     render(<ElementPanel />)
-    expect(screen.getByRole('combobox')).toBeInTheDocument()
+    expect(screen.getByLabelText('Type')).toBeInTheDocument()
   })
 })

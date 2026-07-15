@@ -12,7 +12,7 @@ vi.mock('@xyflow/react', () => ({
 }))
 
 const data: BlockNodeData = {
-  label: 'Engine', blockId: 'SYS-001', color: null, selected: true,
+  label: 'Engine', blockId: 'SYS-001', color: null, lineStyle: null, selected: true,
   nested: false, childCount: 0,
   typeName: null, connectionCount: 0, faded: false,
   onResizeEnd: vi.fn()
@@ -76,6 +76,15 @@ describe('BlockNode', () => {
     const { container: parent } = render(<BlockNode data={{ ...data, childCount: 2 }} {...({} as any)} />)
     expect(screen.getByText('Contains 2')).toBeInTheDocument()
     expect(parent.querySelector('.border-dashed')).not.toBeNull()
+  })
+
+  it('draws the outer border in the elements line style, solid when unset', () => {
+    const frame = (d: BlockNodeData): HTMLElement =>
+      render(<BlockNode data={d} {...({} as any)} />).container.firstChild as HTMLElement
+
+    expect(frame(data).style.borderStyle).toBe('solid')
+    expect(frame({ ...data, lineStyle: 'dashed' }).style.borderStyle).toBe('dashed')
+    expect(frame({ ...data, lineStyle: 'dotted' }).style.borderStyle).toBe('dotted')
   })
 
   it('shows the type name on an unnamed node instead of "Object"', () => {

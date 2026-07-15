@@ -10,6 +10,7 @@ function rowToElement(row: any): ArchitectureElement {
     id: row.id, projectId: row.project_id, architectureId: row.architecture_id ?? null, parentId: row.parent_id ?? null,
     blockId: row.block_id, name: row.name, elementTypeId: row.element_type_id ?? null,
     description: row.description ?? null, color: row.color ?? null,
+    lineStyle: row.line_style ?? null,
     posX: row.pos_x, posY: row.pos_y, width: row.width, height: row.height,
     deletedAt: row.deleted_at ?? null, createdAt: row.created_at, updatedAt: row.updated_at
   }
@@ -62,7 +63,7 @@ export function updateElement(id: number, input: UpdateElementInput): Architectu
   db.prepare(`
     UPDATE architecture_elements SET
       parent_id = ?, block_id = ?, name = ?, element_type_id = ?,
-      description = ?, color = ?, pos_x = ?, pos_y = ?, width = ?, height = ?,
+      description = ?, color = ?, line_style = ?, pos_x = ?, pos_y = ?, width = ?, height = ?,
       updated_at = ?
     WHERE id = ?
   `).run(
@@ -72,6 +73,7 @@ export function updateElement(id: number, input: UpdateElementInput): Architectu
     'elementTypeId' in input ? (input.elementTypeId ?? null) : existing.element_type_id,
     'description' in input ? (input.description ?? null) : existing.description,
     'color' in input ? (input.color ?? null) : existing.color,
+    'lineStyle' in input ? (input.lineStyle ?? null) : existing.line_style,
     input.posX ?? existing.pos_x,
     input.posY ?? existing.pos_y,
     input.width ?? existing.width,

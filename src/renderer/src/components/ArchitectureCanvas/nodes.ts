@@ -119,6 +119,7 @@ export function buildNodes(
       label: el.name,
       blockId: el.blockId,
       color: el.color,
+      lineStyle: el.lineStyle,
       selected: el.id === selectedId,
       nested: hasParent(el),
       childCount: elements.filter((c) => c.parentId === el.id).length,
