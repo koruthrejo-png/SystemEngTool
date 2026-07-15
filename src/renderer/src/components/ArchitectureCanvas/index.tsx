@@ -78,8 +78,8 @@ function Menu({ label, children }: { label: string; children: React.ReactNode })
   }, [open])
 
   return (
-    <div ref={ref} className="relative">
-      <Button variant="ghost" aria-expanded={open} onClick={() => setOpen((v) => !v)}>{label}</Button>
+    <div ref={ref} className="relative shrink-0">
+      <Button variant="ghost" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="whitespace-nowrap">{label}</Button>
       {open && <div className="absolute top-full left-0 mt-1 z-20">{children}</div>}
     </div>
   )
@@ -378,10 +378,10 @@ function CanvasInner(): JSX.Element {
     <div className="flex h-full">
       <div className="flex flex-col flex-1 min-w-0">
         <div className="relative z-10 flex items-center gap-2 px-4 h-12 bg-white border-b border-line shrink-0">
-          <Button onClick={handleAddBlock}>+ Object</Button>
+          <Button onClick={handleAddBlock} className="shrink-0 whitespace-nowrap">+ Object</Button>
           <Menu label="Layers ▾"><LayerPanel /></Menu>
-          <div className="w-px h-5 bg-line" />
-          <div className="flex items-center gap-1">
+          <div className="w-px h-5 bg-line shrink-0" />
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => void undo()}
               disabled={undoStack.length === 0}
@@ -407,7 +407,11 @@ function CanvasInner(): JSX.Element {
             </>
           )}
           {selectedConn && <ConnectionStyleMenu conn={selectedConn} />}
-          <span className="ml-auto text-xs text-ink-faint">Drag from a block's edge to connect</span>
+          {/* ponytail: the hint is the only thing here allowed to shrink. Selecting an object both
+              adds the contextual menus AND opens the ~380px Properties drawer, so this row loses
+              width on the same click it gains controls — without this the controls wrapped inside
+              h-12. Hint truncates first; if the bar still overflows, drop Type per spec §5.3. */}
+          <span className="ml-auto min-w-0 truncate text-xs text-ink-faint">Drag from a block&apos;s edge to connect</span>
         </div>
         <div className="flex-1">
           <ReactFlow
