@@ -96,6 +96,7 @@ interface Store {
   addHeading: (input: CreateHeadingInput) => Promise<void>
   renameHeading: (id: number, title: string) => Promise<void>
   moveHeading: (id: number, direction: 'up' | 'down') => Promise<void>
+  reparentHeading: (id: number, newParentId: number | null) => Promise<void>
   removeHeading: (id: number) => Promise<void>
   toggleHeadingCollapsed: (id: number) => void
   setShowDeleted: (show: boolean) => Promise<void>
@@ -260,6 +261,14 @@ export const useStore = create<Store>((set, get) => ({
     await window.api.headings.move(id, direction)
     const { selectedModuleId } = get()
     if (!selectedModuleId) return
+    set({ headings: await window.api.headings.list(selectedModuleId) })
+  },
+
+  reparentHeading: async (id, newParentId) => {
+    await window.api.headings.reparent(id, newParentId)
+    const { selectedModuleId } = get()
+    if (!selectedModuleId) return
+    // headings only: descendants keep pointing at `id`, so requirements are untouched
     set({ headings: await window.api.headings.list(selectedModuleId) })
   },
 

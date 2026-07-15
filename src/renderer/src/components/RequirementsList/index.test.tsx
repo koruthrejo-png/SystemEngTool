@@ -54,6 +54,7 @@ beforeEach(() => {
     addHeading: vi.fn().mockResolvedValue(undefined),
     renameHeading: vi.fn().mockResolvedValue(undefined),
     moveHeading: vi.fn().mockResolvedValue(undefined),
+    reparentHeading: vi.fn().mockResolvedValue(undefined),
     removeHeading: vi.fn().mockResolvedValue(undefined)
   })
 })
@@ -307,6 +308,52 @@ describe('RequirementsList', () => {
     fireEvent.dragOver(ungrouped)
     fireEvent.drop(ungrouped)
     expect(storeState.updateRequirement).toHaveBeenCalledWith(2, { headingId: null })
+  })
+
+  // Section drag (item 28). Only the dragged heading is written — its subheadings and
+  // requirements point at it via parent_id/heading_id, so they follow on the next render.
+  const sectionB = { ...headingFixture, id: 6, title: 'Thermal', position: 1 }
+
+  it('dragging a section onto another section makes it a child of that section', () => {
+    Object.assign(storeState, { headings: [headingFixture, sectionB] })
+    render(<RequirementsList />)
+    fireEvent.dragStart(screen.getByTestId('heading-drag-6'))
+    fireEvent.dragOver(screen.getByTestId('heading-row-5'))
+    fireEvent.drop(screen.getByTestId('heading-row-5'))
+    expect(storeState.reparentHeading).toHaveBeenCalledWith(6, 5)
+  })
+
+  it("a dragged section's children follow it without being moved themselves", () => {
+    // 6 is nested under 5 and owns req 2; re-parenting 6 to top level writes only 6.
+    Object.assign(storeState, {
+      headings: [headingFixture, { ...sectionB, parentId: 5 }],
+      requirements: [req1, { ...req2, headingId: 6 }]
+    })
+    render(<RequirementsList />)
+    // req1 is ungrouped, so dropping onto its row means "module root" — same idiom as reqs.
+    fireEvent.dragStart(screen.getByTestId('heading-drag-6'))
+    const ungrouped = screen.getByText('SRS-0001').closest('[draggable="true"]')!
+    fireEvent.dragOver(ungrouped)
+    fireEvent.drop(ungrouped)
+    expect(storeState.reparentHeading).toHaveBeenCalledWith(6, null)
+    expect(storeState.reparentHeading).toHaveBeenCalledTimes(1)
+    expect(storeState.updateRequirement).not.toHaveBeenCalled()
+  })
+
+  it('refuses to drop a section onto its own descendant', () => {
+    Object.assign(storeState, { headings: [headingFixture, { ...sectionB, parentId: 5 }] })
+    render(<RequirementsList />)
+    fireEvent.dragStart(screen.getByTestId('heading-drag-5'))
+    fireEvent.drop(screen.getByTestId('heading-row-6'))
+    expect(storeState.reparentHeading).not.toHaveBeenCalled()
+  })
+
+  it('refuses to drop a section onto itself', () => {
+    Object.assign(storeState, { headings: [headingFixture] })
+    render(<RequirementsList />)
+    fireEvent.dragStart(screen.getByTestId('heading-drag-5'))
+    fireEvent.drop(screen.getByTestId('heading-row-5'))
+    expect(storeState.reparentHeading).not.toHaveBeenCalled()
   })
 
   it('collapse toggle calls the store and collapsed heading hides its requirements', () => {

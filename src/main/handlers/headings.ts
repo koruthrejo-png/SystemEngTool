@@ -66,6 +66,34 @@ export function moveHeading(id: number, direction: 'up' | 'down'): void {
   })()
 }
 
+// Re-parent a heading (drag & drop); newParentId null = top level. Descendants need no update:
+// subheadings and requirements point at `id` via parent_id/heading_id, so they follow it.
+// The heading is appended last among its new siblings, matching createHeading.
+export function reparentHeading(id: number, newParentId: number | null): ReqHeading {
+  const db = getDatabase()
+  return db.transaction(() => {
+    const h = db.prepare('SELECT * FROM req_headings WHERE id = ?').get(id) as any
+    if (!h) throw new Error(`Heading ${id} not found`)
+    if (newParentId != null) {
+      // Cycle guard: walk up from the target; hitting `id` means target is self or a descendant.
+      let cur: number | null = newParentId
+      while (cur != null) {
+        if (cur === id) throw new Error('Cannot move a section into itself or its descendants')
+        const row = db.prepare('SELECT parent_id FROM req_headings WHERE id = ?').get(cur) as any
+        if (!row) throw new Error(`Heading ${cur} not found`)
+        cur = row.parent_id ?? null
+      }
+    }
+    // id != ? so a heading re-parented within its current parent doesn't count itself.
+    const max = db.prepare(
+      'SELECT COALESCE(MAX(position), -1) AS p FROM req_headings WHERE module_id = ? AND deleted_at IS NULL AND parent_id IS ? AND id != ?'
+    ).get(h.module_id, newParentId, id) as any
+    db.prepare('UPDATE req_headings SET parent_id = ?, position = ?, updated_at = ? WHERE id = ?')
+      .run(newParentId, max.p + 1, now(), id)
+    return rowToHeading(db.prepare('SELECT * FROM req_headings WHERE id = ?').get(id))
+  })()
+}
+
 // Soft delete; requirements and subheadings under it move up to the deleted heading's parent.
 export function deleteHeading(id: number): void {
   const db = getDatabase()
@@ -86,5 +114,6 @@ export function registerHeadingHandlers(): void {
   ipcMain.handle('headings:create', (_e, input: CreateHeadingInput) => createHeading(input))
   ipcMain.handle('headings:update', (_e, id: number, input: UpdateHeadingInput) => updateHeading(id, input))
   ipcMain.handle('headings:move', (_e, id: number, direction: 'up' | 'down') => moveHeading(id, direction))
+  ipcMain.handle('headings:reparent', (_e, id: number, newParentId: number | null) => reparentHeading(id, newParentId))
   ipcMain.handle('headings:delete', (_e, id: number) => deleteHeading(id))
 }

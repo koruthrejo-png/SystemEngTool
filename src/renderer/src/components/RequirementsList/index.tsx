@@ -2,7 +2,7 @@ import { useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useStore } from '../../store'
 import { Button, Chip, SectionLabel, Select } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
-import { buildOutline, visibleRows, type OutlineRow } from './outline'
+import { buildOutline, visibleRows, canReparent, type OutlineRow } from './outline'
 
 // label '' = structural column (checkbox / actions), not resizable
 const COLUMNS = [
@@ -45,20 +45,38 @@ export default function RequirementsList(): JSX.Element {
     checkedIds, toggleChecked, setChecked,
     updateRequirements, removeRequirements,
     headings, collapsedHeadingIds, toggleHeadingCollapsed,
-    addHeading, renameHeading, moveHeading, removeHeading
+    addHeading, renameHeading, moveHeading, reparentHeading, removeHeading
   } = useStore()
   const [colWidths, setColWidths] = useState<number[]>(loadWidths)
   const [dragReqId, setDragReqId] = useState<number | null>(null)
+  const [dragHeadingId, setDragHeadingId] = useState<number | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
 
-  // Drag a requirement row onto a heading (or another req) to move it into that section.
-  function moveReqToHeading(headingId: number | null): void {
-    const id = dragReqId
+  // Every drop target names the section it puts the dragged row into: a heading row names
+  // itself, a requirement row names the section it lives in (null = module root).
+  function canDropInto(headingId: number | null, targetReqId?: number): boolean {
+    if (dragReqId != null) return dragReqId !== targetReqId
+    if (dragHeadingId != null) return canReparent(headings, dragHeadingId, headingId)
+    return false
+  }
+
+  // Drop a requirement row onto a heading (or another req) to move it into that section;
+  // drop a heading row the same way to move the whole section — subheadings and
+  // requirements follow their parent, so only the dragged heading is written.
+  function dropInto(headingId: number | null, targetReqId?: number): void {
+    const reqId = dragReqId
+    const headId = dragHeadingId
     setDragReqId(null)
+    setDragHeadingId(null)
     setDragOverKey(null)
-    if (id == null) return
-    const dragged = requirements.find((r) => r.id === id)
-    if (dragged && dragged.headingId !== headingId) updateRequirement(id, { headingId })
+    if (!canDropInto(headingId, targetReqId)) return
+    if (reqId != null) {
+      const dragged = requirements.find((r) => r.id === reqId)
+      if (dragged && dragged.headingId !== headingId) updateRequirement(reqId, { headingId })
+    } else if (headId != null) {
+      const dragged = headings.find((h) => h.id === headId)
+      if (dragged && dragged.parentId !== headingId) reparentHeading(headId, headingId)
+    }
   }
 
   function startResize(e: ReactMouseEvent, index: number): void {
@@ -210,9 +228,9 @@ export default function RequirementsList(): JSX.Element {
               <div
                 key={`h-${row.heading.id}`}
                 data-testid={`heading-row-${row.heading.id}`}
-                onDragOver={(e) => { if (dragReqId != null) { e.preventDefault(); setDragOverKey(`h-${row.heading.id}`) } }}
+                onDragOver={(e) => { if (canDropInto(row.heading.id)) { e.preventDefault(); setDragOverKey(`h-${row.heading.id}`) } }}
                 onDragLeave={() => setDragOverKey((k) => (k === `h-${row.heading.id}` ? null : k))}
-                onDrop={(e) => { e.preventDefault(); moveReqToHeading(row.heading.id) }}
+                onDrop={(e) => { e.preventDefault(); dropInto(row.heading.id) }}
                 className={`flex items-center gap-2 px-4 py-2 border-b border-line bg-workspace group/h ${dragOverKey === `h-${row.heading.id}` ? 'ring-2 ring-inset ring-action' : ''}`}
               >
                 <button
@@ -222,8 +240,18 @@ export default function RequirementsList(): JSX.Element {
                 >
                   {collapsedHeadingIds.includes(row.heading.id) ? '▸' : '▾'}
                 </button>
-                {/* fixed width so titles line up regardless of number length; fits '1.1.1' */}
-                <span className="w-12 shrink-0 whitespace-nowrap text-xs font-mono text-ink-faint">{row.number}</span>
+                {/* Drag handle. Only the number grabs, not the whole row: a draggable row
+                    would stop the title <input> below from selecting text. */}
+                <span
+                  data-testid={`heading-drag-${row.heading.id}`}
+                  title="Drag to move section"
+                  draggable
+                  onDragStart={(e) => { setDragHeadingId(row.heading.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move' }}
+                  onDragEnd={() => { setDragHeadingId(null); setDragOverKey(null) }}
+                  className="w-12 shrink-0 whitespace-nowrap text-xs font-mono text-ink-faint cursor-grab active:cursor-grabbing"
+                >
+                  {row.number}
+                </span>
                 {/* fixed width: an <input> can't size to its content, so the toolbar
                     stays next to the title instead of being pushed to the row's edge */}
                 <input
@@ -265,9 +293,9 @@ export default function RequirementsList(): JSX.Element {
                     draggable={!showDeleted}
                     onDragStart={(e) => { setDragReqId(req.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move' }}
                     onDragEnd={() => { setDragReqId(null); setDragOverKey(null) }}
-                    onDragOver={(e) => { if (dragReqId != null && dragReqId !== req.id) { e.preventDefault(); setDragOverKey(`r-${req.id}`) } }}
+                    onDragOver={(e) => { if (canDropInto(req.headingId, req.id)) { e.preventDefault(); setDragOverKey(`r-${req.id}`) } }}
                     onDragLeave={() => setDragOverKey((k) => (k === `r-${req.id}` ? null : k))}
-                    onDrop={(e) => { e.preventDefault(); moveReqToHeading(req.headingId) }}
+                    onDrop={(e) => { e.preventDefault(); dropInto(req.headingId, req.id) }}
                     style={gridStyle}
                     className={[
                     'grid',

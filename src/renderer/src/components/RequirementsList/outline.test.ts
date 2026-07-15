@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildOutline, visibleRows, type OutlineRow } from './outline'
+import { buildOutline, visibleRows, canReparent, type OutlineRow } from './outline'
 import type { ReqHeading, Requirement } from '../../../../types'
 
 function heading(partial: Partial<ReqHeading> & { id: number }): ReqHeading {
@@ -102,5 +102,41 @@ describe('visibleRows', () => {
 
   it('collapsing a subheading hides only its own requirements', () => {
     expect(shape(visibleRows(outline, new Set([11])))).toEqual(['1 H10', 'SRS-1', '1.1 H11', '2 H20', 'SRS-3'])
+  })
+})
+
+// The authority is the identical walk in reparentHeading (src/main/handlers/headings.ts);
+// this guard only decides whether the UI offers the drop.
+describe('canReparent', () => {
+  // 10 > 11 > 12, plus unrelated top-level 20
+  const tree = [
+    heading({ id: 10 }),
+    heading({ id: 11, parentId: 10 }),
+    heading({ id: 12, parentId: 11 }),
+    heading({ id: 20 })
+  ]
+
+  it('allows moving a heading under an unrelated heading', () => {
+    expect(canReparent(tree, 10, 20)).toBe(true)
+  })
+
+  it('allows moving a heading to the top level', () => {
+    expect(canReparent(tree, 12, null)).toBe(true)
+  })
+
+  it('refuses a heading into itself', () => {
+    expect(canReparent(tree, 10, 10)).toBe(false)
+  })
+
+  it('refuses a heading into its direct child', () => {
+    expect(canReparent(tree, 10, 11)).toBe(false)
+  })
+
+  it('refuses a heading into a deeper descendant', () => {
+    expect(canReparent(tree, 10, 12)).toBe(false)
+  })
+
+  it('terminates on a malformed chain whose parent is missing', () => {
+    expect(canReparent([heading({ id: 30, parentId: 99 })], 10, 30)).toBe(true)
   })
 })

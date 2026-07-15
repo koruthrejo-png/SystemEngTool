@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('api', {
     create: (input: CreateHeadingInput): Promise<ReqHeading> => ipcRenderer.invoke('headings:create', input),
     update: (id: number, input: UpdateHeadingInput): Promise<ReqHeading> => ipcRenderer.invoke('headings:update', id, input),
     move: (id: number, direction: 'up' | 'down'): Promise<void> => ipcRenderer.invoke('headings:move', id, direction),
+    reparent: (id: number, newParentId: number | null): Promise<ReqHeading> => ipcRenderer.invoke('headings:reparent', id, newParentId),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('headings:delete', id)
   },
   customFields: {

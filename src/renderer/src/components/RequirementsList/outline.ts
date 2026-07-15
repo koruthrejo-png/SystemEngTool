@@ -32,6 +32,19 @@ export function buildOutline(headings: ReqHeading[], requirements: Requirement[]
   return rows
 }
 
+// Cycle guard: a heading may never become its own descendant. Walk up from the target;
+// hitting `id` means the target is the heading itself or something nested under it.
+// Mirrors the server-side walk in reparentHeading (src/main/handlers/headings.ts), which
+// is the authority — this copy only decides whether the UI offers the drop.
+export function canReparent(headings: ReqHeading[], id: number, newParentId: number | null): boolean {
+  let cur = newParentId
+  while (cur != null) {
+    if (cur === id) return false
+    cur = headings.find((h) => h.id === cur)?.parentId ?? null
+  }
+  return true
+}
+
 // Collapse hides a heading's content (requirements + deeper headings), not the heading row itself.
 export function visibleRows(rows: OutlineRow[], collapsed: Set<number>): OutlineRow[] {
   const out: OutlineRow[] = []
