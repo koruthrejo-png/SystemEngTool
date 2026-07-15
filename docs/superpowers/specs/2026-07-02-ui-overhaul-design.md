@@ -117,7 +117,7 @@ Recorded so they can be planned as future feature work.
 > **13** (last-modified *user* attribution — blocked on there being no user concept at all),
 > **14** (export PDF from architecture view), ~~**23**~~ **DONE 2026-07-15** (ABI fixed AND the
 > item-21 migration regression tests written — suite is 381/381 green),
-> **29** (architecture top-bar consolidation — spec'd; Phase 1 + Phase 2 DONE, Phase 3 open),
+> **29** (architecture top-bar consolidation — spec'd; Phase 1, Phase 2, and Phase 3's B2+B3 DONE; only B1 remains, needs its own brainstorm),
 > **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left).
 > **Item 21 is fully closed** — the user completed their hands-on pass 2026-07-15 and
 > found no defects.

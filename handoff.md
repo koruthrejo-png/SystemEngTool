@@ -313,13 +313,33 @@ resolve: { alias: { 'better-sqlite3': 'better-sqlite3-node' } }
 
 **Item 23's own follow-up is DONE too** — `src/main/db/folderSplit.test.ts` (6 tests) now covers the item-21 folder-split migration: split, flip-only, idempotence (the three the item-21 spec mandated), plus the two gaps its review named — 3-level nesting and the soft-deleted-child branch — and soft-deleted requirements following their module. **Proven load-bearing by mutation testing**, not merely by passing: five mutations of `migrations.ts` each failed the right tests. **Suite is now 54 files / 381 tests, zero failures.** Backlog item 23 is fully closed.
 
+### ✅ Item 29 Phase 3 — B2 (snap) + B3 (duplicate) — COMPLETE (session 2026-07-15c)
+
+Commit `2ec92dc`. Spec: `docs/superpowers/specs/2026-07-15-architecture-top-bar-design.md` §6 B2/B3. **B1 deliberately NOT done** — see below.
+
+- **B2 — snap to grid.** `Snap` toggle in the bar's *global* segment beside `Layers ▾` (a canvas mode, not a selection attribute, so it does not belong in the contextual segment). `snapGrid` is `[16, 16]`, matching the `Background` dot gap, so snapped objects land on visible dots. **Session-only by design** — if it should survive a relaunch it is a view preference, not a column.
+- **B3 — duplicate.** `Cmd+D` only (user decision — the bar had slack but no reason to spend it; duplicating is a hands-on-keyboard flow action). Copies name, type, description, colour, fill, lineStyle, **size and container** (user decision: a duplicate that snaps back to 160x80 or jumps out of its parent reads as a bug). New `blockId` is minted server-side — a duplicate, not a clone.
+
+**⚠️ The spec was wrong that B3 "reuses `addElement`" as-is.** `CreateElementInput` carried **no** style fields and `createElement` silently ignored them — precisely the gap item 22 recorded on connections and shrugged off as "a caller has never needed one". **B3 is that caller.** `CreateElementInput` + the INSERT now carry `description`/`color`/`fillColor`/`lineStyle`/`width`/`height`. This is not optional polish: carrying the whole copy in ONE create call is what keeps a duplicate to **one undo entry** — a create-then-style pair would push two, so the first Cmd+Z would strip the styling and leave a naked duplicate on the canvas.
+
+**Coverage — the first feature this session that did NOT ship dark.** Item 23 was fixed hours earlier, so `createElement`'s new style path has real handler tests (`elements.test.ts`, incl. a test that `+ Object` still produces a plain 160x80 block). **All new tests mutation-verified**: snap grid `[16,16]`→`[8,8]`, duplicate offset removed, `fillColor` not copied, and the `isTyping` guard dropped — each failed the right test.
+
+**Live-verified** (driver, `thermal`, restored to baseline afterwards): snap ON → dragged to exactly `(304, 128)`, both multiples of 16; **snap OFF control** → `(359.19, 173.99)`, remainders 7/13 — so the toggle genuinely gates it. Cmd+D copied colour/fill/`208x176`/pos+20 into a newly minted `SYS-009`; one Cmd+Z removed it (node count 6→7→6, redo→7).
+
+Also reworded `index.tsx`'s stale `"connections only; never a block"` comment, which had contradicted the shipped keep-blocks-deletable behaviour since item 22.
+
+**Driver gotchas that cost time here — read before the next live-verify:**
+- **Node screen coordinates move whenever the diagram changes** (`fitView` re-bounds). Re-read the rect in the same run rather than reusing one from an earlier launch; a stale coordinate mouse-downs on empty canvas and *silently pans* instead of dragging, which looks exactly like "the feature is broken".
+- `document.querySelector('.react-flow__node')` is the **first node in DOM order**, not the one you have in mind. Two style edits landed on SYS-001 while I checked SYS-004 and concluded, wrongly, that the write had failed.
+- Undo history is **session-scoped**: testing Cmd+Z after a relaunch proves nothing.
+
 ## ⏸️ NEXT SESSION — PICK UP HERE
 
-**1. Item 29 Phase 3** (B1 type-colour inheritance — needs seeded `element_types.color` values *and* a type-colour editor, per the earlier §1 correction, plus a border-clear path per the deferral above; B2 snap; B3 duplicate). Per-feature approval first.
+**1. Item 29 Phase 3 — only B1 remains** (B2 + B3 shipped `2ec92dc`). **B1 needs its own brainstorm, not a plan** — it is not the one-liner §9 claims: `element_types.color` is never populated (`seedElementTypes` hardcodes NULL and the renderer never calls `elementTypes.create`), so it needs (a) colours seeded for the 5 built-ins, (b) a type-colour editor UI that does not exist, and (c) a border-clear path, since `color` still has no NULL affordance and hand-set values like SYS-003's `#66ffbd` would override an inherited colour forever. Its handler work can now carry real tests (item 23 is fixed).
 
 **3. Open backlog:** **11** (admin area), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), ~~**23** (ABI + item-21 migration tests)~~ **DONE 2026-07-15**, **29** (Phase 3), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
 
-**Test baseline to expect:** **381 passed / 0 failed (54 files), both typechecks clean.** Item 23 is FIXED (see its section above) — the old "52 failed, all ERR_DLOPEN_FAILED, do not chase it" baseline is dead. **Any failure is now a real failure.**
+**Test baseline to expect:** **389 passed / 0 failed (54 files), both typechecks clean.** Item 23 is FIXED (see its section above) — the old "52 failed, all ERR_DLOPEN_FAILED, do not chase it" baseline is dead. **Any failure is now a real failure.**
 
 **Scratch data on `thermal`:** folder `Avionics` + `SRS-TRS--8` (safe to delete); a dashed SYS-002→SYS-001 connection. `SmokeTest.reqarch` still holds an **un-migrated** legacy tree — **opening it migrates in place, irreversibly from the UI**; copy the file first if a fallback is wanted.
 
