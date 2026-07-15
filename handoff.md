@@ -251,6 +251,21 @@ The wrap bug found at 725/957px is **fixed and committed (`3dcdb35`)**. Root cau
 
 **Not a Phase 1 regression — a pre-existing app-wide floor:** below ~1165px the *whole page* overflows horizontally (`body.scrollWidth 1165` vs `clientWidth 985` at a 1000px window) — with **nothing selected, on the Requirements tab too**. The navy header (search + Open + New Project) sets that floor; "New Project" is the first thing off-screen. The bar clipping seen at 1000px is downstream of this, not of the top bar. Also note the BrowserWindow refuses to go below **900px** wide. Fixing the app-wide min width is a separate, unscoped item — nobody has asked for it.
 
+## Session 2026-07-15c — summary
+
+Four things shipped, all on `main`, `028a4e9..HEAD`. **The headline is item 23: the test suite went from 321 passed / 52 failed to 389 passed / 0 failed.** Detail sections follow.
+
+| What | Commits | Note |
+|---|---|---|
+| **Item 29 Phase 1 closed** — top-bar wrap fix + live-verify | `3dcdb35`, `ce42251` | §5.3 settled: **Type stays in the bar** |
+| **Item 29 Phase 2** — object fill colour | `c5a0654..7216d94`, `f7487c7` | final review: zero Critical/Important |
+| **Item 23 FIXED** — main-process suite runnable | `fcead27`, `5ee5c9c` | 30 lines; + the folder-split migration tests it had blocked |
+| **Item 29 Phase 3 — B2 + B3** | `2ec92dc` | B1 still open — see NEXT SESSION |
+
+**The two threads fed each other.** Phase 2 shipped a DB column with no coverage *because* item 23 was open, and its final review flagged that as the third consecutive occurrence (26, 27, 29-P2). Fixing item 23 then cost 30 lines — the long-standing "structural, do not re-litigate" framing had the diagnosis right but stopped one step short of the answer. B3 is the first feature since with real backend tests.
+
+**A pattern worth carrying forward: this area's specs keep asserting things the code contradicts.** Three found and corrected today — §5.5's palette rationale (no fill can pass AA against `ink-faint`, which is already marginal on plain white), §9's "B1 is one line" (the column is never populated and there's no editor), and B3 "reuses `addElement`" (`CreateElementInput` had no style fields). **Verify before building; the spec is not ground truth here.**
+
 ### ✅ Item 29 Phase 2 (object fill colour) — COMPLETE (session 2026-07-15c)
 
 **Spec:** `docs/superpowers/specs/2026-07-15-architecture-fill-colour-design.md`. **Plan:** `docs/superpowers/plans/2026-07-15-architecture-fill-colour.md`. **Commits:** `c5a0654..7216d94` (4 tasks, subagent-driven development, all reviewed clean) + this docs/live-verify task.
@@ -335,9 +350,37 @@ Also reworded `index.tsx`'s stale `"connections only; never a block"` comment, w
 
 ## ⏸️ NEXT SESSION — PICK UP HERE
 
-**1. Item 29 Phase 3 — only B1 remains** (B2 + B3 shipped `2ec92dc`). **B1 needs its own brainstorm, not a plan** — it is not the one-liner §9 claims: `element_types.color` is never populated (`seedElementTypes` hardcodes NULL and the renderer never calls `elementTypes.create`), so it needs (a) colours seeded for the 5 built-ins, (b) a type-colour editor UI that does not exist, and (c) a border-clear path, since `color` still has no NULL affordance and hand-set values like SYS-003's `#66ffbd` would override an inherited colour forever. Its handler work can now carry real tests (item 23 is fixed).
+**1. Item 29 Phase 3 — only B1 remains: colour defaults from element type.** B2 + B3 shipped (`2ec92dc`).
 
-**3. Open backlog:** **11** (admin area), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), ~~**23** (ABI + item-21 migration tests)~~ **DONE 2026-07-15**, **29** (Phase 3), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
+**Start with `superpowers:brainstorming`, NOT `writing-plans`.** The spec's §9 files B1 under "the cheap wins — one line, no columns". **That ranking is false and is the third bad claim this area has produced** (the others: §5.5's palette rationale, and B3 "reuses `addElement`"). B1 is a real feature with a DB decision, a new IPC, and new UI.
+
+**The idea (still good).** A systems engineer should not hand-colour forty boxes — colour on an architecture diagram encodes a *category*. Objects inherit their Type's colour; per-object colour becomes an override. The render change really is one line in `nodes.ts`. Everything below is what has to exist first.
+
+**Ground truth — all re-verified against the code 2026-07-15, do not re-derive:**
+
+| Claim | Status |
+|---|---|
+| `element_types.color` column exists (`ElementType.color: string \| null`) | ✅ real |
+| `seedElementTypes` hardcodes `color = NULL` for every built-in | ✅ `elementTypes.ts:24` — literal `NULL` in the INSERT |
+| The renderer **never** writes types — only `elementTypes.list` (`store/index.ts:361,429`) | ✅ no `.create`/`.delete`/`.update` call anywhere in `src/renderer` |
+| Handler exposes `list` / `create` / `delete` | ✅ `elementTypes.ts:51-54` |
+| **There is NO `elementTypes:update` at all** | ⚠️ **not in the spec.** A type-colour *editor* has nothing to call. New handler + IPC + preload + `api.d.ts` needed. |
+| `nodes.ts:119` builds `new Map(elementTypes.map(t => [t.id, t.name]))` — takes `.name` only | ✅ the Map must carry `.color` too |
+| `ComponentLibrary.tsx` (has a colour-dot UI) is unmounted | ✅ only its own file + test reference it — shelved deliberately by `ff0be6c`, **not** a regression |
+
+**Five things B1 must decide/do — sized honestly:**
+
+1. **Seeding is a migration, not a seed edit.** `seedElementTypes` inserts only built-ins whose *name* is missing (`elementTypes.ts:20-28`). Every existing project already has all five rows at `color = NULL`, so **changing the INSERT's `NULL` to a colour helps NEW projects only** — existing ones stay grey forever. Seeding colours retroactively needs a backfill migration (`UPDATE element_types SET color = ? WHERE is_built_in = 1 AND color IS NULL AND name = ?`), which is idempotent by the `color IS NULL` guard. **This is the single biggest thing §9's "no columns" framing hides.**
+2. **Which colours?** `ArchitectureCanvas/swatches.ts` now holds 8 measured, AA-verified hues (`SWATCHES`, each `{ name, border, fill }`). Seeding should reuse those values — but `swatches.ts` is **renderer-side** and seeding is **main-side**, so either the constant moves somewhere shared or the hexes get duplicated. Pick deliberately; a silent divergence would put a type's colour outside the palette its own picker offers.
+3. **Border-clear path is a prerequisite, not a nicety.** `color` still has no NULL affordance (Phase 2's ✕ chip is Fill-only, by user decision). Any object with an explicit `color` beats an inherited one **forever**. `thermal` has a live example: `SYS-003` = `#66ffbd`. Without a ✕ on Border, B1 silently does nothing for every already-coloured object, which will read as "the feature is broken". Mirror Phase 2's Fill chip — `Swatches` already takes `clearable`.
+4. **Does fill inherit too?** **Phase 2 deferred inheritance *specifically* so B1 would answer this ONCE for border and fill together** — that was the user's decision and the reason Phase 2 stayed "one column". If fill inherits, `element_types` needs a `fill_color` column as well. Answer this in the brainstorm; do not let it drift a third time.
+5. **Where does the editor live?** No type-management UI exists. Options: revive `ComponentLibrary` (already has a colour dot, but shelved for a reason), extend the bar's `Type ▾` popover, or a small admin surface (cf. backlog item 11). This is a genuine product question — brainstorm it.
+
+**The payoff line, once the above exists** — `nodes.ts`: `el.color ?? type.color ?? NAVY`. Pure, and `nodes.ts` already has good coverage.
+
+**Coverage is available now** — item 23 is fixed, so the backfill migration and the new `elementTypes:update` handler get **real tests**. B1 must NOT ship dark; items 26, 27 and 29-P2 each did, and the final review flagged that pattern as the reason item 23 mattered.
+
+**2. Open backlog:** **11** (admin area — note B1's editor may want a home here), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), ~~**23** (ABI + item-21 migration tests)~~ **DONE 2026-07-15**, **29** (only B1 left), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
 
 **Test baseline to expect:** **389 passed / 0 failed (54 files), both typechecks clean.** Item 23 is FIXED (see its section above) — the old "52 failed, all ERR_DLOPEN_FAILED, do not chase it" baseline is dead. **Any failure is now a real failure.**
 
