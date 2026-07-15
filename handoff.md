@@ -309,15 +309,17 @@ resolve: { alias: { 'better-sqlite3': 'better-sqlite3-node' } }
 
 **Guard:** `src/main/db/sqliteAbi.test.ts` asserts the two copies stay on one version (bump one without the other and the tests silently exercise an engine users never get) and that a real native DB opens. It reads both `package.json`s from **disk** on purpose — importing `better-sqlite3/package.json` inside a test resolves through the alias and compares the copy against itself. The guard was proven load-bearing by faking a drift and watching it fail.
 
-**Consequences — the standing "do not write migration/handler tests" rule is REPEALED.** Items 26, 27 and 29-P2 each shipped a DB column with zero automated coverage citing item 23; that reason is gone. `src/main/db/migrations.test.ts` runs again (5 tests), so **backlog item 23's own follow-up — migration regression tests for the item-21 folder split — is now unblocked and is the natural next piece of work.** Live-verify remains valuable for UI behaviour, but it is no longer the *only* way to prove backend work.
+**Consequences — the standing "do not write migration/handler tests" rule is REPEALED.** Items 26, 27 and 29-P2 each shipped a DB column with zero automated coverage citing item 23; that reason is gone. Live-verify remains valuable for UI behaviour, but it is no longer the *only* way to prove backend work.
+
+**Item 23's own follow-up is DONE too** — `src/main/db/folderSplit.test.ts` (6 tests) now covers the item-21 folder-split migration: split, flip-only, idempotence (the three the item-21 spec mandated), plus the two gaps its review named — 3-level nesting and the soft-deleted-child branch — and soft-deleted requirements following their module. **Proven load-bearing by mutation testing**, not merely by passing: five mutations of `migrations.ts` each failed the right tests. **Suite is now 54 files / 381 tests, zero failures.** Backlog item 23 is fully closed.
 
 ## ⏸️ NEXT SESSION — PICK UP HERE
 
 **1. Item 29 Phase 3** (B1 type-colour inheritance — needs seeded `element_types.color` values *and* a type-colour editor, per the earlier §1 correction, plus a border-clear path per the deferral above; B2 snap; B3 duplicate). Per-feature approval first.
 
-**3. Open backlog:** **11** (admin area), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), ~~**23** (ABI)~~ **FIXED 2026-07-15**, **29** (Phase 3), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
+**3. Open backlog:** **11** (admin area), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), ~~**23** (ABI + item-21 migration tests)~~ **DONE 2026-07-15**, **29** (Phase 3), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
 
-**Test baseline to expect:** **375 passed / 0 failed (53 files), both typechecks clean.** Item 23 is FIXED (see its section above) — the old "52 failed, all ERR_DLOPEN_FAILED, do not chase it" baseline is dead. **Any failure is now a real failure.**
+**Test baseline to expect:** **381 passed / 0 failed (54 files), both typechecks clean.** Item 23 is FIXED (see its section above) — the old "52 failed, all ERR_DLOPEN_FAILED, do not chase it" baseline is dead. **Any failure is now a real failure.**
 
 **Scratch data on `thermal`:** folder `Avionics` + `SRS-TRS--8` (safe to delete); a dashed SYS-002→SYS-001 connection. `SmokeTest.reqarch` still holds an **un-migrated** legacy tree — **opening it migrates in place, irreversibly from the UI**; copy the file first if a fallback is wanted.
 
