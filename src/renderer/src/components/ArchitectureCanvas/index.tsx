@@ -19,6 +19,7 @@ import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from
 import { edgeMarker, EDGE_STROKE, EDGE_STROKE_SELECTED } from './edgeStyle'
 import { shouldDeleteConnection, isTyping } from './deleteKey'
 import { barMode } from './barMode'
+import { SWATCHES, NAVY } from './swatches'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -119,6 +120,44 @@ const MARKERS = (
   </>
 )
 
+// One row of preset chips. `shade` picks which column of the paired palette to show:
+// dark shades sit under the header's white text, pale ones under the body's dark text.
+// Deliberately not selection-aware — the native picker below already reports the current
+// colour, and it can hold a hex no chip has.
+function Swatches({ shade, label, clearable, onPick }: {
+  shade: 'border' | 'fill'
+  label: string
+  clearable?: boolean
+  onPick: (hex: string | null) => void
+}): JSX.Element {
+  return (
+    <div className="flex items-center gap-1 mb-1">
+      {clearable && (
+        <button
+          type="button"
+          aria-label={`${label} None`}
+          title="None"
+          onClick={() => onPick(null)}
+          className="h-5 w-5 rounded border border-line text-[10px] leading-none text-ink-faint hover:border-ink-faint"
+        >
+          ✕
+        </button>
+      )}
+      {SWATCHES.map((s) => (
+        <button
+          key={s.name}
+          type="button"
+          aria-label={`${label} ${s.name}`}
+          title={s.name}
+          onClick={() => onPick(s[shade])}
+          style={{ background: s[shade] }}
+          className="h-5 w-5 rounded border border-line hover:border-ink-faint"
+        />
+      ))}
+    </div>
+  )
+}
+
 // Contextual segment: object styling. Writes on change — no local state, no onBlur.
 function ObjectStyleMenu({ el }: { el: ArchitectureElement }): JSX.Element {
   const { updateElement } = useStore()
@@ -126,11 +165,22 @@ function ObjectStyleMenu({ el }: { el: ArchitectureElement }): JSX.Element {
     <Menu label="Style ▾">
       <MenuCard>
         <Field label="Border">
+          <Swatches shade="border" label="Border" onPick={(c) => updateElement(el.id, { color: c })} />
           <input
             type="color"
             aria-label="Border"
-            value={el.color ?? '#ffffff'}
+            value={el.color ?? NAVY}
             onChange={(e) => updateElement(el.id, { color: e.target.value })}
+            className="h-9 w-full rounded border border-line cursor-pointer"
+          />
+        </Field>
+        <Field label="Fill">
+          <Swatches shade="fill" label="Fill" clearable onPick={(c) => updateElement(el.id, { fillColor: c })} />
+          <input
+            type="color"
+            aria-label="Fill"
+            value={el.fillColor ?? '#ffffff'}
+            onChange={(e) => updateElement(el.id, { fillColor: e.target.value })}
             className="h-9 w-full rounded border border-line cursor-pointer"
           />
         </Field>

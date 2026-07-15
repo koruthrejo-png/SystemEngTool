@@ -226,5 +226,47 @@ describe('ArchitectureCanvas', () => {
       fireEvent.keyDown(screen.getByLabelText('Border'), { key: 'Escape' })
       expect(screen.getByLabelText('Border')).toBeInTheDocument()
     })
+
+    it('offers Fill swatches and a Fill picker when an object is selected', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(screen.getByRole('button', { name: 'Style ▾' }))
+      expect(screen.getByLabelText('Fill')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Fill Teal' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Border Teal' })).toBeInTheDocument()
+    })
+
+    it('clicking a Fill swatch calls updateElement with that hex only', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(screen.getByRole('button', { name: 'Style ▾' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Fill Teal' }))
+      expect(mockUpdateElement).toHaveBeenCalledWith(100, { fillColor: '#e3f3f1' })
+    })
+
+    it('clicking the Fill clear chip calls updateElement with null, not white', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(screen.getByRole('button', { name: 'Style ▾' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Fill None' }))
+      // null, so a later type-inherited colour (B1) can still win. '#ffffff' would block it forever.
+      expect(mockUpdateElement).toHaveBeenCalledWith(100, { fillColor: null })
+    })
+
+    it('clicking a Border swatch calls updateElement with { color } only', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(screen.getByRole('button', { name: 'Style ▾' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Border Teal' }))
+      expect(mockUpdateElement).toHaveBeenCalledWith(100, { color: '#0f766e' })
+    })
+
+    it('shows NAVY in the border picker for an uncoloured object, matching what the block renders', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(screen.getByRole('button', { name: 'Style ▾' }))
+      // BlockNode renders `d.color ?? NAVY`; the picker must not claim white.
+      expect(screen.getByLabelText('Border')).toHaveValue('#1a365d')
+    })
   })
 })
