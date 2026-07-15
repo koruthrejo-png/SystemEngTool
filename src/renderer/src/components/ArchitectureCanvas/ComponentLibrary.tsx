@@ -1,6 +1,5 @@
 import { useStore } from '../../store'
-
-const NAVY = '#1a365d'
+import { NAVY } from './swatches'
 
 export default function ComponentLibrary(): JSX.Element {
   const { project, elementTypes, addElement } = useStore()

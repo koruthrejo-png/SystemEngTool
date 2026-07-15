@@ -434,3 +434,16 @@ Task 5: complete (commits 7216d94..bf3e35b, all 7 live-verify checks PASS)
 
 MINORS carried to final review:
   - `'#1a365d'` still duplicated in `ComponentLibrary.tsx` and `Dashboard/index.tsx` (BlockNode's copy is gone; swatches.ts is now the single home).
+
+FINAL WHOLE-BRANCH REVIEW (opus, 028a4e9..2e3367b): **READY TO MERGE — zero Critical, zero Important.**
+  - Reviewer independently verified the cross-task seam no per-task review could see: store index.ts:612-613 builds `prev` by EXPLICIT ASSIGNMENT for every editKey, so `'fillColor' in prev` is true even when the value is null — undo therefore persists NULL instead of silently no-op'ing. Preload + ipcMain are bare passthroughs. Live-verify check 4 is consistent with the code path, not just the UI.
+  - Also re-derived the WCAG maths from scratch and confirmed swatches.test.ts encodes what it claims (white vs #64748b = 4.759; fills 4.05-4.28; borders 4.923-12.141).
+  - Endorsed the no-migration-tests trade: under ABI 125-vs-127 those tests fail on arrival among 52 existing red and get read by nobody — negative value, not zero. Live-verify check 4 is a STRONGER proof of the `in` idiom than a unit test, because it exercises the real IPC + SQLite path.
+
+Minors — resolved:
+  - `ComponentLibrary.tsx:3` NAVY duplicate — FIXED (0eb0d5e). Same concept as BlockNode's (`t.color ?? NAVY`). `'#1a365d'` now single-homed in swatches.ts across ArchitectureCanvas/.
+  - `Dashboard/index.tsx:13` — **LEDGER MIS-TRIAGE, now closed, do NOT ticket.** That hex is `STATUS_COLORS.Review`, a requirement-status chart colour that only COINCIDENTALLY shares the value. Importing NAVY from ArchitectureCanvas/swatches would couple unrelated domains and be actively wrong the day either colour moves. Verified in source.
+  - NEW deferral (pre-existing, Phase 1 idiom, not caused here): `index.tsx` native `<input type="color">` fires onChange continuously while dragging in the macOS picker, so ONE picker session pushes MANY undo entries. Phase 2 doubles the surface by adding Fill. Swatch chips are unaffected (one click = one entry). Ticket with the deferrals.
+  - ESCALATION (not a merge blocker): items 26, 27 and now 29-P2 have EACH shipped a DB column with zero automated coverage, each correctly citing item 23. Third consecutive data point that item 23 blocks real work, not just hygiene. Argues for prioritising item 23 next.
+
+## PLAN COMPLETE — 5 tasks + final review (READY TO MERGE); branch HEAD after minor fix: 0eb0d5e
