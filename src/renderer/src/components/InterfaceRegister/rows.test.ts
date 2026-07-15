@@ -4,7 +4,7 @@ import type { ArchitectureConnection, ArchitectureElement, ConnectionType, Conne
 
 const el = (id: number, blockId: string): ArchitectureElement => ({
   id, projectId: 1, architectureId: null, parentId: null, blockId, name: `El ${blockId}`, elementTypeId: null,
-  description: null, color: null, lineStyle: null, posX: 0, posY: 0, width: 140, height: 60,
+  description: null, color: null, lineStyle: null, fillColor: null, posX: 0, posY: 0, width: 140, height: 60,
   preNestWidth: null, preNestHeight: null, deletedAt: null, createdAt: '', updatedAt: ''
 })
 const conn = (id: number, connId: string, s: number, t: number, extra: Partial<ArchitectureConnection> = {}): ArchitectureConnection => ({

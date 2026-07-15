@@ -211,6 +211,7 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'modules', 'kind', "TEXT NOT NULL DEFAULT 'module'")
   addColumnIfMissing(db, 'architecture_elements', 'pre_nest_width', 'INTEGER')
   addColumnIfMissing(db, 'architecture_elements', 'pre_nest_height', 'INTEGER')
+  addColumnIfMissing(db, 'architecture_elements', 'fill_color', 'TEXT')
 
   // One-time conversion: split legacy free-text acceptance_criteria into checklist items.
   // Per-row idempotent — each converted row is set to NULL, so re-runs are no-ops.

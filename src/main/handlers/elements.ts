@@ -11,6 +11,7 @@ function rowToElement(row: any): ArchitectureElement {
     blockId: row.block_id, name: row.name, elementTypeId: row.element_type_id ?? null,
     description: row.description ?? null, color: row.color ?? null,
     lineStyle: row.line_style ?? null,
+    fillColor: row.fill_color ?? null,
     posX: row.pos_x, posY: row.pos_y, width: row.width, height: row.height,
     preNestWidth: row.pre_nest_width ?? null, preNestHeight: row.pre_nest_height ?? null,
     deletedAt: row.deleted_at ?? null, createdAt: row.created_at, updatedAt: row.updated_at
@@ -64,7 +65,7 @@ export function updateElement(id: number, input: UpdateElementInput): Architectu
   db.prepare(`
     UPDATE architecture_elements SET
       parent_id = ?, block_id = ?, name = ?, element_type_id = ?,
-      description = ?, color = ?, line_style = ?, pos_x = ?, pos_y = ?, width = ?, height = ?,
+      description = ?, color = ?, line_style = ?, fill_color = ?, pos_x = ?, pos_y = ?, width = ?, height = ?,
       pre_nest_width = ?, pre_nest_height = ?,
       updated_at = ?
     WHERE id = ?
@@ -76,6 +77,7 @@ export function updateElement(id: number, input: UpdateElementInput): Architectu
     'description' in input ? (input.description ?? null) : existing.description,
     'color' in input ? (input.color ?? null) : existing.color,
     'lineStyle' in input ? (input.lineStyle ?? null) : existing.line_style,
+    'fillColor' in input ? (input.fillColor ?? null) : existing.fill_color,
     input.posX ?? existing.pos_x,
     input.posY ?? existing.pos_y,
     input.width ?? existing.width,

@@ -9,7 +9,7 @@ import { resolveConnectorVisibility, type Visibility } from './layers'
 function el(partial: Partial<ArchitectureElement> & { id: number }): ArchitectureElement {
   return {
     projectId: 1, architectureId: null, parentId: null, blockId: `SYS-${partial.id}`, name: `E${partial.id}`,
-    elementTypeId: null, description: null, color: null, lineStyle: null,
+    elementTypeId: null, description: null, color: null, lineStyle: null, fillColor: null,
     posX: 0, posY: 0, width: 160, height: 80,
     preNestWidth: null, preNestHeight: null,
     deletedAt: null, createdAt: '', updatedAt: '',
