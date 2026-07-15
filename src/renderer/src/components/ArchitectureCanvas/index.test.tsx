@@ -3,8 +3,10 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ArchitectureCanvas from './index'
 
+const rfSpy = vi.fn()
+
 vi.mock('@xyflow/react', () => ({
-  ReactFlow: ({ children }: any) => <div data-testid="react-flow">{children}</div>,
+  ReactFlow: (props: any) => { rfSpy(props); return <div data-testid="react-flow">{props.children}</div> },
   ReactFlowProvider: ({ children }: any) => <>{children}</>,
   Background: () => null,
   BackgroundVariant: { Dots: 'dots' },
@@ -33,13 +35,14 @@ const mockUpdateElement = vi.fn()
 const mockUpdateConnection = vi.fn()
 
 // The bar's contextual segment keys off these; tests set them before render.
-const mockEl = { id: 100, projectId: 1, architectureId: 1, parentId: null, blockId: 'SYS-001', name: 'Pump', elementTypeId: null, description: null, color: null, lineStyle: null, posX: 0, posY: 0, width: 140, height: 60, deletedAt: null, createdAt: '', updatedAt: '' }
+const mockEl = { id: 100, projectId: 1, architectureId: 1, parentId: null, blockId: 'SYS-001', name: 'Pump', elementTypeId: null, description: null, color: null, lineStyle: null, fillColor: null, posX: 0, posY: 0, width: 140, height: 60, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockConn = { id: 5, projectId: 1, architectureId: 1, connId: 'ICN-0001', sourceId: 100, targetId: 101, sourceHandle: null, targetHandle: null, name: null, connectionTypeId: null, lineStyle: 'solid', markerStart: 'none', markerEnd: 'arrowclosed', description: null, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockSel: { elementId: number | null; connectionId: number | null } = { elementId: null, connectionId: null }
 
 beforeEach(() => {
   mockSel.elementId = null
   mockSel.connectionId = null
+  mockAddElement.mockClear()
   mockUpdateElement.mockClear()
   mockUpdateConnection.mockClear()
 })
@@ -267,6 +270,84 @@ describe('ArchitectureCanvas', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Style ▾' }))
       // BlockNode renders `d.color ?? NAVY`; the picker must not claim white.
       expect(screen.getByLabelText('Border')).toHaveValue('#1a365d')
+    })
+  })
+
+  describe('snap to grid (B2)', () => {
+    it('is off by default, and the grid matches the dot-grid background gap when on', async () => {
+      rfSpy.mockClear()
+      render(<ArchitectureCanvas />)
+      expect(rfSpy.mock.calls.at(-1)![0].snapToGrid).toBe(false)
+
+      await userEvent.click(screen.getByRole('button', { name: 'Snap' }))
+      const props = rfSpy.mock.calls.at(-1)![0]
+      expect(props.snapToGrid).toBe(true)
+      // 16 is the Background dot gap; a different snap grid would snap to invisible lines.
+      expect(props.snapGrid).toEqual([16, 16])
+    })
+
+    it('reports its state to assistive tech and toggles back off', async () => {
+      render(<ArchitectureCanvas />)
+      const btn = screen.getByRole('button', { name: 'Snap' })
+      expect(btn).toHaveAttribute('aria-pressed', 'false')
+      await userEvent.click(btn)
+      expect(btn).toHaveAttribute('aria-pressed', 'true')
+      await userEvent.click(btn)
+      expect(btn).toHaveAttribute('aria-pressed', 'false')
+    })
+  })
+
+  describe('duplicate object (B3)', () => {
+    const cmdD = (): void => {
+      fireEvent.keyDown(window, { key: 'd', metaKey: true })
+    }
+
+    it('copies every visual property, the container, and offsets the copy', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      cmdD()
+      // One call, so one undo entry: create-then-style would make Cmd+Z strip the styling
+      // and leave a naked duplicate behind.
+      expect(mockAddElement).toHaveBeenCalledTimes(1)
+      expect(mockAddElement).toHaveBeenCalledWith({
+        projectId: 1,
+        parentId: mockEl.parentId,
+        name: mockEl.name,
+        elementTypeId: mockEl.elementTypeId,
+        description: mockEl.description,
+        color: mockEl.color,
+        fillColor: mockEl.fillColor,
+        lineStyle: mockEl.lineStyle,
+        width: mockEl.width,
+        height: mockEl.height,
+        posX: mockEl.posX + 20,
+        posY: mockEl.posY + 20
+      })
+    })
+
+    it('does nothing when no object is selected', () => {
+      mockSel.elementId = null
+      render(<ArchitectureCanvas />)
+      cmdD()
+      expect(mockAddElement).not.toHaveBeenCalled()
+    })
+
+    it('does nothing when a connection is selected — duplicate is objects only', () => {
+      mockSel.elementId = null
+      mockSel.connectionId = 5
+      render(<ArchitectureCanvas />)
+      cmdD()
+      expect(mockAddElement).not.toHaveBeenCalled()
+    })
+
+    it('leaves Cmd+D to the browser while typing in a field', () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      const input = document.createElement('input')
+      document.body.appendChild(input)
+      fireEvent.keyDown(input, { key: 'd', metaKey: true, bubbles: true })
+      expect(mockAddElement).not.toHaveBeenCalled()
+      input.remove()
     })
   })
 })

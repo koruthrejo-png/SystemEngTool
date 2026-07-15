@@ -24,6 +24,11 @@ import { SWATCHES, NAVY } from './swatches'
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
 
+// Matches the Background dot gap below, so snapped objects land on visible dots.
+const SNAP_GRID: [number, number] = [16, 16]
+// Enough that the copy reads as a separate object rather than a render glitch.
+const DUPLICATE_OFFSET = 20
+
 // Industrial-precision zoom/fit controls (design backlog item 17) replacing default RF chrome.
 function CanvasControls(): JSX.Element {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
@@ -277,6 +282,10 @@ function CanvasInner(): JSX.Element {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { getInternalNode } = useReactFlow()
 
+  // ponytail: session-only. Snap is a canvas view mode, not element data — if it should
+  // survive a relaunch it is a view preference, not a column.
+  const [snapToGrid, setSnapToGrid] = useState(false)
+
   const mode = barMode(selectedElementId, selectedConnectionId)
   const selectedEl = mode === 'object' ? elements.find((e) => e.id === selectedElementId) ?? null : null
   const selectedConn = mode === 'connection' ? connections.find((c) => c.id === selectedConnectionId) ?? null : null
@@ -341,23 +350,54 @@ function CanvasInner(): JSX.Element {
     function onKey(e: KeyboardEvent): void {
       if (e.repeat) return
 
-      // Delete / Backspace → remove the selected connection (connections only; never a block)
+      // Delete / Backspace → remove the selected connection. Blocks are deleted by React
+      // Flow's own deleteKeyCode="Delete" + onNodesDelete, which is why this predicate only
+      // covers connections. (Asymmetry that follows: Backspace removes a connection but not
+      // a block.)
       if (shouldDeleteConnection(e, useStore.getState().selectedConnectionId)) {
         e.preventDefault()
         void removeConnection(useStore.getState().selectedConnectionId as number)
         return
       }
 
-      // Cmd/Ctrl+Z undo/redo
-      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return
+      if (!(e.metaKey || e.ctrlKey)) return
       if (isTyping(e)) return
+      const key = e.key.toLowerCase()
+
+      // Cmd/Ctrl+D → duplicate the selected object, offset so the copy is visibly separate.
+      // One addElement call carries the whole copy, so it costs exactly one undo entry.
+      // The new object gets a freshly minted blockId server-side — a duplicate, not a clone.
+      if (key === 'd') {
+        const { selectedElementId, elements, project } = useStore.getState()
+        const src = elements.find((el) => el.id === selectedElementId)
+        if (!src || !project) return
+        e.preventDefault()
+        void addElement({
+          projectId: project.id,
+          parentId: src.parentId,
+          name: src.name,
+          elementTypeId: src.elementTypeId,
+          description: src.description,
+          color: src.color,
+          fillColor: src.fillColor,
+          lineStyle: src.lineStyle,
+          width: src.width,
+          height: src.height,
+          posX: src.posX + DUPLICATE_OFFSET,
+          posY: src.posY + DUPLICATE_OFFSET
+        })
+        return
+      }
+
+      // Cmd/Ctrl+Z undo/redo
+      if (key !== 'z') return
       e.preventDefault()
       if (e.shiftKey) void redo()
       else void undo()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [undo, redo, removeConnection])
+  }, [undo, redo, removeConnection, addElement])
 
   const onConnect = useCallback((params: Connection) => {
     if (!project) return
@@ -430,6 +470,16 @@ function CanvasInner(): JSX.Element {
         <div className="relative z-10 flex items-center gap-2 px-4 h-12 bg-white border-b border-line shrink-0">
           <Button onClick={handleAddBlock} className="shrink-0 whitespace-nowrap">+ Object</Button>
           <Menu label="Layers ▾"><LayerPanel /></Menu>
+          {/* Global segment: snap is a canvas mode, not a selection attribute, so it lives
+              here beside Layers rather than in the contextual segment. */}
+          <button
+            onClick={() => setSnapToGrid((v) => !v)}
+            aria-pressed={snapToGrid}
+            title="Snap objects to the grid"
+            className={`shrink-0 whitespace-nowrap px-2 py-1 rounded text-sm ${
+              snapToGrid ? 'bg-action-tint text-action' : 'text-ink-muted hover:bg-workspace'
+            }`}
+          >Snap</button>
           <div className="w-px h-5 bg-line shrink-0" />
           <div className="flex items-center gap-1 shrink-0">
             <button
@@ -469,6 +519,8 @@ function CanvasInner(): JSX.Element {
             edges={edges}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
+            snapToGrid={snapToGrid}
+            snapGrid={SNAP_GRID}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}

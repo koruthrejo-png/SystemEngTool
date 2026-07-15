@@ -85,4 +85,54 @@ describe('elements handler', () => {
     expect(restored.deletedAt).toBeNull()
     expect(listElements(projectId)).toHaveLength(1)
   })
+
+  // B3 (duplicate object) is the first caller to pass style at create time. Before it,
+  // CreateElementInput carried no style fields and createElement silently ignored them —
+  // recorded as a known nit when item 22 shipped the same gap on connections.
+  it('createElement persists style, size, description and parent when supplied', () => {
+    const parent = createElement({ projectId, name: 'Container' })
+    const el = createElement({
+      projectId,
+      parentId: parent.id,
+      name: 'Pump',
+      description: 'a pump',
+      color: '#0f766e',
+      fillColor: '#e3f3f1',
+      lineStyle: 'dashed',
+      width: 220,
+      height: 120,
+      posX: 40,
+      posY: 60
+    })
+
+    expect(el).toMatchObject({
+      parentId: parent.id,
+      name: 'Pump',
+      description: 'a pump',
+      color: '#0f766e',
+      fillColor: '#e3f3f1',
+      lineStyle: 'dashed',
+      width: 220,
+      height: 120,
+      posX: 40,
+      posY: 60
+    })
+    // It round-trips out of the DB, not just out of the return value.
+    expect(listElements(projectId).find((e) => e.id === el.id)).toMatchObject({
+      color: '#0f766e',
+      fillColor: '#e3f3f1',
+      lineStyle: 'dashed',
+      width: 220,
+      height: 120
+    })
+  })
+
+  it('createElement still defaults style to null and size to 160x80 when omitted', () => {
+    // The + Object path passes none of these; it must keep producing a plain block.
+    const el = createElement({ projectId, name: 'Plain' })
+    expect(el).toMatchObject({
+      color: null, fillColor: null, lineStyle: null, description: null,
+      width: 160, height: 80
+    })
+  })
 })

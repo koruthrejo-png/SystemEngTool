@@ -44,12 +44,15 @@ export function createElement(input: CreateElementInput): ArchitectureElement {
 
     const r = db.prepare(`
       INSERT INTO architecture_elements
-        (project_id, architecture_id, parent_id, block_id, name, element_type_id, pos_x, pos_y, width, height, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 160, 80, ?, ?)
+        (project_id, architecture_id, parent_id, block_id, name, element_type_id,
+         description, color, fill_color, line_style, pos_x, pos_y, width, height, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       input.projectId, architectureId, input.parentId ?? null, blockId,
       input.name ?? '', input.elementTypeId ?? null,
-      input.posX ?? 100, input.posY ?? 100, ts, ts
+      input.description ?? null, input.color ?? null, input.fillColor ?? null, input.lineStyle ?? null,
+      input.posX ?? 100, input.posY ?? 100,
+      input.width ?? 160, input.height ?? 80, ts, ts
     )
     return db.prepare('SELECT * FROM architecture_elements WHERE id = ?').get(r.lastInsertRowid)
   })()

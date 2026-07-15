@@ -250,6 +250,15 @@ export interface CreateElementInput {
   elementTypeId?: number | null
   posX?: number
   posY?: number
+  // Style/size/description are optional and default to a plain block (see createElement).
+  // `+ Object` passes none of them; duplicate (Cmd+D) passes all of them, which is what
+  // lets a duplicate be created in ONE call — and therefore one undo entry.
+  description?: string | null
+  color?: string | null
+  fillColor?: string | null
+  lineStyle?: LineStyle | null
+  width?: number
+  height?: number
 }
 
 export interface UpdateElementInput {
