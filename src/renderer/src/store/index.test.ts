@@ -12,7 +12,7 @@ const mockModule = { id: 1, projectId: 1, parentId: null, kind: 'module' as cons
 const mockReq = { id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'Req text', acceptanceCriteria: null, source: null, rationale: null, status: 'Draft' as const, priority: 'High' as const, reqType: 'Functional' as const, headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }
 const mockElement: ArchitectureElement = {
   id: 1, projectId: 1, architectureId: null, parentId: null, blockId: 'SYS-001', name: '',
-  elementTypeId: null, description: null, color: null,
+  elementTypeId: null, description: null, color: null, lineStyle: null,
   posX: 100, posY: 100, width: 160, height: 80,
   deletedAt: null, createdAt: '', updatedAt: ''
 }

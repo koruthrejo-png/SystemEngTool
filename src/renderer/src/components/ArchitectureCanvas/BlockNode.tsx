@@ -1,10 +1,12 @@
 import { memo } from 'react'
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react'
+import type { LineStyle } from '../../../../types'
 
 export type BlockNodeData = {
   label: string
   blockId: string
   color: string | null
+  lineStyle: LineStyle | null
   selected: boolean
   nested: boolean
   childCount: number
@@ -22,7 +24,7 @@ export default memo(function BlockNode({ data }: NodeProps) {
   const named = d.label.trim() !== ''
   return (
     <div
-      style={{ borderColor: headerColor }}
+      style={{ borderColor: headerColor, borderStyle: d.lineStyle ?? 'solid' }}
       className={`bg-white border rounded-t text-sm select-none h-full w-full flex flex-col
         ${d.selected ? 'ring-2 ring-action/60' : ''}`}
     >

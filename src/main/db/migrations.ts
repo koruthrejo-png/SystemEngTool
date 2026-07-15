@@ -206,6 +206,7 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'architecture_connections', 'marker_end', 'TEXT')
   addColumnIfMissing(db, 'requirements', 'heading_id', 'INTEGER REFERENCES req_headings(id)')
   addColumnIfMissing(db, 'architecture_elements', 'architecture_id', 'INTEGER REFERENCES architectures(id)')
+  addColumnIfMissing(db, 'architecture_elements', 'line_style', 'TEXT')
   addColumnIfMissing(db, 'architecture_connections', 'architecture_id', 'INTEGER REFERENCES architectures(id)')
   addColumnIfMissing(db, 'modules', 'kind', "TEXT NOT NULL DEFAULT 'module'")
 

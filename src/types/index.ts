@@ -189,6 +189,7 @@ export interface ArchitectureElement {
   elementTypeId: number | null
   description: string | null
   color: string | null
+  lineStyle: LineStyle | null
   posX: number
   posY: number
   width: number
@@ -253,6 +254,7 @@ export interface UpdateElementInput {
   elementTypeId?: number | null
   description?: string | null
   color?: string | null
+  lineStyle?: LineStyle | null
   posX?: number
   posY?: number
   width?: number
