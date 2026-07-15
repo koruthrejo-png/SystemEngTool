@@ -52,7 +52,7 @@ export default function NewModuleForm({ projectId, parentId, onSubmit, onCancel 
           <label className="flex items-center gap-1.5 shrink-0">
             <SectionLabel>Digits</SectionLabel>
             <Input type="number" min={1} max={8} value={padding} onChange={(e) => setPadding(Number(e.target.value))}
-              title="ID digit count (prefix SRS + 4 digits = SRS-0001)" className="!w-14 !py-1.5" />
+              title="ID digit count" className="!w-14 !py-1.5" />
           </label>
         </div>
       )}
