@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow, Background, BackgroundVariant, Panel, ReactFlowProvider,
   useNodesState, useEdgesState, useReactFlow, useViewport, ConnectionMode,
@@ -45,6 +45,37 @@ function CanvasControls(): JSX.Element {
         </svg>
       </button>
     </Panel>
+  )
+}
+
+// Top-bar Layers dropdown. LayerPanel's card already reads as a popover surface, so it
+// is reused verbatim — this only supplies the trigger, the anchor and the dismiss rules.
+function LayersMenu(): JSX.Element {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onPointerDown(e: MouseEvent): void {
+      if (!ref.current?.contains(e.target as globalThis.Node)) setOpen(false)
+    }
+    function onKey(e: KeyboardEvent): void {
+      // ponytail: LayerPanel's add/rename inputs own Escape (cancel edit) — let them keep it.
+      if (e.key === 'Escape' && !(e.target instanceof HTMLInputElement)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <Button variant="ghost" aria-expanded={open} onClick={() => setOpen((v) => !v)}>Layers ▾</Button>
+      {open && <div className="absolute top-full left-0 mt-1 z-20"><LayerPanel /></div>}
+    </div>
   )
 }
 
@@ -217,8 +248,9 @@ function CanvasInner(): JSX.Element {
   return (
     <div className="flex h-full">
       <div className="flex flex-col flex-1 min-w-0">
-        <div className="flex items-center gap-2 px-4 h-12 bg-white border-b border-line shrink-0">
+        <div className="relative z-10 flex items-center gap-2 px-4 h-12 bg-white border-b border-line shrink-0">
           <Button onClick={handleAddBlock}>+ Object</Button>
+          <LayersMenu />
           <div className="w-px h-5 bg-line" />
           <div className="flex items-center gap-1">
             <button
@@ -258,7 +290,6 @@ function CanvasInner(): JSX.Element {
           >
             <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} color="#cbd5e1" bgColor="#f8fafc" />
             <CanvasControls />
-            <Panel position="top-right"><LayerPanel /></Panel>
           </ReactFlow>
         </div>
       </div>
