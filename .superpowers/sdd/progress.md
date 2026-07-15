@@ -447,3 +447,11 @@ Minors — resolved:
   - ESCALATION (not a merge blocker): items 26, 27 and now 29-P2 have EACH shipped a DB column with zero automated coverage, each correctly citing item 23. Third consecutive data point that item 23 blocks real work, not just hygiene. Argues for prioritising item 23 next.
 
 ## PLAN COMPLETE — 5 tasks + final review (READY TO MERGE); branch HEAD after minor fix: 0eb0d5e
+
+## ITEM 23 (better-sqlite3 ABI) — FIXED 2026-07-15. Suite now 53 files / 375 tests, ZERO failures.
+  - Fix: `"better-sqlite3-node": "npm:better-sqlite3@^12.11.1"` (npm alias = same package/version, second directory) + `resolve.alias` in vitest.config.ts mapping `better-sqlite3` -> `better-sqlite3-node`. `electron-rebuild -f -w better-sqlite3` only targets the `better-sqlite3` DIRECTORY, so the alias copy keeps its node-ABI prebuild. App = ABI 125, tests = ABI 127. 30 lines, 3 files.
+  - The old framing ("structural, one build cannot serve both runtimes, do not re-litigate") was CORRECT but stopped one step short: nothing requires both runtimes to share one COPY of the package.
+  - Verified: survives clean `npm ci`; app still opens its DB (driver launch rendered thermal's module tree from SQLite); both copies 12.11.1 / SQLite 3.53.2.
+  - Guard: `src/main/db/sqliteAbi.test.ts` — version parity (reads both package.json from DISK; importing through the alias would compare the test copy against itself) + a real native DB open. Proven load-bearing by faking a drift and watching it fail.
+  - **⚠️ PROBING TRAP that produced several confidently wrong readings during this work, including a false "the app is broken" alarm:** `require('better-sqlite3')` does NOT dlopen the binary — it loads only JS; the addon loads lazily inside the `Database` constructor. `node -e "require('better-sqlite3')"` succeeds regardless of ABI and proves NOTHING. Always probe with `new Database(':memory:')`.
+  - Consequence: the standing "never write migration/handler tests" rule is REPEALED. Backlog item 23's own follow-up (item-21 folder-split migration regression tests: split / flip-only / idempotence) is unblocked and is the natural next task.

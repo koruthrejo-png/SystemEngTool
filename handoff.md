@@ -281,13 +281,43 @@ Test objects created for check 5/7 (two objects + the nesting) were deleted from
 
 **⚠️ Item 23 escalation, from the final review.** Items **26, 27 and now 29-Phase-2 have each shipped a DB column with zero automated coverage**, each correctly citing item 23. That is three consecutive data points that the ABI mismatch blocks real work rather than hygiene — item 23's own text already says so. The reviewer endorsed *this* phase's no-migration-tests trade as correct (under ABI 125-vs-127 such tests fail on arrival among 52 existing red and get read by nobody — negative value, not zero; and live-verify check 4 is a *stronger* proof of the NULL path than a unit test, since it exercises the real IPC + SQLite path). The argument is for **prioritising item 23 next**, not for having done Phase 2 differently.
 
+### ✅ ITEM 23 (better-sqlite3 ABI) — FIXED (session 2026-07-15c)
+
+**The main-process suite is no longer dark. Full suite is now 53 files / 375 tests, ALL PASSING — zero failures.** The "52 failed, all `ERR_DLOPEN_FAILED`, do not chase it" baseline that every note above refers to is **obsolete**. Delete that expectation from your mental model: a failing test is now a real failure.
+
+**What was true:** `postinstall` runs `electron-rebuild -f -w better-sqlite3`, building the binary for Electron's ABI 125 — that is *why the app runs*. The test runner's node is ABI 127. One build cannot serve both, so rebuilding for node fixed the tests and broke the app. That framing was correct, and it was never a broken toolchain.
+
+**What it missed:** nothing says both runtimes must share *one copy of the package*.
+
+```jsonc
+// package.json — an npm alias: same package, same version, second directory
+"better-sqlite3-node": "npm:better-sqlite3@^12.11.1"
+```
+```ts
+// vitest.config.ts
+resolve: { alias: { 'better-sqlite3': 'better-sqlite3-node' } }
+```
+
+`electron-rebuild -w better-sqlite3` only ever targets the `better-sqlite3` **directory**, so the alias copy keeps the node-ABI prebuild npm installed for it. The app gets its Electron binary; the tests get a real node-ABI SQLite. **Total cost: 30 lines across 3 files, no new tooling, no rebuild dance, no CI trickery.**
+
+**Verified, not assumed:**
+- Survives a **clean `npm ci`** (destroys `node_modules`, reinstalls, re-runs postinstall): app copy → ABI 125, test copy → ABI 127. The `-w` scoping holds on a fresh install, not just incrementally.
+- The **app still opens its database** — launched the built app via the driver; it rendered `thermal`'s module tree, which is data out of SQLite.
+- Both copies resolve to **12.11.1 / SQLite 3.53.2**.
+
+**⚠️ Trap that cost time — do not repeat it.** `require('better-sqlite3')` **does NOT load the native binary**; it only loads JS. The addon is dlopen'd lazily inside the `Database` constructor (`lib/database.js`). Any ABI probe of the form `node -e "require('better-sqlite3')"` **always succeeds regardless of ABI and proves nothing** — it produced several confidently wrong readings during this fix, including a false alarm that the app was broken. **Probe with `new Database(':memory:')`**, which is what actually dlopens.
+
+**Guard:** `src/main/db/sqliteAbi.test.ts` asserts the two copies stay on one version (bump one without the other and the tests silently exercise an engine users never get) and that a real native DB opens. It reads both `package.json`s from **disk** on purpose — importing `better-sqlite3/package.json` inside a test resolves through the alias and compares the copy against itself. The guard was proven load-bearing by faking a drift and watching it fail.
+
+**Consequences — the standing "do not write migration/handler tests" rule is REPEALED.** Items 26, 27 and 29-P2 each shipped a DB column with zero automated coverage citing item 23; that reason is gone. `src/main/db/migrations.test.ts` runs again (5 tests), so **backlog item 23's own follow-up — migration regression tests for the item-21 folder split — is now unblocked and is the natural next piece of work.** Live-verify remains valuable for UI behaviour, but it is no longer the *only* way to prove backend work.
+
 ## ⏸️ NEXT SESSION — PICK UP HERE
 
 **1. Item 29 Phase 3** (B1 type-colour inheritance — needs seeded `element_types.color` values *and* a type-colour editor, per the earlier §1 correction, plus a border-clear path per the deferral above; B2 snap; B3 duplicate). Per-feature approval first.
 
-**3. Open backlog:** **11** (admin area), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), **23** (ABI — now blocking real coverage), **29** (Phase 3), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
+**3. Open backlog:** **11** (admin area), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), ~~**23** (ABI)~~ **FIXED 2026-07-15**, **29** (Phase 3), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
 
-**Test baseline to expect:** 321 passed / 52 failed (373), 42 files passed / 10 failed. Both typechecks clean. The 10 failing files are all `ERR_DLOPEN_FAILED`.
+**Test baseline to expect:** **375 passed / 0 failed (53 files), both typechecks clean.** Item 23 is FIXED (see its section above) — the old "52 failed, all ERR_DLOPEN_FAILED, do not chase it" baseline is dead. **Any failure is now a real failure.**
 
 **Scratch data on `thermal`:** folder `Avionics` + `SRS-TRS--8` (safe to delete); a dashed SYS-002→SYS-001 connection. `SmokeTest.reqarch` still holds an **un-migrated** legacy tree — **opening it migrates in place, irreversibly from the UI**; copy the file first if a fallback is wanted.
 
