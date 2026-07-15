@@ -109,6 +109,11 @@ describe('buildNodes', () => {
     const nodes = buildNodes(els, [], [], null, () => {}, vis)
     expect(nodes.map((n) => n.id)).toEqual([])                       // child dropped with hidden parent
   })
+
+  it('passes fillColor through to node data', () => {
+    const nodes = buildNodes([el({ id: 1, fillColor: '#e3f3f1' })], [], [], null, vi.fn(), new Map())
+    expect((nodes[0].data as { fillColor: string | null }).fillColor).toBe('#e3f3f1')
+  })
 })
 
 describe('withHiddenCascade', () => {

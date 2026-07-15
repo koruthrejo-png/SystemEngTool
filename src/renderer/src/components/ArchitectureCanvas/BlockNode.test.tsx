@@ -12,7 +12,7 @@ vi.mock('@xyflow/react', () => ({
 }))
 
 const data: BlockNodeData = {
-  label: 'Engine', blockId: 'SYS-001', color: null, lineStyle: null, selected: true,
+  label: 'Engine', blockId: 'SYS-001', color: null, lineStyle: null, fillColor: null, selected: true,
   nested: false, childCount: 0,
   typeName: null, connectionCount: 0, faded: false,
   onResizeEnd: vi.fn()
@@ -104,5 +104,31 @@ describe('BlockNode', () => {
 
     render(<BlockNode data={{ ...data, connectionCount: 3 }} {...({} as any)} />)
     expect(screen.getByText('⇆ 3')).toBeInTheDocument()
+  })
+
+  it('paints the frame in the fill colour, white when unset', () => {
+    const frame = (d: BlockNodeData): HTMLElement =>
+      render(<BlockNode data={d} {...({} as any)} />).container.firstChild as HTMLElement
+
+    // jsdom normalises hex to rgb() — assert the triple, not the hex.
+    expect(frame(data).style.background).toBe('rgb(255, 255, 255)')
+    expect(frame({ ...data, fillColor: '#e3f3f1' }).style.background).toBe('rgb(227, 243, 241)')
+  })
+
+  it('keeps a filled container legible: drop zone stays, workspace overlay drops', () => {
+    const { container: filled } = render(
+      <BlockNode data={{ ...data, childCount: 2, fillColor: '#e3f3f1' }} {...({} as any)} />
+    )
+    // the dashed drop zone must survive — it is what marks the nest target
+    expect(filled.querySelector('.border-dashed')).not.toBeNull()
+    // ...but the opaque overlay must not, or the fill washes out on nesting
+    expect(filled.querySelector('.bg-workspace\\/60')).toBeNull()
+  })
+
+  it('keeps the workspace overlay on an unfilled container', () => {
+    const { container: plain } = render(
+      <BlockNode data={{ ...data, childCount: 2, fillColor: null }} {...({} as any)} />
+    )
+    expect(plain.querySelector('.bg-workspace\\/60')).not.toBeNull()
   })
 })

@@ -1,12 +1,14 @@
 import { memo } from 'react'
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react'
 import type { LineStyle } from '../../../../types'
+import { NAVY } from './swatches'
 
 export type BlockNodeData = {
   label: string
   blockId: string
   color: string | null
   lineStyle: LineStyle | null
+  fillColor: string | null
   selected: boolean
   nested: boolean
   childCount: number
@@ -16,16 +18,18 @@ export type BlockNodeData = {
   onResizeEnd: (x: number, y: number, width: number, height: number) => void
 }
 
-const NAVY = '#1a365d'
-
 export default memo(function BlockNode({ data }: NodeProps) {
   const d = data as BlockNodeData
   const headerColor = d.color ?? NAVY
   const named = d.label.trim() !== ''
   return (
     <div
-      style={{ borderColor: headerColor, borderStyle: d.lineStyle ?? 'solid' }}
-      className={`bg-white border rounded-t text-sm select-none h-full w-full flex flex-col
+      style={{
+        background: d.fillColor ?? '#ffffff',
+        borderColor: headerColor,
+        borderStyle: d.lineStyle ?? 'solid'
+      }}
+      className={`border rounded-t text-sm select-none h-full w-full flex flex-col
         ${d.selected ? 'ring-2 ring-action/60' : ''}`}
     >
       <NodeResizer
@@ -56,7 +60,11 @@ export default memo(function BlockNode({ data }: NodeProps) {
           )}
         </span>
       </div>
-      <div className={`px-3 py-2 flex-1 min-h-0 ${d.childCount > 0 ? 'm-1 rounded border border-dashed border-line bg-workspace/60' : ''}`}>
+      <div className={`px-3 py-2 flex-1 min-h-0 ${
+        d.childCount > 0
+          ? 'm-1 rounded border border-dashed border-line' + (d.fillColor ? '' : ' bg-workspace/60')
+          : ''
+      }`}>
         {!named && (
           <>
             <div className="text-[11px] text-ink-faint font-mono mb-0.5">{d.blockId}</div>
