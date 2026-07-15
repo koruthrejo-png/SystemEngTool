@@ -17,6 +17,7 @@ import type {
   Layer, LayerState, ElementLayerLink, ConnectionLayerLink
 } from '../../../types'
 import { summarize, type AcSummaryEntry } from './acSummary'
+import { revertToBaseline } from '../components/ArchitectureCanvas/nodes'
 
 const ELEMENT_PROP_KEYS = ['name', 'color', 'elementTypeId', 'description', 'blockId'] as const
 const CONNECTION_PROP_KEYS = ['name', 'connectionTypeId', 'description', 'connId', 'lineStyle', 'markerStart', 'markerEnd'] as const
@@ -610,6 +611,7 @@ export const useStore = create<Store>((set, get) => ({
 
   removeElement: async (id) => {
     const state = get()
+    const oldParentId = state.elements.find((e) => e.id === id)?.parentId ?? null
     const childSnaps = state.elements
       .filter((e) => e.parentId === id)
       .map((e) => ({ id: e.id, parentId: e.parentId, posX: e.posX, posY: e.posY }))
@@ -629,6 +631,13 @@ export const useStore = create<Store>((set, get) => ({
       connections,
       selectedElementId: s.selectedElementId === id ? null : s.selectedElementId
     }))
+
+    // deleting a container reparents its children to the grandparent (see
+    // handlers/elements.ts); if that leaves the old parent childless, its
+    // pre-nest size has to come back just as it does on a drag-out.
+    const oldParent = oldParentId !== null ? elements.find((e) => e.id === oldParentId) : undefined
+    const revert = oldParent && revertToBaseline(oldParent, elements.filter((e) => e.parentId === oldParent.id).length)
+    if (oldParent && revert) await get().updateElement(oldParent.id, revert)
 
     pushUndo({
       undo: async () => {

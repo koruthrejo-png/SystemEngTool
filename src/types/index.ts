@@ -193,6 +193,10 @@ export interface ArchitectureElement {
   posY: number
   width: number
   height: number
+  // size this container had before its first child grew it; null when it has
+  // never been nested into, or when a manual resize took over (see nodes.ts)
+  preNestWidth: number | null
+  preNestHeight: number | null
   deletedAt: string | null
   createdAt: string
   updatedAt: string
@@ -257,6 +261,8 @@ export interface UpdateElementInput {
   posY?: number
   width?: number
   height?: number
+  preNestWidth?: number | null
+  preNestHeight?: number | null
 }
 
 export interface CreateConnectionInput {

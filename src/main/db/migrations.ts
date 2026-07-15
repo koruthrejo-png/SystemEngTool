@@ -208,6 +208,8 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'architecture_elements', 'architecture_id', 'INTEGER REFERENCES architectures(id)')
   addColumnIfMissing(db, 'architecture_connections', 'architecture_id', 'INTEGER REFERENCES architectures(id)')
   addColumnIfMissing(db, 'modules', 'kind', "TEXT NOT NULL DEFAULT 'module'")
+  addColumnIfMissing(db, 'architecture_elements', 'pre_nest_width', 'INTEGER')
+  addColumnIfMissing(db, 'architecture_elements', 'pre_nest_height', 'INTEGER')
 
   // One-time conversion: split legacy free-text acceptance_criteria into checklist items.
   // Per-row idempotent — each converted row is set to NULL, so re-runs are no-ops.

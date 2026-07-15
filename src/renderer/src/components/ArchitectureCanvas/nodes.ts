@@ -1,5 +1,5 @@
 import type { Node } from '@xyflow/react'
-import type { ArchitectureElement, ElementType, ArchitectureConnection } from '../../../../types'
+import type { ArchitectureElement, ElementType, ArchitectureConnection, UpdateElementInput } from '../../../../types'
 import type { BlockNodeData } from './BlockNode'
 import type { Visibility } from './layers'
 
@@ -72,6 +72,39 @@ export function fitChildInParent(
     parentWidth,
     parentHeight
   }
+}
+
+// fitChildInParent only ever grows a container. These two keep the other half of
+// the deal: remember the pre-drop size on the way in, restore it on the way out.
+// The baseline is persisted (pre_nest_width/height) because it cannot be
+// recomputed once the container has grown.
+
+// Called BEFORE fitChildInParent grows the parent. childCount is the parent's
+// child count *before* this drop, so a move within the same container (dragged
+// element already counted) never re-baselines against an already-grown size.
+export function nestBaseline(
+  parent: { width: number; height: number; preNestWidth: number | null },
+  childCount: number
+): { preNestWidth: number; preNestHeight: number } | null {
+  if (childCount > 0 || parent.preNestWidth !== null) return null
+  return { preNestWidth: parent.width, preNestHeight: parent.height }
+}
+
+// Restore the pre-nest size once the LAST child leaves. Returns null (no revert)
+// while other children remain, or when there is no baseline to restore.
+export function revertToBaseline(
+  parent: { preNestWidth: number | null; preNestHeight: number | null },
+  remainingChildCount: number
+): UpdateElementInput | null {
+  if (remainingChildCount > 0 || parent.preNestWidth === null || parent.preNestHeight === null) return null
+  return { width: parent.preNestWidth, height: parent.preNestHeight, preNestWidth: null, preNestHeight: null }
+}
+
+// ponytail: a manual resize of a container that holds children drops the
+// baseline — the user's explicit size is now the intended size, so there is
+// nothing meaningful to revert to and the last child leaving keeps it as-is.
+export function clearBaselineOnManualResize(childCount: number): UpdateElementInput {
+  return childCount > 0 ? { preNestWidth: null, preNestHeight: null } : {}
 }
 
 // React Flow requires parents before children in the nodes array.

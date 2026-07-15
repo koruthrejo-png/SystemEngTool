@@ -11,6 +11,7 @@ function rowToElement(row: any): ArchitectureElement {
     blockId: row.block_id, name: row.name, elementTypeId: row.element_type_id ?? null,
     description: row.description ?? null, color: row.color ?? null,
     posX: row.pos_x, posY: row.pos_y, width: row.width, height: row.height,
+    preNestWidth: row.pre_nest_width ?? null, preNestHeight: row.pre_nest_height ?? null,
     deletedAt: row.deleted_at ?? null, createdAt: row.created_at, updatedAt: row.updated_at
   }
 }
@@ -63,6 +64,7 @@ export function updateElement(id: number, input: UpdateElementInput): Architectu
     UPDATE architecture_elements SET
       parent_id = ?, block_id = ?, name = ?, element_type_id = ?,
       description = ?, color = ?, pos_x = ?, pos_y = ?, width = ?, height = ?,
+      pre_nest_width = ?, pre_nest_height = ?,
       updated_at = ?
     WHERE id = ?
   `).run(
@@ -76,6 +78,8 @@ export function updateElement(id: number, input: UpdateElementInput): Architectu
     input.posY ?? existing.pos_y,
     input.width ?? existing.width,
     input.height ?? existing.height,
+    'preNestWidth' in input ? (input.preNestWidth ?? null) : existing.pre_nest_width,
+    'preNestHeight' in input ? (input.preNestHeight ?? null) : existing.pre_nest_height,
     now(), id
   )
   return rowToElement(db.prepare('SELECT * FROM architecture_elements WHERE id = ?').get(id))

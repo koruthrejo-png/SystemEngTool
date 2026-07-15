@@ -11,7 +11,7 @@ function req(partial: Partial<Requirement> & { id: number }): Requirement {
   }
 }
 
-const el = { id: 1, projectId: 1, architectureId: null, parentId: null, blockId: 'SYS-001', name: '', elementTypeId: null, description: null, color: null, posX: 0, posY: 0, width: 160, height: 80, deletedAt: null, createdAt: '', updatedAt: '' }
+const el = { id: 1, projectId: 1, architectureId: null, parentId: null, blockId: 'SYS-001', name: '', elementTypeId: null, description: null, color: null, posX: 0, posY: 0, width: 160, height: 80, preNestWidth: null, preNestHeight: null, deletedAt: null, createdAt: '', updatedAt: '' }
 
 describe('computeStats', () => {
   it('counts totals, coverage and unallocated', () => {

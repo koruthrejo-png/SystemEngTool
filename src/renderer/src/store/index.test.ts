@@ -14,6 +14,7 @@ const mockElement: ArchitectureElement = {
   id: 1, projectId: 1, architectureId: null, parentId: null, blockId: 'SYS-001', name: '',
   elementTypeId: null, description: null, color: null,
   posX: 100, posY: 100, width: 160, height: 80,
+  preNestWidth: null, preNestHeight: null,
   deletedAt: null, createdAt: '', updatedAt: ''
 }
 const mockConn: ArchitectureConnection = {

@@ -9,7 +9,10 @@ import { useStore } from '../../store'
 import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
 import { Button } from '../ui'
-import { buildNodes, resolveDrop, fitChildInParent, withHiddenCascade } from './nodes'
+import {
+  buildNodes, resolveDrop, fitChildInParent, withHiddenCascade,
+  nestBaseline, revertToBaseline, clearBaselineOnManualResize
+} from './nodes'
 import LayerPanel from './LayerPanel'
 import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from './layers'
 import { edgeMarker, EDGE_STROKE, EDGE_STROKE_SELECTED } from './edgeStyle'
@@ -93,16 +96,17 @@ function CanvasInner(): JSX.Element {
     setNodes(buildNodes(elements, elementTypes, connections, selectedElementId, (id, x, y, width, height) => {
       const el = elements.find((e) => e.id === id)
       const parent = el?.parentId != null ? elements.find((e) => e.id === el.parentId) : undefined
+      const cleared = clearBaselineOnManualResize(elements.filter((c) => c.parentId === id).length)
       if (parent) {
         // resized inside a container: keep the child snug, grow the parent if needed
         const fit = fitChildInParent(parent, { posX: x, posY: y, width, height })
-        updateElement(id, { posX: fit.childX, posY: fit.childY, width, height })
+        updateElement(id, { posX: fit.childX, posY: fit.childY, width, height, ...cleared })
         if (fit.parentWidth !== parent.width || fit.parentHeight !== parent.height) {
           updateElement(parent.id, { width: fit.parentWidth, height: fit.parentHeight })
         }
         return
       }
-      updateElement(id, { posX: x, posY: y, width, height })
+      updateElement(id, { posX: x, posY: y, width, height, ...cleared })
     }, visById))
   }, [elements, elementTypes, connections, selectedElementId, visById])
 
@@ -199,12 +203,18 @@ function CanvasInner(): JSX.Element {
       // nesting (or moving within a container): snug-fit the child, grow the parent if needed
       const parent = elements.find((e) => e.id === drop.parentId)!
       const fit = fitChildInParent(parent, { posX: drop.posX, posY: drop.posY, width: el.width, height: el.height })
+      // record the pre-drop size before the fit grows the parent (first child only)
+      const baseline = nestBaseline(parent, elements.filter((c) => c.parentId === parent.id).length)
       updateElement(id, { parentId: drop.parentId, posX: fit.childX, posY: fit.childY })
-      if (fit.parentWidth !== parent.width || fit.parentHeight !== parent.height) {
-        updateElement(parent.id, { width: fit.parentWidth, height: fit.parentHeight })
+      if (baseline || fit.parentWidth !== parent.width || fit.parentHeight !== parent.height) {
+        updateElement(parent.id, { width: fit.parentWidth, height: fit.parentHeight, ...baseline })
       }
     } else if (el && drop.parentId !== el.parentId) {
       updateElement(id, drop)
+      // dragged out to root: revert the old parent if that was its last child
+      const oldParent = elements.find((e) => e.id === el.parentId)
+      const revert = oldParent && revertToBaseline(oldParent, elements.filter((c) => c.parentId === oldParent.id && c.id !== id).length)
+      if (oldParent && revert) updateElement(oldParent.id, revert)
     } else {
       updateElement(id, { posX: node.position.x, posY: node.position.y })
     }
