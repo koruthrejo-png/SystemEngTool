@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import { buildNodes, resolveDrop, fitChildInParent, withHiddenCascade } from './nodes'
+import {
+  buildNodes, resolveDrop, fitChildInParent, withHiddenCascade,
+  nestBaseline, revertToBaseline, clearBaselineOnManualResize
+} from './nodes'
 import type { ArchitectureElement } from '../../../../types'
 import { resolveConnectorVisibility, type Visibility } from './layers'
 
@@ -8,6 +11,7 @@ function el(partial: Partial<ArchitectureElement> & { id: number }): Architectur
     projectId: 1, architectureId: null, parentId: null, blockId: `SYS-${partial.id}`, name: `E${partial.id}`,
     elementTypeId: null, description: null, color: null, lineStyle: null,
     posX: 0, posY: 0, width: 160, height: 80,
+    preNestWidth: null, preNestHeight: null,
     deletedAt: null, createdAt: '', updatedAt: '',
     ...partial
   }
@@ -194,5 +198,58 @@ describe('resolveDrop', () => {
     // dragging the PARENT over its child's area must not nest into the child
     const r = resolveDrop(1, { x: 50, y: 50 }, [parent, child])
     expect(r).toEqual({ parentId: null, posX: 50, posY: 50 })
+  })
+})
+
+describe('pre-nest size baseline', () => {
+  // drop a 300x200 child into a 160x80 container: fitChildInParent grows it
+  const container = el({ id: 1, width: 160, height: 80 })
+  const child = { posX: 0, posY: 0, width: 300, height: 200 }
+
+  function drop(parent: ArchitectureElement, childCount: number): ArchitectureElement {
+    const fit = fitChildInParent(parent, child)
+    const baseline = nestBaseline(parent, childCount)
+    return { ...parent, width: fit.parentWidth, height: fit.parentHeight, ...baseline }
+  }
+
+  it('grow-then-revert restores the pre-drop size and clears the baseline', () => {
+    const grown = drop(container, 0)
+    expect(grown.width).toBeGreaterThan(160)
+    expect([grown.preNestWidth, grown.preNestHeight]).toEqual([160, 80])
+    // last child leaves
+    expect(revertToBaseline(grown, 0)).toEqual({
+      width: 160, height: 80, preNestWidth: null, preNestHeight: null
+    })
+  })
+
+  it('does not revert while other children remain', () => {
+    expect(revertToBaseline(drop(container, 0), 1)).toBeNull()
+  })
+
+  it('manual resize while nested clears the baseline so no revert happens', () => {
+    const grown = drop(container, 0)
+    const resized = { ...grown, width: 500, height: 400, ...clearBaselineOnManualResize(1) }
+    expect(resized.preNestWidth).toBeNull()
+    expect(revertToBaseline(resized, 0)).toBeNull()
+  })
+
+  it('keeps the original baseline when a second child arrives', () => {
+    const grown = drop(container, 0)
+    expect(nestBaseline(grown, 1)).toBeNull()
+    // second child grows it further, then both leave → still the original size
+    const bigger = drop(grown, 1)
+    expect(revertToBaseline(bigger, 0)).toMatchObject({ width: 160, height: 80 })
+  })
+
+  it('baselines a first child that already fits, so a later grow still reverts', () => {
+    const big = el({ id: 1, width: 800, height: 600 })
+    const fitted = drop(big, 0) // no growth needed
+    expect([fitted.width, fitted.height]).toEqual([800, 600])
+    expect([fitted.preNestWidth, fitted.preNestHeight]).toEqual([800, 600])
+  })
+
+  it('leaves a container the user never nested into alone', () => {
+    expect(revertToBaseline(container, 0)).toBeNull()
+    expect(clearBaselineOnManualResize(0)).toEqual({})
   })
 })
