@@ -251,13 +251,37 @@ The wrap bug found at 725/957px is **fixed and committed (`3dcdb35`)**. Root cau
 
 **Not a Phase 1 regression — a pre-existing app-wide floor:** below ~1165px the *whole page* overflows horizontally (`body.scrollWidth 1165` vs `clientWidth 985` at a 1000px window) — with **nothing selected, on the Requirements tab too**. The navy header (search + Open + New Project) sets that floor; "New Project" is the first thing off-screen. The bar clipping seen at 1000px is downstream of this, not of the top bar. Also note the BrowserWindow refuses to go below **900px** wide. Fixing the app-wide min width is a separate, unscoped item — nobody has asked for it.
 
+### ✅ Item 29 Phase 2 (object fill colour) — COMPLETE (session 2026-07-15c)
+
+**Spec:** `docs/superpowers/specs/2026-07-15-architecture-fill-colour-design.md`. **Plan:** `docs/superpowers/plans/2026-07-15-architecture-fill-colour.md`. **Commits:** `c5a0654..7216d94` (4 tasks, subagent-driven development, all reviewed clean) + this docs/live-verify task.
+
+**Shipped:** nullable `fill_color` column on `architecture_elements` (undoable via the existing `updateElement`/`ELEMENT_PROP_KEYS` path); a paired border/fill swatch palette (`swatches.ts`, 8 hues, each carrying a dark `border` shade and a pale `fill` shade so a teal border and teal fill visibly match) with a legibility test asserting `contrast(border, white) >= 4.5`; `fill_color` rendered on `BlockNode`'s outer frame, winning over the container drop-zone overlay (`bg-workspace/60` is skipped when a fill is set, so nesting doesn't wash the fill out); a `Fill` row in the `Style ▾` top-bar popover — ✕ (clear) + 8 chips + native colour picker — alongside the pre-existing `Border` row and `Line style` select. Same commit also fixed a Phase-1 latent bug: the Border picker was showing white instead of the block's actual rendered navy for uncoloured objects.
+
+**Test baseline:** unchanged shape, higher count — `npx vitest run` is **321 passed / 52 failed (373)**, 42 files passed / 10 failed, all 52 failures `ERR_DLOPEN_FAILED` (item 23, pre-existing, re-confirmed not risen). `npx tsc --noEmit` clean. `npx electron-vite build` clean (main/preload/renderer all `✓ built`).
+
+**Live-verified in the built app** (driver against `thermal`, 1500×900 — see `.claude/skills/run-app/driver.mjs`; screenshots in the job's `tmp/shots/`). One correction to the driver's documented behaviour worth recording: **`click-text` matches only `textContent`, not `aria-label`**, despite the swatch chips being real `<button>`s with `aria-label="Fill Teal"` etc. — the chips carry no visible text (they're colour squares), so `click-text` returns `NOT_FOUND` on them. Use `click button[aria-label="Fill Teal"]` (the driver's `click` command takes any CSS selector) instead. All seven checks passed:
+1. Selecting SYS-004 showed `Style ▾` with Border (8 chips + picker), Fill (✕ + 8 chips + picker), Line style.
+2. Teal chip → body painted `rgb(227, 243, 241)` (`#e3f3f1`), header stayed navy; `sqlite3` confirmed `fill_color = '#e3f3f1'`.
+3. Cmd+Z reverted to white/NULL in one step; Cmd+Shift+Z returned to teal — confirmed both by `eval`'d computed background and by re-querying the DB after each key.
+4. ✕ chip → body white, and **`SELECT typeof(fill_color)` returned literal `null`**, not `text` — the `'fillColor' in input ? ... : existing.fill_color` idiom in `updateElement` holds.
+5. Nested a new object into the teal-filled SYS-004 (real mouse drag, since React Flow ignores the driver's synthetic `click`) — fill stayed full-strength teal and the dashed drop-zone border around the nested child stayed legible over it.
+6. SYS-004 has no hand-set `color`; its Border picker showed navy, matching the block's rendered navy border (the Phase-1 bug this commit also fixed).
+7. Relaunched the app — SYS-004's teal fill persisted (`rgb(227, 243, 241)` on a fresh process); switched to the `test 1` architecture and confirmed SYS-001/002/005/006 (never touched) render plain white, and SYS-003 (hand-set `color = '#66ffbd'`, no `fill_color`) also renders a white body under its mint border — untouched legacy objects are unaffected.
+
+Test objects created for check 5/7 (two objects + the nesting) were deleted from `thermal` afterward via direct `UPDATE ... SET deleted_at = ...` / `fill_color = NULL`, restoring the project to its pre-verification 6-object baseline.
+
+**Known deferrals, by explicit user decision:**
+- **Fill is per-object only.** Type-level inheritance (`el.fillColor ?? type.fillColor ?? white`) is **Phase 3 / B1**, deliberately deferred so the inheritance question gets answered once for border *and* fill together rather than twice.
+- **✕/None clears `fillColor` only.** `color` (border) still has no NULL path — there was never a "clear border" affordance, Phase 1 or 2. This means **B1 will meet hand-set border colours that refuse to inherit**: any object with an explicit `color` (e.g. `SYS-003`'s `#66ffbd`) will keep overriding a type colour forever unless B1 also adds a border-clear path. Not a regression — the gap already existed; Phase 2 just makes it visible by finally giving `fillColor` the NULL path `color` never got.
+- **`text-ink-faint` (`#64748b`) is only 4.76:1 against plain white** — already marginal *before* any fill exists, per the spec's §1.1 finding. No fill preset clears AA against it either (4.05–4.28:1, all measured in `swatches.test.ts`'s luminance-only assertion). This is a pre-existing token-level a11y issue that this phase surfaced but did not cause; it belongs in the batched a11y pass already queued (see the standing-context paragraph below), not a one-off fix here.
+
 ## ⏸️ NEXT SESSION — PICK UP HERE
 
-**1. Item 29 Phase 2+** (fill colour + swatch palette — one column), or Phase 3 (B2 snap, B3 duplicate — B1 needs re-sizing per the `element_types.color` correction above). Per-feature approval first.
+**1. Item 29 Phase 3** (B1 type-colour inheritance — needs seeded `element_types.color` values *and* a type-colour editor, per the earlier §1 correction, plus a border-clear path per the deferral above; B2 snap; B3 duplicate). Per-feature approval first.
 
-**3. Open backlog:** **11** (admin area), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), **23** (ABI — now blocking real coverage), **29** (Phase 2+), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
+**3. Open backlog:** **11** (admin area), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), **23** (ABI — now blocking real coverage), **29** (Phase 3), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
 
-**Test baseline to expect:** 306 passed / 52 failed (358), 40 files passed / 10 failed. Both typechecks clean. The 10 failing files are all `ERR_DLOPEN_FAILED`.
+**Test baseline to expect:** 321 passed / 52 failed (373), 42 files passed / 10 failed. Both typechecks clean. The 10 failing files are all `ERR_DLOPEN_FAILED`.
 
 **Scratch data on `thermal`:** folder `Avionics` + `SRS-TRS--8` (safe to delete); a dashed SYS-002→SYS-001 connection. `SmokeTest.reqarch` still holds an **un-migrated** legacy tree — **opening it migrates in place, irreversibly from the UI**; copy the file first if a fallback is wanted.
 
