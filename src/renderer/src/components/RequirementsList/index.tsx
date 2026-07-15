@@ -210,7 +210,6 @@ export default function RequirementsList(): JSX.Element {
               <div
                 key={`h-${row.heading.id}`}
                 data-testid={`heading-row-${row.heading.id}`}
-                style={row.depth > 0 ? { paddingLeft: `${1 + row.depth * 1.5}rem` } : undefined}
                 onDragOver={(e) => { if (dragReqId != null) { e.preventDefault(); setDragOverKey(`h-${row.heading.id}`) } }}
                 onDragLeave={() => setDragOverKey((k) => (k === `h-${row.heading.id}` ? null : k))}
                 onDrop={(e) => { e.preventDefault(); moveReqToHeading(row.heading.id) }}
@@ -223,7 +222,10 @@ export default function RequirementsList(): JSX.Element {
                 >
                   {collapsedHeadingIds.includes(row.heading.id) ? '▸' : '▾'}
                 </button>
-                <span className="text-xs font-mono text-ink-faint">{row.number}</span>
+                {/* fixed width so titles line up regardless of number length; fits '1.1.1' */}
+                <span className="w-12 shrink-0 whitespace-nowrap text-xs font-mono text-ink-faint">{row.number}</span>
+                {/* fixed width: an <input> can't size to its content, so the toolbar
+                    stays next to the title instead of being pushed to the row's edge */}
                 <input
                   key={`${row.heading.id}:${row.heading.title}`}
                   aria-label="Heading title"
@@ -231,7 +233,7 @@ export default function RequirementsList(): JSX.Element {
                   placeholder="Untitled section"
                   onBlur={(e) => { if (e.target.value !== row.heading.title) renameHeading(row.heading.id, e.target.value) }}
                   onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                  className={`flex-1 min-w-0 bg-transparent outline-none font-semibold text-ink text-sm ${row.depth === 0 ? 'uppercase tracking-wide' : ''}`}
+                  className={`w-64 min-w-0 bg-transparent outline-none font-semibold text-ink text-sm ${row.depth === 0 ? 'uppercase tracking-wide' : ''}`}
                 />
                 <span className="flex items-center gap-3 text-xs opacity-0 group-hover/h:opacity-100 transition-opacity shrink-0">
                   <button aria-label="Move section up" onClick={() => moveHeading(row.heading.id, 'up')} className="text-ink-faint hover:text-ink">↑</button>
