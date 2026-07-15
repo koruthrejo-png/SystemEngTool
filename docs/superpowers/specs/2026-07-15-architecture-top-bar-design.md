@@ -28,7 +28,32 @@ Everything the brief for this design asserted was checked. Three corrections:
 
 `nodes.ts:119` builds a `Map` from `elementTypes` and takes `t.name` from it, never `t.color`. `nodes.ts:154` passes `color: el.color` straight through.
 
-So the canvas already has a populated per-type colour column and throws it away. This changes the ranking in §5 — see **B1**.
+So the canvas already has a per-type colour column and throws it away. This changes the ranking in §5 — see **B1**.
+
+> ### ⚠️ CORRECTION (2026-07-15, verified against the code after this spec was drafted)
+>
+> **The column is NOT populated. It is never written at all, so B1 as written delivers nothing.**
+> The "one line, zero DB" framing above is wrong on its load-bearing detail:
+>
+> - `seedElementTypes` (`src/main/handlers/elementTypes.ts:24`) hardcodes **`color = NULL`** for
+>   every built-in type — the `INSERT` literally has `NULL` in the colour position.
+> - `createElementType` (`:41`) *does* accept `input.color ?? null`, and preload exposes
+>   `elementTypes.create` — but **the renderer never calls it.** The only `window.api.elementTypes.*`
+>   calls in the whole renderer are `list` (`store/index.ts:361, 429`). There is no create-type UI.
+> - Therefore every element type is a built-in with `color = NULL`, and `el.color ?? type.color ?? NAVY`
+>   evaluates to `NAVY` for every object. Zero visible change. Note `ComponentLibrary.tsx:31` already
+>   does `t.color ?? NAVY`, so even the shelved palette would have rendered every swatch navy.
+>
+> **The column is dead in both directions — never written, and read only by an unmounted component.**
+>
+> B1 is still a good idea, but it is **not a one-liner**: it needs (a) colours seeded for the built-in
+> types, which is a migration/seed decision about *which* colours and whether to backfill existing
+> projects, and (b) somewhere to edit a type's colour, which means either mounting `ComponentLibrary`
+> or adding a type-colour control. Re-size and re-rank it accordingly before building.
+>
+> **`ComponentLibrary` is not a regression** — `ff0be6c` ("shelve Component Library; type picker on
+> `+ Object`") unmounted it deliberately, and item 20 (`2a280ca`) then removed that replacement type
+> picker too. It is intentionally-shelved code, not something that broke.
 
 ## 2. The central problem: global chrome, per-selection controls
 
