@@ -710,7 +710,14 @@ let i=0; const next=()=>{ if(i>=cmds.length){p.stdin.end();setTimeout(()=>proces
   p.stdin.write(cmds[i++]+"\n"); setTimeout(next,4000); }; setTimeout(next,1000);'
 ```
 
-`click-text` matches on `button`/`a`/`[role=button]`/`[role=tab]` and works on the chips because they are real `<button>`s (Task 4 Step 3) — the `aria-label` is what it matches. Note the driver's `click-text` cannot reach the `<div onClick>` rows used elsewhere in this app; that limitation does not apply here.
+> **Correction (verified 2026-07-15, during execution): `click-text` does NOT match `aria-label`.** An earlier draft of this plan claimed it did. It does not — `driver.mjs:79-80` only ever reads `e.textContent`. The swatch chips are *empty* buttons (colour comes from `style.background`; the name lives in `aria-label`/`title`), so they have no `textContent` and `click-text "Fill Teal"` returns `NOT_FOUND`. Click them by selector instead:
+>
+> ```
+> click button[aria-label="Fill Teal"]
+> click button[aria-label="Fill None"]
+> ```
+>
+> The driver's `click` command uses `querySelector().click()`, which works fine on real buttons — it only fails on React Flow nodes, which ignore synthetic clicks. Fixing `click-text` to fall back to `aria-label` is a worthwhile driver improvement, but out of scope here.
 
 Environment facts, so they are not rediscovered: the work area is 1512×898, so **1500 is the realistic maximum width**; the BrowserWindow refuses to go **below 900 wide**; and readline fires piped input faster than `launch` completes, which is why every command is paced ~4s apart rather than piped as a heredoc.
 

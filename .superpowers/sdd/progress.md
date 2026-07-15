@@ -410,3 +410,27 @@ Reviewer's new minors (all follow-up, non-blocking):
   - stats.ts:65's kind filter is redundant behind `.filter(m => m.total > 0)` (folders own no requirements in any reachable state); its test is only diagnostic because the fixture puts a requirement on a folder, which the guards make impossible. Harmless belt-and-braces — keep it.
 
 ## PLAN COMPLETE — 6 tasks + final review (READY TO MERGE, no fixes needed); branch HEAD 94dd8a7
+
+## Item 29 Phase 2 — Object Fill Colour (plan: docs/superpowers/plans/2026-07-15-architecture-fill-colour.md, base 028a4e9)
+
+Task 1: complete (commits 028a4e9..c5a0654, review clean — spec ✅, quality Approved, no findings)
+  - Reviewer independently verified the two load-bearing points against live source: `updateElement` uses the `'fillColor' in input` form (not `??`, which cannot persist an explicit null), and the bind sits correctly between `line_style` and `pos_x` in the UPDATE argument order.
+  - Implementer found a FIFTH broken fixture the plan's table missed: `Dashboard/stats.test.ts:14`. The plan's scan grepped for the `ArchitectureElement` type name; that file passes untyped literals to a typed param, so it never matched. In-scope mechanical repair, disclosed, typecheck would have failed without it.
+Task 2: complete (commits c5a0654..4bd36ab, review clean — spec ✅, quality Approved, no findings)
+  - Reviewer independently re-derived the WCAG maths in Node: border-vs-white 4.923 (Amber, min) to 12.141 (Navy, max); fill luminance 0.843–0.894. Also verified the spec's §1.1 claim from scratch — all 8 fills land 4.05–4.28 against ink-faint #64748b vs white's own 4.759, i.e. every fill is strictly worse than white and below AA. The palette's legibility rationale is now confirmed by a second party, not just the spec author.
+Task 3: complete (commits 4bd36ab..912ffbb, review clean — spec ✅, quality Approved, no findings)
+  - Reviewer confirmed the new tests are load-bearing by reasoning through a revert: with the old hardcoded bg-white + unconditional bg-workspace/60, all three BlockNode tests fail. Not vacuous.
+  - MINOR carried to final review: `'#1a365d'` is still duplicated in `ComponentLibrary.tsx` and `Dashboard/index.tsx`. BlockNode's copy is gone (now imports NAVY from swatches.ts), but those two predate this plan and were out of Task 3's brief. Now that swatches.ts is the single home for the hex, they are a loose end worth triaging.
+  - Housekeeping trap found: `.superpowers/sdd/` is REUSED across plans. `task-3/4/5-report.md` still held reports from the item-22 connection-line-editing plan. Task 3's implementer overwrote its own; the controller deleted the stale 4/5 before they could poison a review. Check for stale report files at the start of any future SDD run.
+Task 4: complete (commits 912ffbb..7216d94, review clean — spec ✅, quality Approved, no findings)
+  - Reviewer independently verified the plan's highest-risk point: the ✕ chip's `onPick(null)` reaches `updateElement` as `{ fillColor: null }`, and the test would fail if reverted to '#ffffff'. Also confirmed the Border-picker bug fix (`?? NAVY`) now matches BlockNode's render, while the Fill picker correctly keeps `?? '#ffffff'` (white is the honest display of "no fill").
+  - Chips are real <button type="button"> with distinct aria-labels ("Border Teal" / "Fill Teal" / "Fill None") — adds nothing to the batched a11y backlog.
+  - Test count arithmetic (306 baseline +2 T1 +4 T2 +4 T3 +5 T4 = 321) checks out; Task 4's implementer misattributed the delta to "unrelated prior work on main" — it is this plan's own earlier tasks.
+Task 5: complete (commits 7216d94..bf3e35b, all 7 live-verify checks PASS)
+  - Check 4 (the one that matters — no automated coverage exists for it under item 23): after the ✕ chip, `sqlite3 SELECT typeof(fill_color)` literally returned `null`, NOT `text`. The `'fillColor' in input` idiom holds end-to-end. Controller independently re-queried the DB afterwards: column exists, all rows NULL, thermal restored to its 6-object baseline with SYS-003's hand-set #66ffbd border intact.
+  - Check 5 verified by a real mouse drag: nesting a child into a filled block kept the fill full-strength and the dashed drop zone legible (parent_id=4 confirmed in DB).
+  - **PLAN ERROR FOUND BY THE IMPLEMENTER AND CORRECTED:** the plan claimed the driver's `click-text` matches `aria-label`. It does NOT — `driver.mjs:79-80` only reads `textContent`, and the swatch chips are EMPTY buttons (colour is style.background, name is aria-label/title), so `click-text "Fill Teal"` returns NOT_FOUND. Use `click button[aria-label="Fill Teal"]`. Plan corrected in place. A `click-text` aria-label fallback is a worthwhile future driver fix.
+  - Build clean (3/3 targets); both typechecks clean; vitest 321 passed / 52 failed (373) — failures unchanged at the item-23 baseline.
+
+MINORS carried to final review:
+  - `'#1a365d'` still duplicated in `ComponentLibrary.tsx` and `Dashboard/index.tsx` (BlockNode's copy is gone; swatches.ts is now the single home).
