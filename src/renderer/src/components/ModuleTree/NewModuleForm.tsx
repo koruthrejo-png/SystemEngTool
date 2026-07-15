@@ -13,7 +13,7 @@ export default function NewModuleForm({ projectId, parentId, onSubmit, onCancel 
   const [kind, setKind] = useState<ModuleKind>('module')
   const [name, setName] = useState('')
   const [prefix, setPrefix] = useState('')
-  const [padding, setPadding] = useState(4)
+  const [padding, setPadding] = useState(1)
   const isFolder = kind === 'folder'
 
   async function handleSubmit(e: React.FormEvent): Promise<void> {
@@ -54,6 +54,15 @@ export default function NewModuleForm({ projectId, parentId, onSubmit, onCancel 
             <Input type="number" min={1} max={8} value={padding} onChange={(e) => setPadding(Number(e.target.value))}
               title="ID digit count (prefix SRS + 4 digits = SRS-0001)" className="!w-14 !py-1.5" />
           </label>
+        </div>
+      )}
+      {!isFolder && (
+        <div className="text-[11px] text-ink-faint leading-4">
+          {prefix.trim()
+            // ponytail: mirrors requirements.ts:37 exactly — hardcoded hyphen and all, so a
+            // prefix ending in '-' previews the double hyphen it really mints. Do not normalize.
+            ? <>First ID: <span className="font-mono text-ink">{`${prefix.trim().toUpperCase()}-${String(1).padStart(padding, '0')}`}</span></>
+            : 'Enter a prefix to preview the first ID'}
         </div>
       )}
       <div className="flex gap-2">
