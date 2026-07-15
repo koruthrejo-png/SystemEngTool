@@ -24,12 +24,17 @@ it('shows a checkbox per layer, checked for assigned layers', () => {
   expect((screen.getByLabelText('Comms') as HTMLInputElement).checked).toBe(false)
 })
 
-it('defaults the line style select to solid when unset', () => {
+// The styling controls moved to the top bar's Style/Type popovers. Mirroring them here would
+// be the half-migrated UI the design rejects — and the drawer's stale local state would fight
+// the bar's writes. Assert they are gone, not merely that the bar has them.
+it('no longer renders Color, Line style or Type — they live in the top bar', () => {
   render(<ElementPanel />)
-  expect((screen.getByLabelText('Line style') as HTMLSelectElement).value).toBe('solid')
+  expect(screen.queryByLabelText('Line style')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Type')).not.toBeInTheDocument()
+  expect(screen.queryByText('Color')).not.toBeInTheDocument()
 })
 
-it('changing line style calls updateElement with { lineStyle }', () => {
+it('saving the name does not write color or elementTypeId back over the bar', () => {
   const updateElement = vi.fn()
   ;(useStore as any).mockReturnValue({
     selectedElementId: 100, elements: [el], elementTypes: [], projectRequirements: [],
@@ -38,8 +43,8 @@ it('changing line style calls updateElement with { lineStyle }', () => {
     toggleElementLayer: vi.fn()
   })
   render(<ElementPanel />)
-  fireEvent.change(screen.getByLabelText('Line style'), { target: { value: 'dashed' } })
-  expect(updateElement).toHaveBeenCalledWith(100, { lineStyle: 'dashed' })
+  fireEvent.blur(screen.getByDisplayValue('Pump'))
+  expect(updateElement).toHaveBeenCalledWith(100, { name: 'Pump', description: null })
 })
 
 it('toggles layer membership on checkbox click', () => {

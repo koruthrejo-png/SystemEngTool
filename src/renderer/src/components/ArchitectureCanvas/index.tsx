@@ -8,7 +8,8 @@ import '@xyflow/react/dist/style.css'
 import { useStore } from '../../store'
 import BlockNode from './BlockNode'
 import EdgeLabel from './EdgeLabel'
-import { Button } from '../ui'
+import { Button, Select, SectionLabel } from '../ui'
+import type { ArchitectureElement, ArchitectureConnection, LineStyle, EdgeMarker } from '../../../../types'
 import {
   buildNodes, resolveDrop, fitChildInParent, withHiddenCascade,
   nestBaseline, revertToBaseline, clearBaselineOnManualResize
@@ -17,6 +18,7 @@ import LayerPanel from './LayerPanel'
 import { effectiveVisibility, resolveConnectorVisibility, type Visibility } from './layers'
 import { edgeMarker, EDGE_STROKE, EDGE_STROKE_SELECTED } from './edgeStyle'
 import { shouldDeleteConnection, isTyping } from './deleteKey'
+import { barMode } from './barMode'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { labeled: EdgeLabel }
@@ -51,9 +53,9 @@ function CanvasControls(): JSX.Element {
   )
 }
 
-// Top-bar Layers dropdown. LayerPanel's card already reads as a popover surface, so it
-// is reused verbatim — this only supplies the trigger, the anchor and the dismiss rules.
-function LayersMenu(): JSX.Element {
+// Top-bar dropdown: trigger, anchor and dismiss rules, nothing else. Grown out of the Layers
+// menu (item 25) when Style/Type needed the same shell — one dismiss rule for every popover.
+function Menu({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -64,6 +66,7 @@ function LayersMenu(): JSX.Element {
     }
     function onKey(e: KeyboardEvent): void {
       // ponytail: LayerPanel's add/rename inputs own Escape (cancel edit) — let them keep it.
+      // Style's <input type="color"> is an HTMLInputElement too, and falls under the same carve-out.
       if (e.key === 'Escape' && !(e.target instanceof HTMLInputElement)) setOpen(false)
     }
     document.addEventListener('mousedown', onPointerDown)
@@ -76,9 +79,121 @@ function LayersMenu(): JSX.Element {
 
   return (
     <div ref={ref} className="relative">
-      <Button variant="ghost" aria-expanded={open} onClick={() => setOpen((v) => !v)}>Layers ▾</Button>
-      {open && <div className="absolute top-full left-0 mt-1 z-20"><LayerPanel /></div>}
+      <Button variant="ghost" aria-expanded={open} onClick={() => setOpen((v) => !v)}>{label}</Button>
+      {open && <div className="absolute top-full left-0 mt-1 z-20">{children}</div>}
     </div>
+  )
+}
+
+// Popover card. LayerPanel paints its own, so this is only for the Style/Type contents.
+function MenuCard({ children }: { children: React.ReactNode }): JSX.Element {
+  return (
+    <div className="bg-white/95 backdrop-blur border border-line rounded-lg shadow-md w-52 p-3 space-y-3">
+      {children}
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
+  return (
+    <div className="space-y-1.5">
+      <SectionLabel className="block">{label}</SectionLabel>
+      {children}
+    </div>
+  )
+}
+
+const LINE_STYLES = (
+  <>
+    <option value="solid">Solid</option>
+    <option value="dashed">Dashed</option>
+    <option value="dotted">Dotted</option>
+  </>
+)
+
+const MARKERS = (
+  <>
+    <option value="none">None</option>
+    <option value="arrow">Open</option>
+    <option value="arrowclosed">Filled</option>
+  </>
+)
+
+// Contextual segment: object styling. Writes on change — no local state, no onBlur.
+function ObjectStyleMenu({ el }: { el: ArchitectureElement }): JSX.Element {
+  const { updateElement } = useStore()
+  return (
+    <Menu label="Style ▾">
+      <MenuCard>
+        <Field label="Border">
+          <input
+            type="color"
+            aria-label="Border"
+            value={el.color ?? '#ffffff'}
+            onChange={(e) => updateElement(el.id, { color: e.target.value })}
+            className="h-9 w-full rounded border border-line cursor-pointer"
+          />
+        </Field>
+        <Field label="Line style">
+          <Select
+            aria-label="Line style"
+            value={el.lineStyle ?? 'solid'}
+            onChange={(e) => updateElement(el.id, { lineStyle: e.target.value as LineStyle })}
+          >{LINE_STYLES}</Select>
+        </Field>
+      </MenuCard>
+    </Menu>
+  )
+}
+
+function TypeMenu({ el }: { el: ArchitectureElement }): JSX.Element {
+  const { elementTypes, updateElement } = useStore()
+  return (
+    <Menu label="Type ▾">
+      <MenuCard>
+        <Field label="Type">
+          <Select
+            aria-label="Type"
+            value={el.elementTypeId ?? ''}
+            onChange={(e) => updateElement(el.id, { elementTypeId: e.target.value ? Number(e.target.value) : null })}
+          >
+            <option value="">— None —</option>
+            {elementTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </Select>
+        </Field>
+      </MenuCard>
+    </Menu>
+  )
+}
+
+function ConnectionStyleMenu({ conn }: { conn: ArchitectureConnection }): JSX.Element {
+  const { updateConnection } = useStore()
+  return (
+    <Menu label="Style ▾">
+      <MenuCard>
+        <Field label="Line style">
+          <Select
+            aria-label="Line style"
+            value={conn.lineStyle ?? 'solid'}
+            onChange={(e) => updateConnection(conn.id, { lineStyle: e.target.value as LineStyle })}
+          >{LINE_STYLES}</Select>
+        </Field>
+        <Field label="Arrow start">
+          <Select
+            aria-label="Arrow start"
+            value={conn.markerStart ?? 'none'}
+            onChange={(e) => updateConnection(conn.id, { markerStart: e.target.value as EdgeMarker })}
+          >{MARKERS}</Select>
+        </Field>
+        <Field label="Arrow end">
+          <Select
+            aria-label="Arrow end"
+            value={conn.markerEnd ?? 'none'}
+            onChange={(e) => updateConnection(conn.id, { markerEnd: e.target.value as EdgeMarker })}
+          >{MARKERS}</Select>
+        </Field>
+      </MenuCard>
+    </Menu>
   )
 }
 
@@ -111,6 +226,10 @@ function CanvasInner(): JSX.Element {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { getInternalNode } = useReactFlow()
+
+  const mode = barMode(selectedElementId, selectedConnectionId)
+  const selectedEl = mode === 'object' ? elements.find((e) => e.id === selectedElementId) ?? null : null
+  const selectedConn = mode === 'connection' ? connections.find((c) => c.id === selectedConnectionId) ?? null : null
 
   const layersById = useMemo(() => new Map(layers.map((l) => [l.id, l])), [layers])
 
@@ -260,7 +379,7 @@ function CanvasInner(): JSX.Element {
       <div className="flex flex-col flex-1 min-w-0">
         <div className="relative z-10 flex items-center gap-2 px-4 h-12 bg-white border-b border-line shrink-0">
           <Button onClick={handleAddBlock}>+ Object</Button>
-          <LayersMenu />
+          <Menu label="Layers ▾"><LayerPanel /></Menu>
           <div className="w-px h-5 bg-line" />
           <div className="flex items-center gap-1">
             <button
@@ -278,6 +397,16 @@ function CanvasInner(): JSX.Element {
               className="p-1.5 rounded hover:bg-workspace text-ink-muted leading-none text-base disabled:opacity-40 disabled:hover:bg-transparent"
             >↷</button>
           </div>
+          {/* Contextual segment. Collapses when nothing is selected — the global segment is
+              left-anchored and the hint is ml-auto right-anchored, so it grows in the slack
+              between two pinned ends and moves nothing that was already on screen. */}
+          {selectedEl && (
+            <>
+              <ObjectStyleMenu el={selectedEl} />
+              <TypeMenu el={selectedEl} />
+            </>
+          )}
+          {selectedConn && <ConnectionStyleMenu conn={selectedConn} />}
           <span className="ml-auto text-xs text-ink-faint">Drag from a block's edge to connect</span>
         </div>
         <div className="flex-1">

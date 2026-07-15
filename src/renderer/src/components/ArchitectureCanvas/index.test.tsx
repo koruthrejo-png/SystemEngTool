@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ArchitectureCanvas from './index'
 
@@ -16,6 +16,7 @@ vi.mock('@xyflow/react', () => ({
   useReactFlow: () => ({ getInternalNode: vi.fn(), zoomIn: vi.fn(), zoomOut: vi.fn(), fitView: vi.fn() }),
   useViewport: () => ({ x: 0, y: 0, zoom: 1 }),
   ConnectionMode: { Loose: 'loose', Strict: 'strict' },
+  MarkerType: { Arrow: 'arrow', ArrowClosed: 'arrowclosed' },
   NodeResizer: () => null,
   addEdge: vi.fn((edge, edges) => [...edges, edge]),
   Position: { Left: 'left', Right: 'right', Top: 'top', Bottom: 'bottom' },
@@ -28,26 +29,41 @@ vi.mock('@xyflow/react', () => ({
 const mockAddElement = vi.fn().mockResolvedValue(undefined)
 const mockSelectElement = vi.fn()
 const mockSelectConnection = vi.fn()
+const mockUpdateElement = vi.fn()
+const mockUpdateConnection = vi.fn()
+
+// The bar's contextual segment keys off these; tests set them before render.
+const mockEl = { id: 100, projectId: 1, architectureId: 1, parentId: null, blockId: 'SYS-001', name: 'Pump', elementTypeId: null, description: null, color: null, lineStyle: null, posX: 0, posY: 0, width: 140, height: 60, deletedAt: null, createdAt: '', updatedAt: '' }
+const mockConn = { id: 5, projectId: 1, architectureId: 1, connId: 'ICN-0001', sourceId: 100, targetId: 101, sourceHandle: null, targetHandle: null, name: null, connectionTypeId: null, lineStyle: 'solid', markerStart: 'none', markerEnd: 'arrowclosed', description: null, deletedAt: null, createdAt: '', updatedAt: '' }
+const mockSel: { elementId: number | null; connectionId: number | null } = { elementId: null, connectionId: null }
+
+beforeEach(() => {
+  mockSel.elementId = null
+  mockSel.connectionId = null
+  mockUpdateElement.mockClear()
+  mockUpdateConnection.mockClear()
+})
 
 vi.mock('../../store', () => {
   // lazy: the factory is hoisted above the mock* consts, so build the state per call
   const state = () => ({
     project: { id: 1, name: 'Test', elemIdPrefix: 'SYS', elemIdPadding: 3, elemNextCounter: 1, connIdPrefix: 'ICN', connIdPadding: 4, connNextCounter: 1, createdAt: '', updatedAt: '' },
-    elements: [],
-    connections: [],
-    elementTypes: [],
-    selectedElementId: null,
-    selectedConnectionId: null,
+    elements: [mockEl],
+    connections: [mockConn],
+    elementTypes: [{ id: 7, projectId: 1, name: 'Sensor', color: null, isBuiltIn: true, deletedAt: null, createdAt: '', updatedAt: '' }],
+    selectedElementId: mockSel.elementId,
+    selectedConnectionId: mockSel.connectionId,
     layers: [],
     elementLayers: [],
     connectionLayers: [],
     addElement: mockAddElement,
-    updateElement: vi.fn(),
+    updateElement: mockUpdateElement,
     removeElement: vi.fn(),
     addConnection: vi.fn(),
     removeConnection: vi.fn(),
     selectElement: mockSelectElement,
     selectConnection: mockSelectConnection,
+    updateConnection: mockUpdateConnection,
     undo: vi.fn(),
     redo: vi.fn(),
     undoStack: [],
@@ -125,6 +141,90 @@ describe('ArchitectureCanvas', () => {
       await userEvent.keyboard('{Escape}')
       expect(screen.queryByPlaceholderText('Layer name')).not.toBeInTheDocument()
       expect(panel()).toBeInTheDocument() // popover survived; only the input was cancelled
+    })
+  })
+
+  describe('contextual segment', () => {
+    const style = (): HTMLElement => screen.getByRole('button', { name: /style/i })
+
+    it('collapses when nothing is selected', () => {
+      render(<ArchitectureCanvas />)
+      expect(screen.queryByRole('button', { name: /style/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /type/i })).not.toBeInTheDocument()
+    })
+
+    it('offers Border and Line style when an object is selected', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(style())
+      expect(screen.getByLabelText('Border')).toBeInTheDocument()
+      expect(screen.getByLabelText('Line style')).toBeInTheDocument()
+      expect(screen.queryByLabelText('Arrow start')).not.toBeInTheDocument()
+    })
+
+    it('offers Line style, Arrow start and Arrow end when a connection is selected', async () => {
+      mockSel.connectionId = 5
+      render(<ArchitectureCanvas />)
+      await userEvent.click(style())
+      expect(screen.getByLabelText('Line style')).toBeInTheDocument()
+      expect((screen.getByLabelText('Arrow end') as HTMLSelectElement).value).toBe('arrowclosed')
+      expect(screen.queryByLabelText('Border')).not.toBeInTheDocument()
+    })
+
+    it('changing the border colour calls updateElement with { color } only', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(style())
+      fireEvent.change(screen.getByLabelText('Border'), { target: { value: '#ff0000' } })
+      expect(mockUpdateElement).toHaveBeenCalledWith(100, { color: '#ff0000' })
+    })
+
+    it('changing the object line style calls updateElement with { lineStyle } only', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(style())
+      fireEvent.change(screen.getByLabelText('Line style'), { target: { value: 'dashed' } })
+      expect(mockUpdateElement).toHaveBeenCalledWith(100, { lineStyle: 'dashed' })
+    })
+
+    it('changing Type calls updateElement with { elementTypeId } only', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(screen.getByRole('button', { name: /type/i }))
+      fireEvent.change(screen.getByLabelText('Type'), { target: { value: '7' } })
+      expect(mockUpdateElement).toHaveBeenCalledWith(100, { elementTypeId: 7 })
+    })
+
+    it('changing the arrow end calls updateConnection with { markerEnd } only', async () => {
+      mockSel.connectionId = 5
+      render(<ArchitectureCanvas />)
+      await userEvent.click(style())
+      fireEvent.change(screen.getByLabelText('Arrow end'), { target: { value: 'arrow' } })
+      expect(mockUpdateConnection).toHaveBeenCalledWith(5, { markerEnd: 'arrow' })
+    })
+
+    it('closes the Style popover on an outside click', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(style())
+      await userEvent.click(screen.getByTestId('react-flow'))
+      expect(screen.queryByLabelText('Border')).not.toBeInTheDocument()
+    })
+
+    it('closes the Style popover on Escape', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(style())
+      await userEvent.keyboard('{Escape}')
+      expect(screen.queryByLabelText('Border')).not.toBeInTheDocument()
+    })
+
+    it('survives Escape from the colour input — it is an HTMLInputElement (the carve-out)', async () => {
+      mockSel.elementId = 100
+      render(<ArchitectureCanvas />)
+      await userEvent.click(style())
+      fireEvent.keyDown(screen.getByLabelText('Border'), { key: 'Escape' })
+      expect(screen.getByLabelText('Border')).toBeInTheDocument()
     })
   })
 })

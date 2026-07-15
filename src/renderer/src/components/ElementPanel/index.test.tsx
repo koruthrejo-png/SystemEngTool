@@ -67,8 +67,8 @@ describe('ElementPanel', () => {
     expect(screen.getByDisplayValue('Main engine')).toBeInTheDocument()
   })
 
-  it('renders type dropdown', () => {
+  it('no longer renders the type dropdown — it moved to the top bar', () => {
     render(<ElementPanel />)
-    expect(screen.getByLabelText('Type')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Type')).not.toBeInTheDocument()
   })
 })

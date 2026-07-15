@@ -1,5 +1,5 @@
 import { it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import ConnectionPanel from './index'
 import { useStore } from '../../store'
 
@@ -23,37 +23,17 @@ beforeEach(() => {
   })
 })
 
-it('renders the three style selects with current values', () => {
+// The three style selects moved to the top bar's connection Style popover — see
+// ArchitectureCanvas/index.test.tsx. They are deleted here, not mirrored.
+it('no longer renders the three style selects — they live in the top bar', () => {
   render(<ConnectionPanel />)
-  expect((screen.getByLabelText('Line style') as HTMLSelectElement).value).toBe('solid')
-  expect((screen.getByLabelText('Arrow start') as HTMLSelectElement).value).toBe('none')
-  expect((screen.getByLabelText('Arrow end') as HTMLSelectElement).value).toBe('arrowclosed')
+  expect(screen.queryByLabelText('Line style')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Arrow start')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Arrow end')).not.toBeInTheDocument()
 })
 
-it('changing line style calls updateConnection with { lineStyle }', () => {
-  const updateConnection = vi.fn()
-  ;(useStore as any).mockReturnValue({
-    selectedConnectionId: 1, connections: [conn], connectionTypes: [], projectRequirements: [],
-    updateConnection, removeConnection: vi.fn(), addConnectionLink: vi.fn(), removeConnectionLink: vi.fn(),
-    connectionCustomFields: [], loadConnectionCustomFields: vi.fn(),
-    addConnectionCustomField: vi.fn(), updateConnectionCustomField: vi.fn(), removeConnectionCustomField: vi.fn(),
-    layers: [], connectionLayers: [], toggleConnectionLayer: vi.fn()
-  })
+it('still renders the fields it kept', () => {
   render(<ConnectionPanel />)
-  fireEvent.change(screen.getByLabelText('Line style'), { target: { value: 'dashed' } })
-  expect(updateConnection).toHaveBeenCalledWith(1, { lineStyle: 'dashed' })
-})
-
-it('changing arrow end calls updateConnection with { markerEnd }', () => {
-  const updateConnection = vi.fn()
-  ;(useStore as any).mockReturnValue({
-    selectedConnectionId: 1, connections: [conn], connectionTypes: [], projectRequirements: [],
-    updateConnection, removeConnection: vi.fn(), addConnectionLink: vi.fn(), removeConnectionLink: vi.fn(),
-    connectionCustomFields: [], loadConnectionCustomFields: vi.fn(),
-    addConnectionCustomField: vi.fn(), updateConnectionCustomField: vi.fn(), removeConnectionCustomField: vi.fn(),
-    layers: [], connectionLayers: [], toggleConnectionLayer: vi.fn()
-  })
-  render(<ConnectionPanel />)
-  fireEvent.change(screen.getByLabelText('Arrow end'), { target: { value: 'arrow' } })
-  expect(updateConnection).toHaveBeenCalledWith(1, { markerEnd: 'arrow' })
+  expect(screen.getByLabelText('Type')).toBeInTheDocument()
+  expect(screen.getByText('Description')).toBeInTheDocument()
 })

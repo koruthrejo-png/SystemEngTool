@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
-import { Input, Textarea, Select, SectionLabel, Button } from '../ui'
-import type { LineStyle } from '../../../../types'
+import { Input, Textarea, SectionLabel, Button } from '../ui'
 
 export default function ElementPanel(): JSX.Element {
   const {
-    selectedElementId, elements, elementTypes, projectRequirements,
+    selectedElementId, elements, projectRequirements,
     updateElement, removeElement, addElementLink, removeElementLink,
     layers, elementLayers, toggleElementLayer
   } = useStore()
@@ -13,8 +12,6 @@ export default function ElementPanel(): JSX.Element {
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [color, setColor] = useState('')
-  const [elementTypeId, setElementTypeId] = useState<number | null>(null)
   const [linkedReqIds, setLinkedReqIds] = useState<number[]>([])
   const [reqSearch, setReqSearch] = useState('')
 
@@ -22,8 +19,6 @@ export default function ElementPanel(): JSX.Element {
     if (!el) return
     setName(el.name)
     setDescription(el.description ?? '')
-    setColor(el.color ?? '')
-    setElementTypeId(el.elementTypeId)
     window.api.elementLinks.list(el.id).then((reqs) => setLinkedReqIds(reqs.map((r) => r.id)))
   }, [el?.id])
 
@@ -36,12 +31,7 @@ export default function ElementPanel(): JSX.Element {
   }
 
   function save(): void {
-    updateElement(el!.id, {
-      name,
-      description: description || null,
-      color: color || null,
-      elementTypeId
-    })
+    updateElement(el!.id, { name, description: description || null })
   }
 
   async function toggleLink(reqId: number): Promise<void> {
@@ -73,39 +63,8 @@ export default function ElementPanel(): JSX.Element {
         <Field label="Name">
           <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={save} />
         </Field>
-        <Field label="Type">
-          <Select
-            aria-label="Type"
-            value={elementTypeId ?? ''}
-            onChange={(e) => {
-              const newTypeId = e.target.value ? Number(e.target.value) : null
-              setElementTypeId(newTypeId)
-              updateElement(el!.id, { name, description: description || null, color: color || null, elementTypeId: newTypeId })
-            }}
-          >
-            <option value="">— None —</option>
-            {elementTypes.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </Select>
-        </Field>
         <Field label="Description">
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onBlur={save} rows={3} />
-        </Field>
-        <Field label="Color">
-          <input type="color" value={color || '#ffffff'} onChange={(e) => setColor(e.target.value)} onBlur={save}
-            className="h-9 w-full rounded border border-line cursor-pointer" />
-        </Field>
-        <Field label="Line style">
-          <Select
-            aria-label="Line style"
-            value={el.lineStyle ?? 'solid'}
-            onChange={(e) => updateElement(el!.id, { lineStyle: e.target.value as LineStyle })}
-          >
-            <option value="solid">Solid</option>
-            <option value="dashed">Dashed</option>
-            <option value="dotted">Dotted</option>
-          </Select>
         </Field>
         <Field label="Requirements">
           <Input placeholder="Filter by ID or text…" value={reqSearch} onChange={(e) => setReqSearch(e.target.value)} className="!py-1.5 !text-xs mb-2" />
