@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CreateModuleInput, ModuleKind } from '../../../../types'
-import { Button, Input } from '../ui'
+import { Button, Input, SectionLabel } from '../ui'
 
 interface Props {
   projectId: number
@@ -49,8 +49,11 @@ export default function NewModuleForm({ projectId, parentId, onSubmit, onCancel 
       {!isFolder && (
         <div className="flex gap-2">
           <Input placeholder="ID prefix (e.g. SRS)" value={prefix} onChange={(e) => setPrefix(e.target.value)} className="flex-1 !py-1.5" />
-          <Input type="number" min={1} max={8} value={padding} onChange={(e) => setPadding(Number(e.target.value))}
-            title="ID digit count" className="!w-16 !py-1.5" />
+          <label className="flex items-center gap-1.5 shrink-0">
+            <SectionLabel>Digits</SectionLabel>
+            <Input type="number" min={1} max={8} value={padding} onChange={(e) => setPadding(Number(e.target.value))}
+              title="ID digit count (prefix SRS + 4 digits = SRS-0001)" className="!w-14 !py-1.5" />
+          </label>
         </div>
       )}
       <div className="flex gap-2">
