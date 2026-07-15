@@ -155,15 +155,18 @@ Its own module because the codebase puts pure units in their own file with a tes
 One component serves both rows, differing only in which shade it reads and whether it offers the clear chip:
 
 ```tsx
-function Swatches({ shade, clearable, onPick }: {
+function Swatches({ shade, label, clearable, onPick }: {
   shade: 'border' | 'fill'
+  label: string
   clearable?: boolean
   onPick: (hex: string | null) => void
 }): JSX.Element
 
-// Border: <Swatches shade="border" onPick={(c) => updateElement(el.id, { color: c })} />
-// Fill:   <Swatches shade="fill" clearable onPick={(c) => updateElement(el.id, { fillColor: c })} />
+// Border: <Swatches shade="border" label="Border" onPick={(c) => updateElement(el.id, { color: c })} />
+// Fill:   <Swatches shade="fill" label="Fill" clearable onPick={(c) => updateElement(el.id, { fillColor: c })} />
 ```
+
+`label` prefixes each chip's `aria-label` (`"Border Teal"`, `"Fill Teal"`). It is not decoration: both rows render the same hue names, so a bare `aria-label="Teal"` would appear twice and make `getByRole` ambiguous.
 
 `onPick` passes `null` only from the ✕ chip, which is why its type is `string | null` and why `clearable` gates it. Deliberately **not** selection-aware: it takes no `value` and renders no "currently chosen" ring. The native picker beneath already shows the current colour, and a chip can't reliably indicate selection anyway once the native picker can set a hex no chip holds. Add a selected state only if the absence is felt.
 
