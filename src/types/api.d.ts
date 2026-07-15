@@ -45,6 +45,7 @@ declare global {
         create(input: CreateHeadingInput): Promise<ReqHeading>
         update(id: number, input: UpdateHeadingInput): Promise<ReqHeading>
         move(id: number, direction: 'up' | 'down'): Promise<void>
+        reparent(id: number, newParentId: number | null): Promise<ReqHeading>
         delete(id: number): Promise<void>
       }
       customFields: {
