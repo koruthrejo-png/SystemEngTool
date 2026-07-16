@@ -273,7 +273,7 @@ export default function ArchitectureCanvas(): JSX.Element {
 function CanvasInner(): JSX.Element {
   const {
     project, elements, connections, elementTypes, selectedElementId, selectedConnectionId,
-    layers, elementLayers, connectionLayers,
+    layers, elementLayers, connectionLayers, colourByType,
     addElement, updateElement, removeElement, addConnection, removeConnection,
     selectElement, selectConnection, undo, redo, undoStack, redoStack
   } = useStore()
@@ -316,8 +316,8 @@ function CanvasInner(): JSX.Element {
         return
       }
       updateElement(id, { posX: x, posY: y, width, height, ...cleared })
-    }, visById))
-  }, [elements, elementTypes, connections, selectedElementId, visById])
+    }, visById, colourByType))
+  }, [elements, elementTypes, connections, selectedElementId, visById, colourByType])
 
   useEffect(() => {
     const connMemberIds = new Map<number, number[]>()

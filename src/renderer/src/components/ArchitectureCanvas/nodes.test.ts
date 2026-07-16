@@ -3,7 +3,8 @@ import {
   buildNodes, resolveDrop, fitChildInParent, withHiddenCascade,
   nestBaseline, revertToBaseline, clearBaselineOnManualResize
 } from './nodes'
-import type { ArchitectureElement } from '../../../../types'
+import type { ArchitectureElement, ElementType } from '../../../../types'
+import type { BlockNodeData } from './BlockNode'
 import { resolveConnectorVisibility, type Visibility } from './layers'
 
 function el(partial: Partial<ArchitectureElement> & { id: number }): ArchitectureElement {
@@ -12,6 +13,14 @@ function el(partial: Partial<ArchitectureElement> & { id: number }): Architectur
     elementTypeId: null, description: null, color: null, lineStyle: null, fillColor: null,
     posX: 0, posY: 0, width: 160, height: 80,
     preNestWidth: null, preNestHeight: null,
+    deletedAt: null, createdAt: '', updatedAt: '',
+    ...partial
+  }
+}
+
+function elementType(partial: Partial<ElementType> & { id: number }): ElementType {
+  return {
+    projectId: 1, name: `T${partial.id}`, color: null, isBuiltIn: false,
     deletedAt: null, createdAt: '', updatedAt: '',
     ...partial
   }
@@ -113,6 +122,27 @@ describe('buildNodes', () => {
   it('passes fillColor through to node data', () => {
     const nodes = buildNodes([el({ id: 1, fillColor: '#e3f3f1' })], [], [], null, vi.fn(), new Map())
     expect((nodes[0].data as { fillColor: string | null }).fillColor).toBe('#e3f3f1')
+  })
+
+  it('colourByType ON resolves an uncoloured object to its type colour', () => {
+    const els = [el({ id: 1, elementTypeId: 10, color: null })]
+    const types = [elementType({ id: 10, color: '#0f766e' })]
+    const nodes = buildNodes(els, types, [], null, () => {}, new Map(), true)
+    expect((nodes[0].data as BlockNodeData).color).toBe('#0f766e')
+  })
+
+  it('per-object colour overrides the type colour when ON', () => {
+    const els = [el({ id: 1, elementTypeId: 10, color: '#abcdef' })]
+    const types = [elementType({ id: 10, color: '#0f766e' })]
+    const nodes = buildNodes(els, types, [], null, () => {}, new Map(), true)
+    expect((nodes[0].data as BlockNodeData).color).toBe('#abcdef')
+  })
+
+  it('colourByType OFF ignores the type colour', () => {
+    const els = [el({ id: 1, elementTypeId: 10, color: null })]
+    const types = [elementType({ id: 10, color: '#0f766e' })]
+    const nodes = buildNodes(els, types, [], null, () => {}, new Map(), false)
+    expect((nodes[0].data as BlockNodeData).color).toBeNull()
   })
 })
 

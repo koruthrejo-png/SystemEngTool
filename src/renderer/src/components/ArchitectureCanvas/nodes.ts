@@ -114,9 +114,11 @@ export function buildNodes(
   connections: ArchitectureConnection[],
   selectedId: number | null,
   onResizeEnd: (id: number, x: number, y: number, width: number, height: number) => void,
-  visibilityById: Map<number, Visibility>
+  visibilityById: Map<number, Visibility>,
+  colourByType = false
 ): Node[] {
   const typeName = new Map(elementTypes.map((t) => [t.id, t.name]))
+  const typeColor = new Map(elementTypes.map((t) => [t.id, t.color]))
   const byId = new Map(elements.map((e) => [e.id, e]))
   const ordered: ArchitectureElement[] = []
   const placed = new Set<number>()
@@ -151,7 +153,9 @@ export function buildNodes(
     data: {
       label: el.name,
       blockId: el.blockId,
-      color: el.color,
+      color: colourByType
+        ? (el.color ?? (el.elementTypeId != null ? typeColor.get(el.elementTypeId) ?? null : null))
+        : el.color,
       lineStyle: el.lineStyle,
       fillColor: el.fillColor,
       selected: el.id === selectedId,
