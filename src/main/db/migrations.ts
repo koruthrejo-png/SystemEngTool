@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3'
+import { BUILT_IN_TYPE_COLORS } from '../../types'
 
 function addColumnIfMissing(db: Database.Database, table: string, column: string, definition: string): void {
   try {
@@ -212,6 +213,19 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'architecture_elements', 'pre_nest_width', 'INTEGER')
   addColumnIfMissing(db, 'architecture_elements', 'pre_nest_height', 'INTEGER')
   addColumnIfMissing(db, 'architecture_elements', 'fill_color', 'TEXT')
+
+  // Backfill built-in element-type colours on legacy projects (pre-B1 seed used color NULL).
+  // Idempotent: only NULL built-ins are touched, so a user-set colour is never overwritten
+  // and re-runs are no-ops.
+  {
+    const ts = new Date().toISOString()
+    const setColor = db.prepare(
+      'UPDATE element_types SET color = ?, updated_at = ? WHERE is_built_in = 1 AND color IS NULL AND name = ?'
+    )
+    db.transaction(() => {
+      for (const [name, color] of Object.entries(BUILT_IN_TYPE_COLORS)) setColor.run(color, ts, name)
+    })()
+  }
 
   // One-time conversion: split legacy free-text acceptance_criteria into checklist items.
   // Per-row idempotent — each converted row is set to NULL, so re-runs are no-ops.

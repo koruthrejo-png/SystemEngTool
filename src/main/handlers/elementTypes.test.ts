@@ -5,6 +5,7 @@ import { tmpdir } from 'os'
 import { openDatabase, closeDatabase, getDatabase } from '../db/connection'
 import { createProject } from './projects'
 import { seedElementTypes, listElementTypes, createElementType, deleteElementType } from './elementTypes'
+import { BUILT_IN_TYPE_COLORS } from '../../types'
 
 describe('elementTypes handler', () => {
   let tempDir: string
@@ -50,5 +51,11 @@ describe('elementTypes handler', () => {
     seedElementTypes(db, projectId)
     seedElementTypes(db, projectId)
     expect(listElementTypes(projectId)).toHaveLength(5)
+  })
+
+  it('seedElementTypes assigns built-in colours', () => {
+    seedElementTypes(getDatabase(), projectId)
+    const system = listElementTypes(projectId).find((t) => t.name === 'System')!
+    expect(system.color).toBe(BUILT_IN_TYPE_COLORS.System)
   })
 })

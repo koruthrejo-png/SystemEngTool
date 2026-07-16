@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import Database from 'better-sqlite3'
 import { getDatabase } from '../db/connection'
 import type { ElementType, CreateElementTypeInput } from '../../types'
+import { BUILT_IN_TYPE_COLORS } from '../../types'
 
 const BUILT_IN_ELEMENT_TYPES = ['System', 'Subsystem', 'Component', 'Function', 'External']
 
@@ -21,10 +22,10 @@ export function seedElementTypes(db: Database.Database, projectId: number): void
     .prepare('SELECT name FROM element_types WHERE project_id = ? AND is_built_in = 1')
     .all(projectId) as any[]).map((r) => r.name)
   const insert = db.prepare(
-    'INSERT INTO element_types (project_id, name, color, is_built_in, created_at, updated_at) VALUES (?, ?, NULL, 1, ?, ?)'
+    'INSERT INTO element_types (project_id, name, color, is_built_in, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)'
   )
   for (const name of BUILT_IN_ELEMENT_TYPES) {
-    if (!existing.includes(name)) insert.run(projectId, name, ts, ts)
+    if (!existing.includes(name)) insert.run(projectId, name, BUILT_IN_TYPE_COLORS[name] ?? null, ts, ts)
   }
 }
 
