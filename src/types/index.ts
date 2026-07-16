@@ -207,6 +207,35 @@ export interface ArchitectureElement {
 export const LINE_STYLES = ['solid', 'dashed', 'dotted'] as const
 export type LineStyle = (typeof LINE_STYLES)[number]
 
+// Canonical border hexes — single source shared by the renderer swatch pickers
+// (ArchitectureCanvas/swatches.ts) and the main-side seed + backfill migration.
+export const NAVY = '#1a365d'
+export const TYPE_BORDER_COLORS = {
+  Navy: NAVY,
+  Slate: '#475569',
+  Teal: '#0f766e',
+  Green: '#3f6212',
+  Amber: '#a16207',
+  Red: '#9f1239',
+  Purple: '#6b21a8',
+  Grey: '#3f3f46'
+} as const
+
+// Colour each built-in element type seeds/backfills to. Names must match
+// BUILT_IN_ELEMENT_TYPES in handlers/elementTypes.ts.
+export const BUILT_IN_TYPE_COLORS: Record<string, string> = {
+  System: TYPE_BORDER_COLORS.Navy,
+  Subsystem: TYPE_BORDER_COLORS.Teal,
+  Component: TYPE_BORDER_COLORS.Slate,
+  Function: TYPE_BORDER_COLORS.Green,
+  External: TYPE_BORDER_COLORS.Amber
+}
+
+export interface UpdateElementTypeInput {
+  name?: string
+  color?: string | null
+}
+
 export const EDGE_MARKERS = ['none', 'arrow', 'arrowclosed'] as const
 export type EdgeMarker = (typeof EDGE_MARKERS)[number]
 

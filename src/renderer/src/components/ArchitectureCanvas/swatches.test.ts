@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { SWATCHES, NAVY } from './swatches'
+import { BUILT_IN_TYPE_COLORS, TYPE_BORDER_COLORS } from '../../../../types'
 
 // WCAG relative luminance + contrast ratio. Six lines, no dependency.
 const lum = (hex: string): number => {
@@ -40,5 +41,11 @@ describe('SWATCHES legibility contract', () => {
   it('has unique hue names, so chips are addressable by label', () => {
     const names = SWATCHES.map((s) => s.name)
     expect(new Set(names).size).toBe(names.length)
+  })
+
+  it('every built-in type colour is a palette border hue', () => {
+    const borders = SWATCHES.map((s) => s.border)
+    for (const hex of Object.values(BUILT_IN_TYPE_COLORS)) expect(borders).toContain(hex)
+    expect(borders).toEqual(Object.values(TYPE_BORDER_COLORS))
   })
 })
