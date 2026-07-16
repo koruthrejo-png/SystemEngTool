@@ -42,7 +42,10 @@ vi.stubGlobal('window', {
       listByProject: vi.fn().mockResolvedValue([mockReq])
     },
     headings: { list: vi.fn().mockResolvedValue([]) },
-    elementTypes: { list: vi.fn().mockResolvedValue([]) },
+    elementTypes: {
+      list: vi.fn().mockResolvedValue([]),
+      update: vi.fn().mockResolvedValue({ id: 1, projectId: 1, name: 'TypeA', color: '#FF0000', deletedAt: null, createdAt: '', updatedAt: '' })
+    },
     connectionTypes: { list: vi.fn().mockResolvedValue([]) },
     elements: {
       list: vi.fn().mockResolvedValue([mockElement]),
@@ -424,5 +427,20 @@ describe('undo/redo — edit', () => {
     expect(useStore.getState().undoStack).toHaveLength(1)
     await useStore.getState().undo()
     expect(window.api.connections.update).toHaveBeenLastCalledWith(1, { name: 'OldConn' })
+  })
+})
+
+describe('preferences', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.clearAllMocks()
+  })
+
+  it('setColourByType updates state and persists to localStorage', () => {
+    useStore.getState().setColourByType(true)
+    expect(useStore.getState().colourByType).toBe(true)
+    expect(localStorage.getItem('reqarch.prefs.colourByType')).toBe('true')
+    useStore.getState().setColourByType(false)
+    expect(localStorage.getItem('reqarch.prefs.colourByType')).toBe('false')
   })
 })

@@ -4,6 +4,7 @@ import type {
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
   ElementType, ConnectionType,
+  UpdateElementTypeInput,
   Architecture,
   ArchitectureElement, ArchitectureConnection,
   CreateElementInput, UpdateElementInput,
@@ -33,6 +34,8 @@ interface Store {
   activeTab: 'requirements' | 'architecture' | 'traceability' | 'dashboard' | 'interfaces'
   lastError: string | null
   clearError: () => void
+  colourByType: boolean
+  setColourByType: (v: boolean) => void
 
   // requirements tab
   modules: Module[]
@@ -151,11 +154,17 @@ interface Store {
   removeElementLink: (elementId: number, requirementId: number) => Promise<void>
   addConnectionLink: (connectionId: number, requirementId: number) => Promise<void>
   removeConnectionLink: (connectionId: number, requirementId: number) => Promise<void>
+  updateElementType: (id: number, input: UpdateElementTypeInput) => Promise<void>
 }
 
 export const useStore = create<Store>((set, get) => ({
   project: null, activeTab: 'requirements', lastError: null,
   clearError: () => set({ lastError: null }),
+  colourByType: localStorage.getItem('reqarch.prefs.colourByType') === 'true',
+  setColourByType: (v) => {
+    localStorage.setItem('reqarch.prefs.colourByType', String(v))
+    set({ colourByType: v })
+  },
   modules: [], selectedModuleId: null, requirements: [], selectedRequirementId: null,
   headings: [], collapsedHeadingIds: [],
   architectures: [], activeArchitectureId: null,
@@ -720,6 +729,11 @@ export const useStore = create<Store>((set, get) => ({
 
   removeConnectionLink: (connectionId, requirementId) => run(async () => {
     await window.api.connectionLinks.remove(connectionId, requirementId)
+  }),
+
+  updateElementType: (id, input) => run(async () => {
+    const updated = await window.api.elementTypes.update(id, input)
+    set((s) => ({ elementTypes: s.elementTypes.map((t) => (t.id === id ? updated : t)) }))
   })
 }))
 
