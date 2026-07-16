@@ -13,10 +13,12 @@ import Dashboard from './components/Dashboard'
 import GlobalSearch from './components/GlobalSearch'
 import InterfaceRegister from './components/InterfaceRegister'
 import InterfaceNav from './components/InterfaceRegister/InterfaceNav'
+import Settings from './components/Settings'
 
 export default function App(): JSX.Element {
   const { project, activeTab, setActiveTab, loadProject, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId, lastError, clearError } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -81,6 +83,7 @@ export default function App(): JSX.Element {
           {project && <span className="text-sm text-white/50">{project.name}</span>}
           <Button variant="secondary-on-navy" onClick={handleOpen}>Open</Button>
           <Button onClick={() => setShowNewDialog(true)}>New Project</Button>
+          <button aria-label="Settings" onClick={() => setShowSettings(true)} className="text-white/60 hover:text-white text-lg leading-none">⚙</button>
         </div>
       </header>
 
@@ -90,6 +93,8 @@ export default function App(): JSX.Element {
           <button onClick={clearError} className="font-semibold underline">Dismiss</button>
         </div>
       )}
+
+      <Settings open={showSettings} onClose={() => setShowSettings(false)} />
 
       {showNewDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/40">
