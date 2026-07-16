@@ -350,7 +350,7 @@ Also reworded `index.tsx`'s stale `"connections only; never a block"` comment, w
 
 ## ⏸️ NEXT SESSION — PICK UP HERE
 
-**1. Item 29 Phase 3 — only B1 remains: colour defaults from element type.** B2 + B3 shipped (`2ec92dc`).
+**1. Item 29 Phase 3 — DONE 2026-07-16.** B1 (colour-by-type + Preferences) shipped `a954938..6fab0d5`; B2 + B3 earlier (`2ec92dc`). **Item 29 fully closed** — see the 2026-07-16 session section at the end of this file.
 
 **Start with `superpowers:brainstorming`, NOT `writing-plans`.** The spec's §9 files B1 under "the cheap wins — one line, no columns". **That ranking is false and is the third bad claim this area has produced** (the others: §5.5's palette rationale, and B3 "reuses `addElement`"). B1 is a real feature with a DB decision, a new IPC, and new UI.
 
@@ -435,3 +435,21 @@ Known deferrals from final reviews (all triaged non-blocking, recorded in the le
 
 ## Environment gotcha — RESOLVED 2026-07-15, kept for history
 The `npm` shim in the **Logi** node22 distribution was broken (`npm-cli.js: No such file or directory`) — that was the "npm is broken" trap. Fixed by installing a real Node 22.23.1; `npm` works now. Do not resurrect the `./node_modules/.bin/*` workaround.
+
+## Session 2026-07-16 — item 31, error-surfacing, and item 29 B1 (item 29 now CLOSED)
+
+Three tracks, all merged to `main`. Suite went 389 → **409/409**, tsc + build clean throughout.
+
+**Parallel worktree agents (merged):**
+- **Item 31 — keyboard section re-parenting** (`worktree`→main): a ⇄ "Move to…" `<select>` on heading rows in `RequirementsList`, reusing item 28's `headings:reparent` IPC + the pure `canReparent` guard. Additive to the drag path. `moveTargets()` in `outline.ts` (excludes self + descendants). +3 tests.
+- **Item 4 — promise error-surfacing pass** (`worktree`→main): store `lastError` slice + `clearError` + a module-level `run(work, resync?)` helper wrapping ~40 fire-and-forget `api.*` mutations; single ops leave pre-mutation state on rejection (optimistic `set` runs after the await), only the two bulk `Promise.all` ops resync from DB; `undo`/`redo` gained a `lastError` catch keeping their `finally` re-fetch; dismissable `role="alert"` banner in `App.tsx`. +3 tests. **This `run()`/`lastError` is now the store's error convention — new mutations must use it.**
+
+**Item 29 B1 — optional "Colour objects by type" (subagent-driven, 7 tasks + fix).** Spec `docs/superpowers/specs/2026-07-16-preferences-and-type-colours-design.md`, plan `docs/superpowers/plans/2026-07-16-preferences-and-type-colours.md`, ledger section in `.superpowers/sdd/progress.md`. Commits `a954938..6fab0d5`. **User decisions:** optional toggle (some dislike forced type colours); housed in a NEW **Settings modal** (gear ⚙ in the navy header) with an extensible **Preferences** section; **border only** (no `fill_color` on types); toggle persisted in **localStorage** `reqarch.prefs.colourByType`, app-global. Delivered:
+- Shared palette single-sourced in `src/types/index.ts` (`TYPE_BORDER_COLORS`, `BUILT_IN_TYPE_COLORS`, `NAVY` moved here; `swatches.ts` derives its `border` from it and re-exports `NAVY`). `UpdateElementTypeInput` added.
+- Seed colours for new projects + **idempotent backfill** for legacy ones. **Final-review fix (`6fab0d5`):** backfill is per-PROJECT (`HAVING COUNT(color)=0` — only projects where every built-in is still NULL), NOT per-row — because for a built-in, `color IS NULL` means both "legacy unseeded" AND "user cleared to None", so the per-row form silently reverted a user-cleared built-in every launch. Regression test (`typeColorBackfill.test.ts`, the "does NOT revert" case) confirmed fail-then-pass. Residual (accepted): clearing ALL built-ins to NULL re-seeds next launch.
+- New `elementTypes:update` handler + IPC + preload + `api.d.ts` (nullable-clear `'color' in input ? (input.color ?? null) : existing`). Store `updateElementType` via `run()`; `colourByType` slice; `loadProject` now also loads `elementTypes` (so Settings' Type Colours list is populated from any tab).
+- Render: `buildNodes(..., colourByType = false)` resolves `data.color = colourByType ? (el.color ?? type.color ?? null) : el.color`; `BlockNode`'s `?? NAVY` stays last. Call site passes it AND lists it in the effect deps.
+- Border ✕ clear added to the Style ▾ Border row (the handler/type NULL path already existed since Phase 2 — one-line UI change).
+- **Live-verify (standalone Playwright script on `thermal`):** backfill applied on the real legacy DB (Settings shows all 5 built-ins at their exact palette colours); toggle persists to localStorage; types load from the Requirements tab. Caveat: thermal's active architecture holds only a System-typed object whose type colour equals the NAVY fallback, so on/off is visually identical on it — the distinct resolution is unit-proven in `nodes.test.ts`. `thermal` left with toggle OFF; its built-in colours are now permanently backfilled (intended, like prior migrations).
+
+**Open backlog now:** 11 (admin area — B1's type-colour editor could migrate here later), 12 (nav icons), 13 (last-modified user attribution — still under-specified, no user concept), 14 (export PDF). Item 29 is fully closed. Standing cleanup still unscheduled: the batched a11y pass (`<div onClick>` nav/tree rows); native colour picker spams undo per drag (Border/Fill).
