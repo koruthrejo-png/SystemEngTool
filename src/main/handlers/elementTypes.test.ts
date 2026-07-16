@@ -4,7 +4,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { openDatabase, closeDatabase, getDatabase } from '../db/connection'
 import { createProject } from './projects'
-import { seedElementTypes, listElementTypes, createElementType, deleteElementType } from './elementTypes'
+import { seedElementTypes, listElementTypes, createElementType, deleteElementType, updateElementType } from './elementTypes'
 import { BUILT_IN_TYPE_COLORS } from '../../types'
 
 describe('elementTypes handler', () => {
@@ -57,5 +57,16 @@ describe('elementTypes handler', () => {
     seedElementTypes(getDatabase(), projectId)
     const system = listElementTypes(projectId).find((t) => t.name === 'System')!
     expect(system.color).toBe(BUILT_IN_TYPE_COLORS.System)
+  })
+
+  it('updateElementType sets a colour', () => {
+    seedElementTypes(getDatabase(), projectId)
+    const t = listElementTypes(projectId)[0]
+    expect(updateElementType(t.id, { color: '#0f766e' }).color).toBe('#0f766e')
+  })
+
+  it('updateElementType clears a colour to null via the "color" in input idiom', () => {
+    const t = createElementType({ projectId, name: 'Sensor', color: '#ff0000' })
+    expect(updateElementType(t.id, { color: null }).color).toBeNull()
   })
 })

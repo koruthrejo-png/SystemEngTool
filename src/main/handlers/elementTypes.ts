@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import Database from 'better-sqlite3'
 import { getDatabase } from '../db/connection'
-import type { ElementType, CreateElementTypeInput } from '../../types'
+import type { ElementType, CreateElementTypeInput, UpdateElementTypeInput } from '../../types'
 import { BUILT_IN_TYPE_COLORS } from '../../types'
 
 const BUILT_IN_ELEMENT_TYPES = ['System', 'Subsystem', 'Component', 'Function', 'External']
@@ -44,6 +44,15 @@ export function createElementType(input: CreateElementTypeInput): ElementType {
   return rowToElementType(db.prepare('SELECT * FROM element_types WHERE id = ?').get(result.lastInsertRowid))
 }
 
+export function updateElementType(id: number, input: UpdateElementTypeInput): ElementType {
+  const db = getDatabase()
+  const existing = db.prepare('SELECT * FROM element_types WHERE id = ?').get(id) as any
+  const name = 'name' in input ? input.name : existing.name
+  const color = 'color' in input ? (input.color ?? null) : existing.color
+  db.prepare('UPDATE element_types SET name = ?, color = ?, updated_at = ? WHERE id = ?').run(name, color, now(), id)
+  return rowToElementType(db.prepare('SELECT * FROM element_types WHERE id = ?').get(id))
+}
+
 export function deleteElementType(id: number): void {
   const ts = now()
   getDatabase().prepare('UPDATE element_types SET deleted_at = ?, updated_at = ? WHERE id = ?').run(ts, ts, id)
@@ -52,5 +61,6 @@ export function deleteElementType(id: number): void {
 export function registerElementTypeHandlers(): void {
   ipcMain.handle('elementTypes:list', (_e, projectId: number) => listElementTypes(projectId))
   ipcMain.handle('elementTypes:create', (_e, input: CreateElementTypeInput) => createElementType(input))
+  ipcMain.handle('elementTypes:update', (_e, id: number, input: UpdateElementTypeInput) => updateElementType(id, input))
   ipcMain.handle('elementTypes:delete', (_e, id: number) => deleteElementType(id))
 }

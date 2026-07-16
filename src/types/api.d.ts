@@ -7,7 +7,7 @@ import type {
   AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   ElementType, ConnectionType,
   Architecture, ArchitectureElement, ArchitectureConnection,
-  CreateElementTypeInput, CreateConnectionTypeInput,
+  CreateElementTypeInput, UpdateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
   ElementRequirementLink, RequirementLink, SearchResults,
@@ -65,6 +65,7 @@ declare global {
       elementTypes: {
         list(projectId: number): Promise<ElementType[]>
         create(input: CreateElementTypeInput): Promise<ElementType>
+        update(id: number, input: UpdateElementTypeInput): Promise<ElementType>
         delete(id: number): Promise<void>
       }
       connectionTypes: {

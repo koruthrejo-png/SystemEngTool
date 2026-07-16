@@ -8,7 +8,7 @@ import type {
   AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   ElementType, ConnectionType,
   Architecture, ArchitectureElement, ArchitectureConnection,
-  CreateElementTypeInput, CreateConnectionTypeInput,
+  CreateElementTypeInput, UpdateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
   ElementRequirementLink, RequirementLink, SearchResults,
@@ -64,6 +64,8 @@ contextBridge.exposeInMainWorld('api', {
   elementTypes: {
     list: (projectId: number): Promise<ElementType[]> => ipcRenderer.invoke('elementTypes:list', projectId),
     create: (input: CreateElementTypeInput): Promise<ElementType> => ipcRenderer.invoke('elementTypes:create', input),
+    update: (id: number, input: UpdateElementTypeInput): Promise<ElementType> =>
+      ipcRenderer.invoke('elementTypes:update', id, input),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('elementTypes:delete', id)
   },
   connectionTypes: {
