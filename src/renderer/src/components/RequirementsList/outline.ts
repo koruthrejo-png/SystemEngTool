@@ -45,6 +45,19 @@ export function canReparent(headings: ReqHeading[], id: number, newParentId: num
   return true
 }
 
+// Valid re-parent targets for heading `id`: every heading it may move under,
+// in outline order with its dotted number for the label. canReparent drops the
+// heading itself and its descendants. Reuses buildOutline for order + numbering.
+export function moveTargets(headings: ReqHeading[], id: number): { heading: ReqHeading; number: string }[] {
+  const out: { heading: ReqHeading; number: string }[] = []
+  for (const row of buildOutline(headings, [])) {
+    if (row.kind === 'heading' && canReparent(headings, id, row.heading.id)) {
+      out.push({ heading: row.heading, number: row.number })
+    }
+  }
+  return out
+}
+
 // Collapse hides a heading's content (requirements + deeper headings), not the heading row itself.
 export function visibleRows(rows: OutlineRow[], collapsed: Set<number>): OutlineRow[] {
   const out: OutlineRow[] = []

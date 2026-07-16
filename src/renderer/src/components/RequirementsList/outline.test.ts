@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildOutline, visibleRows, canReparent, type OutlineRow } from './outline'
+import { buildOutline, visibleRows, canReparent, moveTargets, type OutlineRow } from './outline'
 import type { ReqHeading, Requirement } from '../../../../types'
 
 function heading(partial: Partial<ReqHeading> & { id: number }): ReqHeading {
@@ -138,5 +138,30 @@ describe('canReparent', () => {
 
   it('terminates on a malformed chain whose parent is missing', () => {
     expect(canReparent([heading({ id: 30, parentId: 99 })], 10, 30)).toBe(true)
+  })
+})
+
+describe('moveTargets', () => {
+  // 10 > 11 > 12, plus unrelated top-level 20
+  const tree = [
+    heading({ id: 10, position: 0 }),
+    heading({ id: 11, parentId: 10, position: 0 }),
+    heading({ id: 12, parentId: 11, position: 0 }),
+    heading({ id: 20, position: 1 })
+  ]
+  const targetIds = (id: number): number[] => moveTargets(tree, id).map((t) => t.heading.id)
+
+  it('excludes the heading itself and its descendants', () => {
+    // moving 10: 11 and 12 are descendants, 10 is self → only 20 remains
+    expect(targetIds(10)).toEqual([20])
+  })
+
+  it('offers every other heading for a leaf', () => {
+    expect(targetIds(12)).toEqual([10, 11, 20])
+  })
+
+  it('labels targets with their outline number', () => {
+    expect(moveTargets(tree, 12).map((t) => `${t.number} ${t.heading.title}`))
+      .toEqual(['1 H10', '1.1 H11', '2 H20'])
   })
 })
