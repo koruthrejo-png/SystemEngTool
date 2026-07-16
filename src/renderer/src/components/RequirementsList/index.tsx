@@ -2,7 +2,7 @@ import { useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useStore } from '../../store'
 import { Button, Chip, SectionLabel, Select } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
-import { buildOutline, visibleRows, canReparent, type OutlineRow } from './outline'
+import { buildOutline, visibleRows, canReparent, moveTargets, type OutlineRow } from './outline'
 
 // label '' = structural column (checkbox / actions), not resizable
 const COLUMNS = [
@@ -51,6 +51,7 @@ export default function RequirementsList(): JSX.Element {
   const [dragReqId, setDragReqId] = useState<number | null>(null)
   const [dragHeadingId, setDragHeadingId] = useState<number | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
+  const [movingHeadingId, setMovingHeadingId] = useState<number | null>(null)
 
   // Every drop target names the section it puts the dragged row into: a heading row names
   // itself, a requirement row names the section it lives in (null = module root).
@@ -267,6 +268,14 @@ export default function RequirementsList(): JSX.Element {
                   <button aria-label="Move section up" onClick={() => moveHeading(row.heading.id, 'up')} className="text-ink-faint hover:text-ink">↑</button>
                   <button aria-label="Move section down" onClick={() => moveHeading(row.heading.id, 'down')} className="text-ink-faint hover:text-ink">↓</button>
                   <button
+                    aria-label="Move section to"
+                    title="Move to…"
+                    onClick={() => setMovingHeadingId((v) => (v === row.heading.id ? null : row.heading.id))}
+                    className="text-ink-faint hover:text-action"
+                  >
+                    ⇄
+                  </button>
+                  <button
                     aria-label="Add requirement to section"
                     onClick={() => addRequirement({ moduleId: selectedModuleId!, text: '', headingId: row.heading.id })}
                     className="text-action hover:text-action-hover font-medium whitespace-nowrap"
@@ -282,6 +291,26 @@ export default function RequirementsList(): JSX.Element {
                   </button>
                   <button aria-label="Delete section" onClick={() => removeHeading(row.heading.id)} className="text-ink-faint hover:text-error text-base leading-none">×</button>
                 </span>
+                {/* Keyboard-accessible re-parent (item 31). Mirrors ModuleTree's ⇄ picker;
+                    additive to the drag path above. Options exclude self + descendants. */}
+                {movingHeadingId === row.heading.id && (
+                  <select
+                    aria-label={`Move section ${row.number} to`}
+                    autoFocus
+                    defaultValue={row.heading.parentId === null ? '' : String(row.heading.parentId)}
+                    onChange={(e) => {
+                      reparentHeading(row.heading.id, e.target.value === '' ? null : Number(e.target.value))
+                      setMovingHeadingId(null)
+                    }}
+                    onBlur={() => setMovingHeadingId(null)}
+                    className="text-xs border border-line rounded px-1 py-1 bg-white text-ink focus:outline-none focus:border-action shrink-0"
+                  >
+                    <option value="">(top level)</option>
+                    {moveTargets(headings, row.heading.id).map(({ heading, number }) => (
+                      <option key={heading.id} value={heading.id}>{number} {heading.title || 'Untitled section'}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             ) : (
               (() => {
