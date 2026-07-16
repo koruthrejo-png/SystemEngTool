@@ -15,7 +15,7 @@ import InterfaceRegister from './components/InterfaceRegister'
 import InterfaceNav from './components/InterfaceRegister/InterfaceNav'
 
 export default function App(): JSX.Element {
-  const { project, activeTab, setActiveTab, loadProject, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId } = useStore()
+  const { project, activeTab, setActiveTab, loadProject, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId, lastError, clearError } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -83,6 +83,13 @@ export default function App(): JSX.Element {
           <Button onClick={() => setShowNewDialog(true)}>New Project</Button>
         </div>
       </header>
+
+      {lastError && (
+        <div role="alert" className="flex items-center gap-3 px-4 py-2 bg-red-600 text-white text-sm shrink-0">
+          <span className="flex-1">{lastError}</span>
+          <button onClick={clearError} className="font-semibold underline">Dismiss</button>
+        </div>
+      )}
 
       {showNewDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/40">
