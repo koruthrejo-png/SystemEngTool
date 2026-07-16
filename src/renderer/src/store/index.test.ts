@@ -229,6 +229,44 @@ describe('store', () => {
   })
 })
 
+describe('error surfacing on rejected mutations', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useStore.setState({ project: mockProject, modules: [], selectedModuleId: null, requirements: [], checkedIds: [], lastError: null })
+  })
+
+  it('a rejected single mutation sets lastError instead of throwing', async () => {
+    ;(window.api.modules.create as any).mockRejectedValueOnce(new Error('DB constraint failed'))
+    // must not reject: the action swallows and surfaces
+    await useStore.getState().addModule({ projectId: 1, parentId: null, kind: 'module', name: 'X', idPrefix: 'X', idPadding: 4 })
+    expect(useStore.getState().lastError).toBe('DB constraint failed')
+    expect(useStore.getState().modules).toEqual([]) // no optimistic row leaked
+  })
+
+  it('clearError resets lastError', () => {
+    useStore.setState({ lastError: 'boom' })
+    useStore.getState().clearError()
+    expect(useStore.getState().lastError).toBeNull()
+  })
+
+  it('a partially-failed bulk delete re-syncs the list from the DB instead of trusting the optimistic filter', async () => {
+    const reqA = { ...mockReq, id: 1 }
+    const reqB = { ...mockReq, id: 2 }
+    useStore.setState({ selectedModuleId: 1, requirements: [reqA, reqB], checkedIds: [1, 2] })
+    // id 1 deletes, id 2 rejects -> Promise.all rejects; DB still holds reqB
+    ;(window.api.requirements.delete as any)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('locked'))
+    ;(window.api.requirements.list as any).mockResolvedValueOnce([reqB])
+
+    await useStore.getState().removeRequirements([1, 2])
+
+    expect(useStore.getState().lastError).toBe('locked')
+    // honest state from the DB re-sync: reqB survived, not silently dropped by the optimistic filter
+    expect(useStore.getState().requirements).toEqual([reqB])
+  })
+})
+
 describe('architecture store', () => {
   beforeEach(() => {
     useStore.setState({

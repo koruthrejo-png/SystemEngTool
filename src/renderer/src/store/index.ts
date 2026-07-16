@@ -31,6 +31,8 @@ interface Store {
   // shared
   project: Project | null
   activeTab: 'requirements' | 'architecture' | 'traceability' | 'dashboard' | 'interfaces'
+  lastError: string | null
+  clearError: () => void
 
   // requirements tab
   modules: Module[]
@@ -152,7 +154,8 @@ interface Store {
 }
 
 export const useStore = create<Store>((set, get) => ({
-  project: null, activeTab: 'requirements',
+  project: null, activeTab: 'requirements', lastError: null,
+  clearError: () => set({ lastError: null }),
   modules: [], selectedModuleId: null, requirements: [], selectedRequirementId: null,
   headings: [], collapsedHeadingIds: [],
   architectures: [], activeArchitectureId: null,
@@ -193,50 +196,50 @@ export const useStore = create<Store>((set, get) => ({
     set({ selectedRequirementId: req.id })
   },
 
-  addModule: async (input) => {
+  addModule: (input) => run(async () => {
     const mod = await window.api.modules.create(input)
     set((s) => ({ modules: [...s.modules, mod] }))
-  },
+  }),
 
-  updateModule: async (id, input) => {
+  updateModule: (id, input) => run(async () => {
     const updated = await window.api.modules.update(id, input)
     set((s) => ({ modules: s.modules.map((m) => (m.id === id ? updated : m)) }))
-  },
+  }),
 
-  removeModule: async (id) => {
+  removeModule: (id) => run(async () => {
     await window.api.modules.delete(id)
     const { project } = get()
     const modules = project ? await window.api.modules.list(project.id) : []
     set((s) => ({ modules, selectedModuleId: s.selectedModuleId === id ? null : s.selectedModuleId }))
-  },
+  }),
 
-  moveModule: async (id, newParentId) => {
+  moveModule: (id, newParentId) => run(async () => {
     await window.api.modules.move(id, newParentId)
     const { project } = get()
     if (!project) return
     set({ modules: await window.api.modules.list(project.id) })
-  },
+  }),
 
-  addRequirement: async (input) => {
+  addRequirement: (input) => run(async () => {
     const req = await window.api.requirements.create(input)
     set((s) => ({ requirements: [...s.requirements, req], selectedRequirementId: req.id }))
-  },
+  }),
 
-  updateRequirement: async (id, input) => {
+  updateRequirement: (id, input) => run(async () => {
     const updated = await window.api.requirements.update(id, input)
     set((s) => ({ requirements: s.requirements.map((r) => (r.id === id ? updated : r)) }))
-  },
+  }),
 
-  removeRequirement: async (id) => {
+  removeRequirement: (id) => run(async () => {
     await window.api.requirements.delete(id)
     set((s) => ({
       requirements: s.requirements.filter((r) => r.id !== id),
       selectedRequirementId: s.selectedRequirementId === id ? null : s.selectedRequirementId,
       checkedIds: s.checkedIds.filter((c) => c !== id)
     }))
-  },
+  }),
 
-  restoreRequirement: async (id) => {
+  restoreRequirement: (id) => run(async () => {
     await window.api.requirements.restore(id)
     const { selectedModuleId } = get()
     if (!selectedModuleId) return
@@ -245,34 +248,34 @@ export const useStore = create<Store>((set, get) => ({
       window.api.requirements.listDeleted(selectedModuleId)
     ])
     set({ requirements, deletedRequirements, selectedRequirementId: null, customFields: [] })
-  },
+  }),
 
-  addHeading: async (input) => {
+  addHeading: (input) => run(async () => {
     const heading = await window.api.headings.create(input)
     set((s) => ({ headings: [...s.headings, heading] }))
-  },
+  }),
 
-  renameHeading: async (id, title) => {
+  renameHeading: (id, title) => run(async () => {
     const updated = await window.api.headings.update(id, { title })
     set((s) => ({ headings: s.headings.map((h) => (h.id === id ? updated : h)) }))
-  },
+  }),
 
-  moveHeading: async (id, direction) => {
+  moveHeading: (id, direction) => run(async () => {
     await window.api.headings.move(id, direction)
     const { selectedModuleId } = get()
     if (!selectedModuleId) return
     set({ headings: await window.api.headings.list(selectedModuleId) })
-  },
+  }),
 
-  reparentHeading: async (id, newParentId) => {
+  reparentHeading: (id, newParentId) => run(async () => {
     await window.api.headings.reparent(id, newParentId)
     const { selectedModuleId } = get()
     if (!selectedModuleId) return
     // headings only: descendants keep pointing at `id`, so requirements are untouched
     set({ headings: await window.api.headings.list(selectedModuleId) })
-  },
+  }),
 
-  removeHeading: async (id) => {
+  removeHeading: (id) => run(async () => {
     await window.api.headings.delete(id)
     const { selectedModuleId } = get()
     if (!selectedModuleId) return
@@ -282,7 +285,7 @@ export const useStore = create<Store>((set, get) => ({
       window.api.requirements.list(selectedModuleId)
     ])
     set((s) => ({ headings, requirements, collapsedHeadingIds: s.collapsedHeadingIds.filter((c) => c !== id) }))
-  },
+  }),
 
   toggleHeadingCollapsed: (id) => set((s) => ({
     collapsedHeadingIds: s.collapsedHeadingIds.includes(id)
@@ -312,15 +315,17 @@ export const useStore = create<Store>((set, get) => ({
 
   setChecked: (ids) => set({ checkedIds: ids }),
 
-  updateRequirements: async (ids, patch) => {
+  // Bulk ops: Promise.all can partially succeed, so on rejection re-sync the list from the DB
+  // rather than trusting the optimistic local set that never ran.
+  updateRequirements: (ids, patch) => run(async () => {
     await Promise.all(ids.map((id) => window.api.requirements.update(id, patch)))
     const { selectedModuleId } = get()
     if (!selectedModuleId) return
     const requirements = await window.api.requirements.list(selectedModuleId)
     set({ requirements, checkedIds: [] })
-  },
+  }, resyncRequirements),
 
-  removeRequirements: async (ids) => {
+  removeRequirements: (ids) => run(async () => {
     await Promise.all(ids.map((id) => window.api.requirements.delete(id)))
     set((s) => ({
       requirements: s.requirements.filter((r) => !ids.includes(r.id)),
@@ -330,27 +335,27 @@ export const useStore = create<Store>((set, get) => ({
           ? null
           : s.selectedRequirementId
     }))
-  },
+  }, resyncRequirements),
 
   loadCustomFields: async (requirementId) => {
     const customFields = await window.api.customFields.list(requirementId)
     set({ customFields })
   },
 
-  addCustomField: async (requirementId) => {
+  addCustomField: (requirementId) => run(async () => {
     const field = await window.api.customFields.create(requirementId)
     set((s) => ({ customFields: [...s.customFields, field] }))
-  },
+  }),
 
-  updateCustomField: async (id, patch) => {
+  updateCustomField: (id, patch) => run(async () => {
     const updated = await window.api.customFields.update(id, patch)
     set((s) => ({ customFields: s.customFields.map((f) => (f.id === id ? updated : f)) }))
-  },
+  }),
 
-  removeCustomField: async (id) => {
+  removeCustomField: (id) => run(async () => {
     await window.api.customFields.delete(id)
     set((s) => ({ customFields: s.customFields.filter((f) => f.id !== id) }))
-  },
+  }),
 
   loadInterfaces: async () => {
     const { project } = get()
@@ -371,54 +376,54 @@ export const useStore = create<Store>((set, get) => ({
     set({ connectionCustomFields })
   },
 
-  addConnectionCustomField: async (connectionId) => {
+  addConnectionCustomField: (connectionId) => run(async () => {
     const field = await window.api.connectionCustomFields.create(connectionId)
     set((s) => ({
       connectionCustomFields: [...s.connectionCustomFields, field],
       projectConnectionCustomFields: [...s.projectConnectionCustomFields, field]
     }))
-  },
+  }),
 
-  updateConnectionCustomField: async (id, patch) => {
+  updateConnectionCustomField: (id, patch) => run(async () => {
     const updated = await window.api.connectionCustomFields.update(id, patch)
     set((s) => ({
       connectionCustomFields: s.connectionCustomFields.map((f) => (f.id === id ? updated : f)),
       projectConnectionCustomFields: s.projectConnectionCustomFields.map((f) => (f.id === id ? updated : f))
     }))
-  },
+  }),
 
-  removeConnectionCustomField: async (id) => {
+  removeConnectionCustomField: (id) => run(async () => {
     await window.api.connectionCustomFields.delete(id)
     set((s) => ({
       connectionCustomFields: s.connectionCustomFields.filter((f) => f.id !== id),
       projectConnectionCustomFields: s.projectConnectionCustomFields.filter((f) => f.id !== id)
     }))
-  },
+  }),
 
   loadAcItems: async (requirementId) => {
     const acItems = await window.api.acceptanceCriteria.list(requirementId)
     set({ acItems })
   },
 
-  addAcItem: async (requirementId, text) => {
+  addAcItem: (requirementId, text) => run(async () => {
     await window.api.acceptanceCriteria.create(requirementId, text)
     await refreshAc(requirementId)
-  },
+  }),
 
-  updateAcItem: async (id, patch, requirementId) => {
+  updateAcItem: (id, patch, requirementId) => run(async () => {
     await window.api.acceptanceCriteria.update(id, patch)
     await refreshAc(requirementId)
-  },
+  }),
 
-  removeAcItem: async (id, requirementId) => {
+  removeAcItem: (id, requirementId) => run(async () => {
     await window.api.acceptanceCriteria.remove(id)
     await refreshAc(requirementId)
-  },
+  }),
 
-  moveAcItem: async (id, direction, requirementId) => {
+  moveAcItem: (id, direction, requirementId) => run(async () => {
     await window.api.acceptanceCriteria.move(id, direction)
     await refreshAc(requirementId)
-  },
+  }),
 
   loadArchitecture: async () => {
     const { project, activeArchitectureId } = get()
@@ -451,20 +456,20 @@ export const useStore = create<Store>((set, get) => ({
     await get().loadArchitecture()
   },
 
-  addArchitecture: async (name) => {
+  addArchitecture: (name) => run(async () => {
     const { project } = get()
     if (!project) return
     const created = await window.api.architectures.create(project.id, name)
     set((s) => ({ architectures: [...s.architectures, created] }))
     await get().setActiveArchitecture(created.id)
-  },
+  }),
 
-  renameArchitecture: async (id, name) => {
+  renameArchitecture: (id, name) => run(async () => {
     const updated = await window.api.architectures.rename(id, name)
     set((s) => ({ architectures: s.architectures.map((a) => (a.id === id ? updated : a)) }))
-  },
+  }),
 
-  removeArchitecture: async (id) => {
+  removeArchitecture: (id) => run(async () => {
     const { project, activeArchitectureId } = get()
     if (!project) return
     await window.api.architectures.delete(id)
@@ -473,7 +478,7 @@ export const useStore = create<Store>((set, get) => ({
     if (activeArchitectureId === id) {
       await get().setActiveArchitecture(architectures[0].id)
     }
-  },
+  }),
 
   loadLayers: async () => {
     const { activeArchitectureId } = get()
@@ -485,44 +490,44 @@ export const useStore = create<Store>((set, get) => ({
     set({ layers, elementLayers: assignments.elementLayers, connectionLayers: assignments.connectionLayers })
   },
 
-  addLayer: async (name) => {
+  addLayer: (name) => run(async () => {
     const { activeArchitectureId } = get()
     if (activeArchitectureId == null) return
     await window.api.layers.create(activeArchitectureId, name)
     await get().loadLayers()
-  },
+  }),
 
-  renameLayer: async (id, name) => {
+  renameLayer: (id, name) => run(async () => {
     await window.api.layers.rename(id, name)
     await get().loadLayers()
-  },
+  }),
 
-  cycleLayerState: async (id) => {
+  cycleLayerState: (id) => run(async () => {
     const layer = get().layers.find((l) => l.id === id)
     if (!layer) return
     const next: LayerState = layer.state === 'visible' ? 'faded' : layer.state === 'faded' ? 'hidden' : 'visible'
     await window.api.layers.setState(id, next)
     await get().loadLayers()
-  },
+  }),
 
-  removeLayer: async (id) => {
+  removeLayer: (id) => run(async () => {
     await window.api.layers.delete(id)
     await get().loadLayers()
-  },
+  }),
 
-  toggleElementLayer: async (elementId, layerId) => {
+  toggleElementLayer: (elementId, layerId) => run(async () => {
     const member = get().elementLayers.some((l) => l.elementId === elementId && l.layerId === layerId)
     if (member) await window.api.layers.unassignElement(elementId, layerId)
     else await window.api.layers.assignElement(elementId, layerId)
     await get().loadLayers()
-  },
+  }),
 
-  toggleConnectionLayer: async (connectionId, layerId) => {
+  toggleConnectionLayer: (connectionId, layerId) => run(async () => {
     const member = get().connectionLayers.some((l) => l.connectionId === connectionId && l.layerId === layerId)
     if (member) await window.api.layers.unassignConnection(connectionId, layerId)
     else await window.api.layers.assignConnection(connectionId, layerId)
     await get().loadLayers()
-  },
+  }),
 
   loadTraceability: async () => {
     const { project } = get()
@@ -536,28 +541,28 @@ export const useStore = create<Store>((set, get) => ({
     set({ projectRequirements, elements, traceLinks, reqLinks })
   },
 
-  toggleTraceLink: async (elementId, requirementId) => {
+  toggleTraceLink: (elementId, requirementId) => run(async () => {
     const { traceLinks, project } = get()
     const exists = traceLinks.some((l) => l.elementId === elementId && l.requirementId === requirementId)
     if (exists) await window.api.elementLinks.remove(elementId, requirementId)
     else await window.api.elementLinks.add(elementId, requirementId)
     if (!project) return
     set({ traceLinks: await window.api.elementLinks.listByProject(project.id) })
-  },
+  }),
 
-  addReqLink: async (parentReqId, childReqId) => {
+  addReqLink: (parentReqId, childReqId) => run(async () => {
     await window.api.reqLinks.add(parentReqId, childReqId)
     const { project } = get()
     if (!project) return
     set({ reqLinks: await window.api.reqLinks.listByProject(project.id) })
-  },
+  }),
 
-  removeReqLink: async (parentReqId, childReqId) => {
+  removeReqLink: (parentReqId, childReqId) => run(async () => {
     await window.api.reqLinks.remove(parentReqId, childReqId)
     const { project } = get()
     if (!project) return
     set({ reqLinks: await window.api.reqLinks.listByProject(project.id) })
-  },
+  }),
 
   undo: async () => {
     const { undoStack, redoStack } = get()
@@ -565,6 +570,8 @@ export const useStore = create<Store>((set, get) => ({
     const cmd = undoStack[undoStack.length - 1]
     try {
       await cmd.undo()
+    } catch (err) {
+      set({ lastError: err instanceof Error ? err.message : String(err) })
     } finally {
       set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, cmd] })
       // ponytail: full re-fetch keeps the store in sync with the DB after undo; cheap at diagram scale
@@ -578,6 +585,8 @@ export const useStore = create<Store>((set, get) => ({
     const cmd = redoStack[redoStack.length - 1]
     try {
       await cmd.redo()
+    } catch (err) {
+      set({ lastError: err instanceof Error ? err.message : String(err) })
     } finally {
       set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, cmd] })
       // ponytail: full re-fetch keeps the store in sync with the DB after undo; cheap at diagram scale
@@ -593,16 +602,16 @@ export const useStore = create<Store>((set, get) => ({
 
   setInterfaceArchFilter: (f) => set({ interfaceArchFilter: f }),
 
-  addElement: async (input) => {
+  addElement: (input) => run(async () => {
     const el = await window.api.elements.create({ ...input, architectureId: get().activeArchitectureId })
     set((s) => ({ elements: [...s.elements, el], selectedElementId: el.id, selectedConnectionId: null }))
     pushUndo({
       undo: async () => { await window.api.elements.delete(el.id) },
       redo: async () => { await window.api.elements.restore(el.id) }
     })
-  },
+  }),
 
-  updateElement: async (id, input) => {
+  updateElement: (id, input) => run(async () => {
     const before = get().elements.find((e) => e.id === id)
     const editKeys = ELEMENT_PROP_KEYS.filter((k) => k in input)
     const updated = await window.api.elements.update(id, input)
@@ -616,9 +625,9 @@ export const useStore = create<Store>((set, get) => ({
         redo: async () => { await window.api.elements.update(id, input) }
       })
     }
-  },
+  }),
 
-  removeElement: async (id) => {
+  removeElement: (id) => run(async () => {
     const state = get()
     const oldParentId = state.elements.find((e) => e.id === id)?.parentId ?? null
     const childSnaps = state.elements
@@ -658,18 +667,18 @@ export const useStore = create<Store>((set, get) => ({
       },
       redo: async () => { await window.api.elements.delete(id) }
     })
-  },
+  }),
 
-  addConnection: async (input) => {
+  addConnection: (input) => run(async () => {
     const conn = await window.api.connections.create({ ...input, architectureId: get().activeArchitectureId })
     set((s) => ({ connections: [...s.connections, conn], selectedConnectionId: conn.id, selectedElementId: null }))
     pushUndo({
       undo: async () => { await window.api.connections.delete(conn.id) },
       redo: async () => { await window.api.connections.restore(conn.id) }
     })
-  },
+  }),
 
-  updateConnection: async (id, input) => {
+  updateConnection: (id, input) => run(async () => {
     const before = get().connections.find((c) => c.id === id)
     const editKeys = CONNECTION_PROP_KEYS.filter((k) => k in input)
     const updated = await window.api.connections.update(id, input)
@@ -683,9 +692,9 @@ export const useStore = create<Store>((set, get) => ({
         redo: async () => { await window.api.connections.update(id, input) }
       })
     }
-  },
+  }),
 
-  removeConnection: async (id) => {
+  removeConnection: (id) => run(async () => {
     await window.api.connections.delete(id)
     set((s) => ({
       connections: s.connections.filter((c) => c.id !== id),
@@ -695,27 +704,45 @@ export const useStore = create<Store>((set, get) => ({
       undo: async () => { await window.api.connections.restore(id) },
       redo: async () => { await window.api.connections.delete(id) }
     })
-  },
+  }),
 
-  addElementLink: async (elementId, requirementId) => {
+  addElementLink: (elementId, requirementId) => run(async () => {
     await window.api.elementLinks.add(elementId, requirementId)
-  },
+  }),
 
-  removeElementLink: async (elementId, requirementId) => {
+  removeElementLink: (elementId, requirementId) => run(async () => {
     await window.api.elementLinks.remove(elementId, requirementId)
-  },
+  }),
 
-  addConnectionLink: async (connectionId, requirementId) => {
+  addConnectionLink: (connectionId, requirementId) => run(async () => {
     await window.api.connectionLinks.add(connectionId, requirementId)
-  },
+  }),
 
-  removeConnectionLink: async (connectionId, requirementId) => {
+  removeConnectionLink: (connectionId, requirementId) => run(async () => {
     await window.api.connectionLinks.remove(connectionId, requirementId)
-  }
+  })
 }))
 
 function pushUndo(cmd: UndoCommand): void {
   useStore.setState((s) => ({ undoStack: [...s.undoStack, cmd], redoStack: [] }))
+}
+
+// Surface a rejected mutation IPC instead of letting it vanish as an unhandled rejection.
+// `resync` is only needed where local state can outlive a rejected mutation (bulk Promise.all
+// partial success); everywhere else the optimistic `set` runs *after* the await, so a rejection
+// simply leaves the pre-mutation state — which still matches the unchanged DB.
+async function run(work: () => Promise<void>, resync?: () => Promise<void>): Promise<void> {
+  try {
+    await work()
+  } catch (err) {
+    useStore.setState({ lastError: err instanceof Error ? err.message : String(err) })
+    if (resync) { try { await resync() } catch { /* keep the original error */ } }
+  }
+}
+
+async function resyncRequirements(): Promise<void> {
+  const { selectedModuleId } = useStore.getState()
+  if (selectedModuleId) useStore.setState({ requirements: await window.api.requirements.list(selectedModuleId) })
 }
 
 async function refreshAc(requirementId: number): Promise<void> {
