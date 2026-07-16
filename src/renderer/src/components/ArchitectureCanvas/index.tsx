@@ -170,7 +170,7 @@ function ObjectStyleMenu({ el }: { el: ArchitectureElement }): JSX.Element {
     <Menu label="Style ▾">
       <MenuCard>
         <Field label="Border">
-          <Swatches shade="border" label="Border" onPick={(c) => updateElement(el.id, { color: c })} />
+          <Swatches shade="border" label="Border" clearable onPick={(c) => updateElement(el.id, { color: c })} />
           <input
             type="color"
             aria-label="Border"
