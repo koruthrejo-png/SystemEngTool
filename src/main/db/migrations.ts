@@ -215,15 +215,21 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'architecture_elements', 'fill_color', 'TEXT')
 
   // Backfill built-in element-type colours on legacy projects (pre-B1 seed used color NULL).
-  // Idempotent: only NULL built-ins are touched, so a user-set colour is never overwritten
-  // and re-runs are no-ops.
+  // Scope to projects where EVERY built-in is still NULL — the genuine pre-B1 state. Once any
+  // built-in carries a colour (post-B1 seed, or a user edit), the project is skipped, so a user
+  // clearing an individual built-in's colour to "None" is not reverted on the next launch.
   {
     const ts = new Date().toISOString()
+    const legacyProjects = db
+      .prepare('SELECT project_id FROM element_types WHERE is_built_in = 1 GROUP BY project_id HAVING COUNT(color) = 0')
+      .all() as { project_id: number }[]
     const setColor = db.prepare(
-      'UPDATE element_types SET color = ?, updated_at = ? WHERE is_built_in = 1 AND color IS NULL AND name = ?'
+      'UPDATE element_types SET color = ?, updated_at = ? WHERE is_built_in = 1 AND color IS NULL AND name = ? AND project_id = ?'
     )
     db.transaction(() => {
-      for (const [name, color] of Object.entries(BUILT_IN_TYPE_COLORS)) setColor.run(color, ts, name)
+      for (const { project_id } of legacyProjects) {
+        for (const [name, color] of Object.entries(BUILT_IN_TYPE_COLORS)) setColor.run(color, ts, name, project_id)
+      }
     })()
   }
 

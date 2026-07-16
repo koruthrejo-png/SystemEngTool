@@ -464,3 +464,15 @@ Minors — resolved:
   - All new tests mutation-verified (4 mutations: snap grid 16->8, offset removed, fillColor not copied, isTyping guard dropped) — each failed the right test.
   - Live-verify: snap ON -> (304,128) both %16==0; snap OFF control -> (359.19,173.99) rem 7/13. Cmd+D -> SYS-009 with colour/fill/208x176/pos+20; one Cmd+Z removed it (6->7->6, redo->7). thermal restored to baseline.
   - **Driver traps that cost real time:** (1) node screen coords move whenever the diagram changes (fitView re-bounds) — a stale coord mouse-downs on empty canvas and silently PANS, looking exactly like a broken feature; re-read the rect in the same run. (2) `querySelector('.react-flow__node')` = first node in DOM order, not the one you mean — two edits landed on SYS-001 while I checked SYS-004 and wrongly concluded the write failed. (3) undo history is session-scoped; testing Cmd+Z after a relaunch proves nothing.
+
+## Item 29 B1 — Preferences + colour-by-type (subagent-driven, 2026-07-16)
+Plan: `docs/superpowers/plans/2026-07-16-preferences-and-type-colours.md`. Spec: `docs/superpowers/specs/2026-07-16-preferences-and-type-colours-design.md`. Base `c99ddfb`.
+Also this session (parallel worktree agents, merged): item 31 keyboard section re-parent; item 4 promise error-surfacing pass (run()/lastError). Suite 395/395 before B1.
+- Task 1: complete (a954938, review clean — inline) — shared palette + BUILT_IN_TYPE_COLORS + UpdateElementTypeInput
+- Task 2: complete (b4360e0, review clean — inline; brief premise createProject-auto-seeds was wrong, agent corrected test to seed explicitly) — seed colours + idempotent backfill. Minor: dual import line in elementTypes.ts (harmless).
+- Task 3: complete (b163a91, review clean — inline) — elementTypes:update handler + IPC + preload + api.d.ts, exact null-clear idiom
+- Task 4: complete (0339219, review clean — inline) — colourByType localStorage slice + updateElementType via run()
+- Task 5: complete (decf4ed, review clean — inline) — buildNodes colourByType resolution + call-site arg + memo dep
+- Task 6: complete (ca6ef70, inline one-line) — clearable on Border Swatches; handler/type NULL path already existed
+- Task 7: complete (ff1f24f, review clean — inline) — Settings modal: gear + Preferences toggle + Type Colours picker + App wiring
+- Task 8: in progress (build + final review + live-verify + docs)

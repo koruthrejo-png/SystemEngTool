@@ -180,8 +180,11 @@ export const useStore = create<Store>((set, get) => ({
   loadProject: async () => {
     const project = await window.api.project.getCurrent()
     if (!project) return
-    const modules = await window.api.modules.list(project.id)
-    set({ project, modules, undoStack: [], redoStack: [], interfaceArchFilter: 'all' })
+    const [modules, elementTypes] = await Promise.all([
+      window.api.modules.list(project.id),
+      window.api.elementTypes.list(project.id)
+    ])
+    set({ project, modules, elementTypes, undoStack: [], redoStack: [], interfaceArchFilter: 'all' })
   },
 
   setActiveTab: (tab) => set({ activeTab: tab }),

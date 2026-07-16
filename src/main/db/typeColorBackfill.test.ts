@@ -19,22 +19,35 @@ describe('built-in type colour backfill', () => {
     rmSync(tempDir, { recursive: true, force: true })
   })
 
-  it('backfills NULL built-in colours, preserves user colours, is idempotent', () => {
+  it('backfills a legacy project where every built-in colour is NULL', () => {
     const db = getDatabase()
     const projectId = createProject('Legacy').id
-    seedElementTypes(db, projectId) // matches project:create flow, which seeds after createProject
-    // Simulate pre-B1 state: built-ins seeded with color NULL, one hand-set by a user.
+    seedElementTypes(db, projectId)
     db.prepare('UPDATE element_types SET color = NULL WHERE project_id = ? AND is_built_in = 1').run(projectId)
-    db.prepare("UPDATE element_types SET color = '#123456' WHERE project_id = ? AND name = 'Component'").run(projectId)
-
     runMigrations(db)
-    let types = listElementTypes(projectId)
+    const types = listElementTypes(projectId)
     expect(types.find((t) => t.name === 'System')!.color).toBe(BUILT_IN_TYPE_COLORS.System)
-    expect(types.find((t) => t.name === 'Component')!.color).toBe('#123456') // user colour untouched
+    expect(types.find((t) => t.name === 'Component')!.color).toBe(BUILT_IN_TYPE_COLORS.Component)
+  })
 
-    runMigrations(db) // idempotent — second run changes nothing
-    types = listElementTypes(projectId)
-    expect(types.find((t) => t.name === 'System')!.color).toBe(BUILT_IN_TYPE_COLORS.System)
-    expect(types.find((t) => t.name === 'Component')!.color).toBe('#123456')
+  it('does NOT revert a user who cleared one built-in colour (project already partly coloured)', () => {
+    const db = getDatabase()
+    const projectId = createProject('Managed').id
+    seedElementTypes(db, projectId) // seeds all built-ins with palette colours
+    db.prepare("UPDATE element_types SET color = NULL WHERE project_id = ? AND name = 'System'").run(projectId)
+    runMigrations(db)
+    const types = listElementTypes(projectId)
+    expect(types.find((t) => t.name === 'System')!.color).toBeNull() // stays cleared
+    expect(types.find((t) => t.name === 'Component')!.color).toBe(BUILT_IN_TYPE_COLORS.Component)
+  })
+
+  it('is idempotent — a second run changes nothing', () => {
+    const db = getDatabase()
+    const projectId = createProject('Legacy2').id
+    seedElementTypes(db, projectId)
+    db.prepare('UPDATE element_types SET color = NULL WHERE project_id = ? AND is_built_in = 1').run(projectId)
+    runMigrations(db)
+    runMigrations(db)
+    expect(listElementTypes(projectId).find((t) => t.name === 'System')!.color).toBe(BUILT_IN_TYPE_COLORS.System)
   })
 })
