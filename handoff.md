@@ -352,39 +352,21 @@ Also reworded `index.tsx`'s stale `"connections only; never a block"` comment, w
 
 **1. Item 29 Phase 3 — DONE 2026-07-16.** B1 (colour-by-type + Preferences) shipped `a954938..6fab0d5`; B2 + B3 earlier (`2ec92dc`). **Item 29 fully closed** — see the 2026-07-16 session section at the end of this file.
 
-**Start with `superpowers:brainstorming`, NOT `writing-plans`.** The spec's §9 files B1 under "the cheap wins — one line, no columns". **That ranking is false and is the third bad claim this area has produced** (the others: §5.5's palette rationale, and B3 "reuses `addElement`"). B1 is a real feature with a DB decision, a new IPC, and new UI.
+Also DONE 2026-07-16: **item 31** (keyboard section re-parenting) and the **item-4 promise error-surfacing pass** (`run()`/`lastError`). All on `main`, full detail in the 2026-07-16 session section at the end of this file.
 
-**The idea (still good).** A systems engineer should not hand-colour forty boxes — colour on an architecture diagram encodes a *category*. Objects inherit their Type's colour; per-object colour becomes an override. The render change really is one line in `nodes.ts`. Everything below is what has to exist first.
+**⏳ Awaiting the user's hands-on test of B1** (colour-by-type + Settings) — the app was launched for them at end of session, same as item 21's close-out flow. If they report a defect, start from the B1 section below (2026-07-16); otherwise nothing is owed on item 29.
 
-**Ground truth — all re-verified against the code 2026-07-15, do not re-derive:**
+**1. Open backlog** (every feature item is now shipped; these are the remaining unbuilt ones, all verified absent from `src/`, not assumed):
+- **11** — admin area (B1's type-colour editor currently lives in the Settings modal; if an admin area is built, that editor could migrate there).
+- **12** — nav notification/settings/help/profile icons (a ⚙ Settings gear now exists as of B1; the rest don't).
+- **13** — last-modified *user* attribution. **Under-specified:** `updatedAt` exists, but there is no user/account concept in this single-user app, so "user attribution" needs a product decision on what identity means before it can be planned.
+- **14** — export PDF from the architecture view.
 
-| Claim | Status |
-|---|---|
-| `element_types.color` column exists (`ElementType.color: string \| null`) | ✅ real |
-| `seedElementTypes` hardcodes `color = NULL` for every built-in | ✅ `elementTypes.ts:24` — literal `NULL` in the INSERT |
-| The renderer **never** writes types — only `elementTypes.list` (`store/index.ts:361,429`) | ✅ no `.create`/`.delete`/`.update` call anywhere in `src/renderer` |
-| Handler exposes `list` / `create` / `delete` | ✅ `elementTypes.ts:51-54` |
-| **There is NO `elementTypes:update` at all** | ⚠️ **not in the spec.** A type-colour *editor* has nothing to call. New handler + IPC + preload + `api.d.ts` needed. |
-| `nodes.ts:119` builds `new Map(elementTypes.map(t => [t.id, t.name]))` — takes `.name` only | ✅ the Map must carry `.color` too |
-| `ComponentLibrary.tsx` (has a colour-dot UI) is unmounted | ✅ only its own file + test reference it — shelved deliberately by `ff0be6c`, **not** a regression |
+**Standing cleanup, still unscheduled** (no plan yet): batched `aria-pressed`/`role`+keyboard a11y pass — `ArchitectureNav`/`InterfaceNav`/`LayerPanel` + `ModuleTree` rows are `<div onClick>`; codebase-wide the store now surfaces errors via `run()`/`lastError` (item 4) so the old "unawaited fire-and-forget promise" cleanup is largely DONE — remaining gap is UI that doesn't yet *read* `lastError` beyond the banner; native colour picker (`<input type="color">` on Border/Fill) still spams the undo stack per drag (pre-existing Phase 1/2).
 
-**Five things B1 must decide/do — sized honestly:**
+**Test baseline to expect:** **409 passed / 0 failed (56 files), both typechecks clean, `electron-vite build` clean.** Any failure is a real failure.
 
-1. **Seeding is a migration, not a seed edit.** `seedElementTypes` inserts only built-ins whose *name* is missing (`elementTypes.ts:20-28`). Every existing project already has all five rows at `color = NULL`, so **changing the INSERT's `NULL` to a colour helps NEW projects only** — existing ones stay grey forever. Seeding colours retroactively needs a backfill migration (`UPDATE element_types SET color = ? WHERE is_built_in = 1 AND color IS NULL AND name = ?`), which is idempotent by the `color IS NULL` guard. **This is the single biggest thing §9's "no columns" framing hides.**
-2. **Which colours?** `ArchitectureCanvas/swatches.ts` now holds 8 measured, AA-verified hues (`SWATCHES`, each `{ name, border, fill }`). Seeding should reuse those values — but `swatches.ts` is **renderer-side** and seeding is **main-side**, so either the constant moves somewhere shared or the hexes get duplicated. Pick deliberately; a silent divergence would put a type's colour outside the palette its own picker offers.
-3. **Border-clear path is a prerequisite, not a nicety.** `color` still has no NULL affordance (Phase 2's ✕ chip is Fill-only, by user decision). Any object with an explicit `color` beats an inherited one **forever**. `thermal` has a live example: `SYS-003` = `#66ffbd`. Without a ✕ on Border, B1 silently does nothing for every already-coloured object, which will read as "the feature is broken". Mirror Phase 2's Fill chip — `Swatches` already takes `clearable`.
-4. **Does fill inherit too?** **Phase 2 deferred inheritance *specifically* so B1 would answer this ONCE for border and fill together** — that was the user's decision and the reason Phase 2 stayed "one column". If fill inherits, `element_types` needs a `fill_color` column as well. Answer this in the brainstorm; do not let it drift a third time.
-5. **Where does the editor live?** No type-management UI exists. Options: revive `ComponentLibrary` (already has a colour dot, but shelved for a reason), extend the bar's `Type ▾` popover, or a small admin surface (cf. backlog item 11). This is a genuine product question — brainstorm it.
-
-**The payoff line, once the above exists** — `nodes.ts`: `el.color ?? type.color ?? NAVY`. Pure, and `nodes.ts` already has good coverage.
-
-**Coverage is available now** — item 23 is fixed, so the backfill migration and the new `elementTypes:update` handler get **real tests**. B1 must NOT ship dark; items 26, 27 and 29-P2 each did, and the final review flagged that pattern as the reason item 23 mattered.
-
-**2. Open backlog:** **11** (admin area — note B1's editor may want a home here), **12** (nav icons), **13** (last-modified user attribution — under-specified, no user concept exists), **14** (export PDF), ~~**23** (ABI + item-21 migration tests)~~ **DONE 2026-07-15**, **29** (only B1 left), **31** (keyboard-accessible section re-parenting — the a11y gap item 28 left; `ModuleTree`'s "Move to…" select would port cheaply and would reuse item 28's IPC + guard).
-
-**Test baseline to expect:** **389 passed / 0 failed (54 files), both typechecks clean.** Item 23 is FIXED (see its section above) — the old "52 failed, all ERR_DLOPEN_FAILED, do not chase it" baseline is dead. **Any failure is now a real failure.**
-
-**Scratch data on `thermal`:** folder `Avionics` + `SRS-TRS--8` (safe to delete); a dashed SYS-002→SYS-001 connection. `SmokeTest.reqarch` still holds an **un-migrated** legacy tree — **opening it migrates in place, irreversibly from the UI**; copy the file first if a fallback is wanted.
+**Scratch data on `thermal`:** folder `Avionics` + `SRS-TRS--8` (safe to delete); a dashed SYS-002→SYS-001 connection. **B1 permanently backfilled thermal's built-in element-type colours** (System=Navy, Subsystem=Teal, Component=Slate, Function=Green, External=Amber) — intended, not damage; `colourByType` left OFF in localStorage. `SmokeTest.reqarch` still holds an **un-migrated** legacy tree — **opening it migrates in place, irreversibly from the UI** (and will now also backfill its type colours); copy the file first if a fallback is wanted.
 
 ## Standing context: PLANNING + REFINING (user directive)
 *(Superseded on specifics by the NEXT SESSION section above — kept for the standing directive and the workflow conventions at the end.)*
