@@ -97,9 +97,9 @@ export default function InterfaceRegister(): JSX.Element {
             <tr className="text-left">
               <th className="px-4 py-2"><SectionLabel>Interface ID</SectionLabel></th>
               <th className="px-4 py-2"><SectionLabel>From</SectionLabel></th>
-              <th className="px-4 py-2"><SectionLabel>From Name</SectionLabel></th>
+              <th className="px-4 py-2"><SectionLabel>Origin</SectionLabel></th>
               <th className="px-4 py-2"><SectionLabel>To</SectionLabel></th>
-              <th className="px-4 py-2"><SectionLabel>To Name</SectionLabel></th>
+              <th className="px-4 py-2"><SectionLabel>Destination</SectionLabel></th>
               {optionalCols.map((col) => (
                 <th key={col} className="px-4 py-2"><SectionLabel>{BUILTIN_LABELS[col] ?? col}</SectionLabel></th>
               ))}
