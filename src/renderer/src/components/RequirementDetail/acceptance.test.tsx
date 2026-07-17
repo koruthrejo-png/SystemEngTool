@@ -33,7 +33,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   Object.assign(storeState, {
     requirements: [req], selectedRequirementId: 5, customFields: [],
-    headings: [], modules: [], projectRequirements: [], reqLinks: [],
+    headings: [], modules: [], projectRequirements: [], reqLinks: [], users: [],
     acItems: [
       item({ id: 1, text: 'boots in 2s', status: 'Passed', position: 0 }),
       item({ id: 2, text: 'logs errors', status: 'Unverified', position: 1 })

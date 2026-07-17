@@ -16,6 +16,21 @@ export function runMigrations(db: Database.Database): void {
       updated_at  TEXT    NOT NULL
     );
 
+    -- The roster of people who have edited THIS file. \`uuid\` is the identity that
+    -- survives leaving this file: \`id\` is a per-file autoincrement, so two projects
+    -- both mint id 1 for different people and a server ingesting both would merge
+    -- them. Cross-file identity must always resolve through uuid (or, once SSO
+    -- lands, external_id/email) — never through id.
+    CREATE TABLE IF NOT EXISTS users (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid         TEXT    NOT NULL UNIQUE,
+      display_name TEXT    NOT NULL,
+      email        TEXT,
+      external_id  TEXT,
+      created_at   TEXT    NOT NULL,
+      updated_at   TEXT    NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS modules (
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       project_id      INTEGER NOT NULL REFERENCES projects(id),
@@ -213,6 +228,10 @@ export function runMigrations(db: Database.Database): void {
   addColumnIfMissing(db, 'architecture_elements', 'pre_nest_width', 'INTEGER')
   addColumnIfMissing(db, 'architecture_elements', 'pre_nest_height', 'INTEGER')
   addColumnIfMissing(db, 'architecture_elements', 'fill_color', 'TEXT')
+  // Nullable and never backfilled: NULL means "predates attribution / unknown", not
+  // "the current user". Stamping existing rows would invent a record of who edited them.
+  addColumnIfMissing(db, 'requirements', 'created_by', 'INTEGER REFERENCES users(id)')
+  addColumnIfMissing(db, 'requirements', 'updated_by', 'INTEGER REFERENCES users(id)')
 
   // Backfill built-in element-type colours on legacy projects (pre-B1 seed used color NULL).
   // Scope to projects where EVERY built-in is still NULL — the genuine pre-B1 state. Once any

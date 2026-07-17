@@ -1,9 +1,9 @@
 import { useStore } from '../../store'
-import { SectionLabel, Button } from '../ui'
+import { SectionLabel, Button, Input } from '../ui'
 import { SWATCHES } from '../ArchitectureCanvas/swatches'
 
 export default function Settings({ open, onClose }: { open: boolean; onClose: () => void }): JSX.Element | null {
-  const { colourByType, setColourByType, elementTypes, updateElementType } = useStore()
+  const { colourByType, setColourByType, elementTypes, updateElementType, me, setMe, users, project } = useStore()
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/40" onClick={onClose}>
@@ -15,6 +15,45 @@ export default function Settings({ open, onClose }: { open: boolean; onClose: ()
           <SectionLabel>Settings</SectionLabel>
           <button aria-label="Close settings" onClick={onClose} className="text-ink-faint hover:text-ink text-base leading-none">×</button>
         </div>
+
+        <section className="flex flex-col gap-2">
+          <SectionLabel>You</SectionLabel>
+          <p className="text-xs text-ink-faint">Stamped on requirements you create or edit.</p>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-ink">Name</span>
+            <Input
+              defaultValue={me?.displayName ?? ''}
+              aria-label="Your name"
+              onBlur={(e) => { if (e.target.value.trim() !== me?.displayName) setMe({ displayName: e.target.value }) }}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-ink">Email</span>
+            <Input
+              type="email"
+              defaultValue={me?.email ?? ''}
+              aria-label="Your email"
+              placeholder="optional"
+              onBlur={(e) => { if ((e.target.value.trim() || null) !== me?.email) setMe({ email: e.target.value }) }}
+            />
+          </label>
+        </section>
+
+        {project && (
+          <section className="flex flex-col gap-2">
+            <SectionLabel>People</SectionLabel>
+            <p className="text-xs text-ink-faint">Everyone who has edited this project.</p>
+            {users.length === 0
+              ? <p className="text-sm text-ink-faint">No edits recorded yet.</p>
+              : users.map((u) => (
+                <div key={u.id} className="flex items-baseline gap-2 text-sm">
+                  <span className="text-ink">{u.displayName}</span>
+                  {u.uuid === me?.uuid && <span className="text-xs text-ink-faint">(you)</span>}
+                  {u.email && <span className="ml-auto text-xs text-ink-faint">{u.email}</span>}
+                </div>
+              ))}
+          </section>
+        )}
 
         <section className="flex flex-col gap-2">
           <SectionLabel>Preferences</SectionLabel>

@@ -5,6 +5,7 @@ import type {
   CreateRequirementInput, UpdateRequirementInput,
   ElementType, ConnectionType,
   UpdateElementTypeInput,
+  User, LocalIdentity, UpdateMeInput,
   Architecture,
   ArchitectureElement, ArchitectureConnection,
   CreateElementInput, UpdateElementInput,
@@ -36,6 +37,12 @@ interface Store {
   clearError: () => void
   colourByType: boolean
   setColourByType: (v: boolean) => void
+  /** You, per machine. Not a preference — main owns it, because main stamps it. */
+  me: LocalIdentity | null
+  loadMe: () => Promise<void>
+  setMe: (input: UpdateMeInput) => Promise<void>
+  /** The open project's roster: everyone who has edited this file. */
+  users: User[]
 
   // requirements tab
   modules: Module[]
@@ -165,6 +172,17 @@ export const useStore = create<Store>((set, get) => ({
     localStorage.setItem('reqarch.prefs.colourByType', String(v))
     set({ colourByType: v })
   },
+  me: null,
+  users: [],
+  loadMe: async () => {
+    set({ me: await window.api.users.me() })
+  },
+  setMe: (input) => run(async () => {
+    const me = await window.api.users.setMe(input)
+    // The rename lands in the roster too (main upserts it), so re-read the list rather
+    // than patching the local copy and drifting from the file.
+    set({ me, users: get().project ? await window.api.users.list() : get().users })
+  }),
   modules: [], selectedModuleId: null, requirements: [], selectedRequirementId: null,
   headings: [], collapsedHeadingIds: [],
   architectures: [], activeArchitectureId: null,
@@ -180,11 +198,12 @@ export const useStore = create<Store>((set, get) => ({
   loadProject: async () => {
     const project = await window.api.project.getCurrent()
     if (!project) return
-    const [modules, elementTypes] = await Promise.all([
+    const [modules, elementTypes, users] = await Promise.all([
       window.api.modules.list(project.id),
-      window.api.elementTypes.list(project.id)
+      window.api.elementTypes.list(project.id),
+      window.api.users.list()
     ])
-    set({ project, modules, elementTypes, undoStack: [], redoStack: [], interfaceArchFilter: 'all' })
+    set({ project, modules, elementTypes, users, undoStack: [], redoStack: [], interfaceArchFilter: 'all' })
   },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -235,11 +254,13 @@ export const useStore = create<Store>((set, get) => ({
   addRequirement: (input) => run(async () => {
     const req = await window.api.requirements.create(input)
     set((s) => ({ requirements: [...s.requirements, req], selectedRequirementId: req.id }))
+    await ensureAuthorKnown(req.updatedBy, get, set)
   }),
 
   updateRequirement: (id, input) => run(async () => {
     const updated = await window.api.requirements.update(id, input)
     set((s) => ({ requirements: s.requirements.map((r) => (r.id === id ? updated : r)) }))
+    await ensureAuthorKnown(updated.updatedBy, get, set)
   }),
 
   removeRequirement: (id) => run(async () => {
@@ -742,6 +763,18 @@ export const useStore = create<Store>((set, get) => ({
 
 function pushUndo(cmd: UndoCommand): void {
   useStore.setState((s) => ({ undoStack: [...s.undoStack, cmd], redoStack: [] }))
+}
+
+// The roster is read when the project opens, but you are only enrolled in it on your
+// FIRST write to that file — so that write returns an author id the store cannot yet
+// name. Re-read the roster exactly then; every later edit already knows the author.
+async function ensureAuthorKnown(
+  authorId: number | null,
+  get: () => Store,
+  set: (partial: Partial<Store>) => void
+): Promise<void> {
+  if (authorId === null || get().users.some((u) => u.id === authorId)) return
+  set({ users: await window.api.users.list() })
 }
 
 // Surface a rejected mutation IPC instead of letting it vanish as an unhandled rejection.

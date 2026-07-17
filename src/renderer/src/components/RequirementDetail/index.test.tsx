@@ -21,7 +21,7 @@ const storeState = {
   addCustomField: vi.fn(),
   updateCustomField: vi.fn(),
   removeCustomField: vi.fn(),
-  headings: [],
+  headings: [], users: [],
   reqLinks: [],
   projectRequirements: [],
   modules: [],

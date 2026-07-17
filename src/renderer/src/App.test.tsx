@@ -31,6 +31,8 @@ const baseStore = {
   requirements: [], selectedRequirementId: null,
   setActiveTab: vi.fn(),
   loadProject: vi.fn(),
+  loadMe: vi.fn(),
+  users: [],
   loadArchitecture: vi.fn(),
   loadArchitectures: vi.fn(),
   architectures: [],

@@ -27,7 +27,7 @@ beforeEach(() => {
     requirements: [req(2, 2, 'Low level req')],
     projectRequirements: [req(1, 1, 'High level req'), req(2, 2, 'Low level req'), req(3, 1, 'Unlinked high')],
     modules: [mod(1, null, 'System'), mod(2, 1, 'Software')],
-    headings: [],
+    headings: [], users: [],
     customFields: [],
     reqLinks: [{ parentReqId: 1, childReqId: 2 }],
     loadCustomFields: vi.fn().mockResolvedValue(undefined),

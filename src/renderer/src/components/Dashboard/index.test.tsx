@@ -31,6 +31,7 @@ beforeEach(() => {
     modules: [{ id: 1, name: 'SRS', kind: 'module', position: 0 }],
     traceLinks: [{ elementId: 1, requirementId: 1 }],
     reqLinks: [{ parentReqId: 1, childReqId: 2 }],
+    users: [],
     loadTraceability: vi.fn().mockResolvedValue(undefined),
     openRequirement: vi.fn().mockResolvedValue(undefined),
     setActiveTab: vi.fn()

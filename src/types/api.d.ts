@@ -6,6 +6,7 @@ import type {
   RequirementCustomField, UpdateCustomFieldInput,
   AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   ElementType, ConnectionType,
+  User, LocalIdentity, UpdateMeInput,
   Architecture, ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, UpdateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
@@ -61,6 +62,11 @@ declare global {
         update(id: number, patch: UpdateAcceptanceCriterionInput): Promise<AcceptanceCriterion>
         remove(id: number): Promise<void>
         move(id: number, direction: 'up' | 'down'): Promise<void>
+      }
+      users: {
+        me(): Promise<LocalIdentity | null>
+        setMe(input: UpdateMeInput): Promise<LocalIdentity>
+        list(): Promise<User[]>
       }
       elementTypes: {
         list(projectId: number): Promise<ElementType[]>

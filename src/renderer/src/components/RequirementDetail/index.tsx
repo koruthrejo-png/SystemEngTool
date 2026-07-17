@@ -5,12 +5,13 @@ import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES, AC_STA
 import type { RequirementStatus, RequirementPriority, RequirementType, Requirement, AcStatus, ArchitectureElement } from '../../../../types'
 import { buildOutline } from '../RequirementsList/outline'
 import { flattenTree } from '../ModuleTree/moduleTree'
+import { userName } from '../../attribution'
 
 export default function RequirementDetail(): JSX.Element {
   const {
     selectedRequirementId, requirements, updateRequirement,
     customFields, loadCustomFields, addCustomField, updateCustomField, removeCustomField,
-    headings,
+    headings, users,
     acItems, loadAcItems, addAcItem, updateAcItem, removeAcItem, moveAcItem
   } = useStore()
   const req = requirements.find((r) => r.id === selectedRequirementId) ?? null
@@ -110,6 +111,9 @@ export default function RequirementDetail(): JSX.Element {
       <div className="px-5 py-3 border-b border-line shrink-0">
         <div className="text-lg font-semibold tracking-tight text-ink">Requirement Details</div>
         <span className="text-xs font-mono text-ink-faint">{req.reqId}</span>
+        <div className="text-xs text-ink-faint mt-1">
+          Last modified {new Date(req.updatedAt).toLocaleString()} by {userName(users, req.updatedBy)}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
         <div className="grid grid-cols-3 gap-3">

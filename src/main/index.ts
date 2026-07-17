@@ -17,6 +17,8 @@ import { registerRequirementLinkHandlers } from './handlers/requirementLinks'
 import { registerSearchHandlers } from './handlers/search'
 import { registerArchitectureHandlers } from './handlers/architectures'
 import { registerLayerHandlers } from './handlers/layers'
+import { registerUserHandlers } from './handlers/users'
+import { initIdentity } from './identity'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -36,6 +38,10 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Before any handler: an uninitialised identity stamps NULL, so a missing call here
+  // would silently attribute every edit to nobody.
+  initIdentity(app.getPath('userData'))
+  registerUserHandlers()
   registerProjectHandlers()
   registerModuleHandlers()
   registerRequirementHandlers()

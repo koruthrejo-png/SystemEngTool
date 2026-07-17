@@ -14,7 +14,8 @@ function req(partial: Partial<Requirement> & { id: number }): Requirement {
     moduleId: 1, reqId: `SRS-${partial.id}`, text: `R${partial.id}`,
     acceptanceCriteria: null, source: null, rationale: null,
     status: 'Draft', priority: 'Medium', reqType: 'Functional',
-    headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '', ...partial
+    headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '',
+    createdBy: null, updatedBy: null, ...partial
   }
 }
 

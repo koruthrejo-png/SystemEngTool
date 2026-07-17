@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, rmSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { openDatabase, closeDatabase } from '../db/connection'
+import { openDatabase, closeDatabase, getDatabase } from '../db/connection'
+import { initIdentity, setMe, currentUserRowId } from '../identity'
 import { createProject } from './projects'
 import { createModule } from './modules'
 import { listRequirements, createRequirement, updateRequirement, deleteRequirement, restoreRequirement } from './requirements'
@@ -102,5 +103,84 @@ describe('requirements handler', () => {
     expect(updated.priority).toBe('High')
     expect(updated.reqType).toBe('Interface')
     expect(updated.text).toBe('Keep this text')
+  })
+})
+
+describe('requirement attribution', () => {
+  let tempDir: string
+  let identityDir: string
+  let moduleId: number
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
+    identityDir = mkdtempSync(join(tmpdir(), 'reqarch-identity-'))
+    initIdentity(identityDir)
+    setMe({ displayName: 'Ada' })
+    openDatabase(join(tempDir, 'test.reqarch'))
+    const project = createProject('Test')
+    moduleId = createModule({ projectId: project.id, parentId: null, kind: 'module', name: 'SRS', idPrefix: 'SRS', idPadding: 4 }).id
+  })
+
+  afterEach(() => {
+    closeDatabase()
+    initIdentity('')
+    rmSync(tempDir, { recursive: true, force: true })
+    rmSync(identityDir, { recursive: true, force: true })
+  })
+
+  it('createRequirement stamps both created_by and updated_by', () => {
+    const req = createRequirement({ moduleId, text: 'X' })
+    const me = currentUserRowId(getDatabase())
+    expect(req.createdBy).toBe(me)
+    expect(req.updatedBy).toBe(me)
+  })
+
+  it('updateRequirement stamps updated_by and never rewrites created_by', () => {
+    const req = createRequirement({ moduleId, text: 'X' })
+
+    // A genuinely different person — a second machine's identity, hence a second uuid.
+    // (Renaming yourself would not do: same uuid, same roster row, still one person.)
+    const otherDir = mkdtempSync(join(tmpdir(), 'reqarch-identity-2-'))
+    initIdentity(otherDir)
+    setMe({ displayName: 'Grace' })
+    const editorId = currentUserRowId(getDatabase())
+    expect(editorId).not.toBe(req.createdBy)
+
+    const updated = updateRequirement(req.id, { text: 'Y' })
+    expect(updated.updatedBy).toBe(editorId)
+    expect(updated.createdBy).toBe(req.createdBy)
+    rmSync(otherDir, { recursive: true, force: true })
+  })
+
+  it('a rename keeps you the same person in the roster', () => {
+    const req = createRequirement({ moduleId, text: 'X' })
+    setMe({ displayName: 'Ada Lovelace' })
+    const updated = updateRequirement(req.id, { text: 'Y' })
+    // Same uuid: renaming yourself must not fork you into a second roster entry.
+    expect(updated.updatedBy).toBe(req.createdBy)
+  })
+
+  it('ignores an author supplied by the caller — identity is never client-asserted', () => {
+    const forged = { moduleId, text: 'X', createdBy: 999, updatedBy: 999 } as any
+    const req = createRequirement(forged)
+    expect(req.createdBy).toBe(currentUserRowId(getDatabase()))
+    expect(req.createdBy).not.toBe(999)
+
+    const updated = updateRequirement(req.id, { text: 'Y', updatedBy: 999 } as any)
+    expect(updated.updatedBy).not.toBe(999)
+  })
+
+  it('leaves rows written before attribution existed as NULL rather than claiming an author', () => {
+    const db = getDatabase()
+    const ts = new Date().toISOString()
+    // A legacy row: written straight to the table with no attribution, as every row in
+    // an existing project is.
+    db.prepare(`
+      INSERT INTO requirements (module_id, req_id, text, status, priority, req_type, position, created_at, updated_at)
+      VALUES (?, 'SRS-9999', 'Legacy', 'Draft', 'Medium', 'Functional', 0, ?, ?)
+    `).run(moduleId, ts, ts)
+    const legacy = listRequirements(moduleId).find((r) => r.reqId === 'SRS-9999')!
+    expect(legacy.createdBy).toBeNull()
+    expect(legacy.updatedBy).toBeNull()
   })
 })

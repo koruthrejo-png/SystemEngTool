@@ -7,6 +7,7 @@ import type {
   RequirementCustomField, UpdateCustomFieldInput,
   AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   ElementType, ConnectionType,
+  User, LocalIdentity, UpdateMeInput,
   Architecture, ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, UpdateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
@@ -60,6 +61,12 @@ contextBridge.exposeInMainWorld('api', {
     update: (id: number, patch: UpdateAcceptanceCriterionInput): Promise<AcceptanceCriterion> => ipcRenderer.invoke('acceptanceCriteria:update', id, patch),
     remove: (id: number): Promise<void> => ipcRenderer.invoke('acceptanceCriteria:delete', id),
     move: (id: number, direction: 'up' | 'down'): Promise<void> => ipcRenderer.invoke('acceptanceCriteria:move', id, direction)
+  },
+  users: {
+    // No setter for who you *are* mid-edit: main owns the identity, the renderer only reads it.
+    me: (): Promise<LocalIdentity | null> => ipcRenderer.invoke('users:me'),
+    setMe: (input: UpdateMeInput): Promise<LocalIdentity> => ipcRenderer.invoke('users:setMe', input),
+    list: (): Promise<User[]> => ipcRenderer.invoke('users:list')
   },
   elementTypes: {
     list: (projectId: number): Promise<ElementType[]> => ipcRenderer.invoke('elementTypes:list', projectId),

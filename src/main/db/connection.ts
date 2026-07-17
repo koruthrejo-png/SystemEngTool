@@ -17,6 +17,10 @@ export function getDatabase(): Database.Database {
   return _db
 }
 
+export function hasDatabase(): boolean {
+  return _db !== null
+}
+
 export function closeDatabase(): void {
   _db?.close()
   _db = null

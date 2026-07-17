@@ -16,13 +16,13 @@ import InterfaceNav from './components/InterfaceRegister/InterfaceNav'
 import Settings from './components/Settings'
 
 export default function App(): JSX.Element {
-  const { project, activeTab, setActiveTab, loadProject, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId, lastError, clearError } = useStore()
+  const { project, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, selectedRequirementId, lastError, clearError } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { loadProject() }, [])
+  useEffect(() => { loadProject(); loadMe() }, [])
 
   useEffect(() => {
     if (activeTab === 'architecture' && project) loadArchitectures()

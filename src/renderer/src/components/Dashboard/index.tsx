@@ -4,7 +4,8 @@ import { SectionLabel, Chip } from '../ui'
 import { computeStats, timeAgo, derivationStats } from './stats'
 import type { ModuleCoverage } from './stats'
 import { flattenTree } from '../ModuleTree/moduleTree'
-import type { Module, Requirement, RequirementLink } from '../../../../types'
+import { userName } from '../../attribution'
+import type { Module, Requirement, RequirementLink, User } from '../../../../types'
 
 // Chart-mark colors: hex mirrors of tailwind tokens (SVG attrs can't take classes).
 // Fixed per status entity — see plan Global Constraints.
@@ -45,7 +46,7 @@ const warnIcon = (
 
 export default function Dashboard(): JSX.Element {
   const {
-    project, projectRequirements, elements, traceLinks, modules, reqLinks,
+    project, projectRequirements, elements, traceLinks, modules, reqLinks, users,
     loadTraceability, openRequirement, setActiveTab
   } = useStore()
 
@@ -112,7 +113,7 @@ export default function Dashboard(): JSX.Element {
         />
 
         <div className="grid grid-cols-2 gap-4">
-          <ActivityCard reqs={stats.recent} onOpen={openRequirement} />
+          <ActivityCard reqs={stats.recent} users={users} onOpen={openRequirement} />
           <GapsCard
             gaps={stats.criticalGaps}
             onOpen={openRequirement}
@@ -225,9 +226,10 @@ function ModuleBarsCard({ perModule }: { perModule: ModuleCoverage[] }): JSX.Ele
 }
 
 function ActivityCard({
-  reqs, onOpen
+  reqs, users, onOpen
 }: {
   reqs: Requirement[]
+  users: User[]
   onOpen: (req: Requirement) => Promise<void>
 }): JSX.Element {
   return (
@@ -248,7 +250,9 @@ function ActivityCard({
               </span>
               <span className="text-xs font-mono text-ink-faint shrink-0">{r.reqId}</span>
               <span className="text-xs text-ink truncate flex-1">{r.text || '—'}</span>
-              <span className="text-[11px] text-ink-faint shrink-0">{timeAgo(r.updatedAt)}</span>
+              <span className="text-[11px] text-ink-faint shrink-0">
+                {userName(users, r.updatedBy)} · {timeAgo(r.updatedAt)}
+              </span>
             </button>
           )
         })}

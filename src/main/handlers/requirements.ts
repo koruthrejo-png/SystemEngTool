@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../db/connection'
+import { currentUserRowId } from '../identity'
 import type { Requirement, CreateRequirementInput, UpdateRequirementInput } from '../../types'
 
 function now(): string { return new Date().toISOString() }
@@ -12,7 +13,8 @@ export function rowToRequirement(row: any): Requirement {
     status: row.status, priority: row.priority, reqType: row.req_type,
     headingId: row.heading_id ?? null,
     position: row.position, deletedAt: row.deleted_at ?? null,
-    createdAt: row.created_at, updatedAt: row.updated_at
+    createdAt: row.created_at, updatedAt: row.updated_at,
+    createdBy: row.created_by ?? null, updatedBy: row.updated_by ?? null
   }
 }
 
@@ -32,6 +34,10 @@ export function createRequirement(input: CreateRequirementInput): Requirement {
   const db = getDatabase()
   const ts = now()
 
+  // Attribution comes from the process that owns the identity, never from `input` — the
+  // renderer must not be able to name who made an edit. Same rule the server will need.
+  const author = currentUserRowId(db)
+
   const row = db.transaction(() => {
     const mod = db.prepare('SELECT id_prefix, id_padding, next_counter, kind FROM modules WHERE id = ?').get(input.moduleId) as any
     if (!mod) throw new Error(`Module ${input.moduleId} not found`)
@@ -40,9 +46,9 @@ export function createRequirement(input: CreateRequirementInput): Requirement {
     db.prepare('UPDATE modules SET next_counter = ?, updated_at = ? WHERE id = ?')
       .run(mod.next_counter + 1, ts, input.moduleId)
     const r = db.prepare(`
-      INSERT INTO requirements (module_id, req_id, text, acceptance_criteria, source, rationale, heading_id, position, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-    `).run(input.moduleId, reqId, input.text, input.acceptanceCriteria ?? null, input.source ?? null, input.rationale ?? null, input.headingId ?? null, ts, ts)
+      INSERT INTO requirements (module_id, req_id, text, acceptance_criteria, source, rationale, heading_id, position, created_at, updated_at, created_by, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+    `).run(input.moduleId, reqId, input.text, input.acceptanceCriteria ?? null, input.source ?? null, input.rationale ?? null, input.headingId ?? null, ts, ts, author, author)
     return db.prepare('SELECT * FROM requirements WHERE id = ?').get(r.lastInsertRowid)
   })()
 
@@ -53,8 +59,9 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
   const db = getDatabase()
   const existing = db.prepare('SELECT * FROM requirements WHERE id = ?').get(id) as any
   if (!existing) throw new Error(`Requirement ${id} not found`)
+  // `created_by` is deliberately absent from the SET list — who wrote it first never changes.
   db.prepare(`
-    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, heading_id = ?, updated_at = ? WHERE id = ?
+    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, heading_id = ?, updated_at = ?, updated_by = ? WHERE id = ?
   `).run(
     // nullable text fields coerce '' → null; NOT NULL enum fields have no empty state, so plain ??
     input.text ?? existing.text,
@@ -65,7 +72,7 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
     input.priority ?? existing.priority,
     input.reqType ?? existing.req_type,
     input.headingId !== undefined ? input.headingId : existing.heading_id,
-    now(), id
+    now(), currentUserRowId(db), id
   )
   return rowToRequirement(db.prepare('SELECT * FROM requirements WHERE id = ?').get(id))
 }

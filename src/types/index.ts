@@ -72,6 +72,8 @@ export interface Requirement {
   deletedAt: string | null
   createdAt: string
   updatedAt: string
+  createdBy: number | null
+  updatedBy: number | null
 }
 
 export interface ReqHeading {
@@ -155,6 +157,30 @@ export interface ConnectionCustomField {
 export interface UpdateConnectionCustomFieldInput {
   key?: string
   value?: string
+}
+
+/** A row in a project's roster — someone who has edited that .reqarch file. */
+export interface User {
+  id: number
+  uuid: string
+  displayName: string
+  email: string | null
+  /** OAuth subject. Always null until the server lands. */
+  externalId: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Who you are on this machine, across every project. Lives outside any .reqarch. */
+export interface LocalIdentity {
+  uuid: string
+  displayName: string
+  email: string | null
+}
+
+export interface UpdateMeInput {
+  displayName?: string
+  email?: string | null
 }
 
 export interface ElementType {

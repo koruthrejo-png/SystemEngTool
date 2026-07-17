@@ -1,18 +1,7 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../db/connection'
+import { rowToRequirement } from './requirements'
 import type { Requirement, ElementRequirementLink } from '../../types'
-
-function rowToRequirement(row: any): Requirement {
-  return {
-    id: row.id, moduleId: row.module_id, reqId: row.req_id, text: row.text,
-    acceptanceCriteria: row.acceptance_criteria ?? null,
-    source: row.source ?? null, rationale: row.rationale ?? null,
-    status: row.status, priority: row.priority, reqType: row.req_type,
-    headingId: row.heading_id ?? null,
-    position: row.position, deletedAt: row.deleted_at ?? null,
-    createdAt: row.created_at, updatedAt: row.updated_at
-  }
-}
 
 export function listElementLinks(elementId: number): Requirement[] {
   return (getDatabase().prepare(`
