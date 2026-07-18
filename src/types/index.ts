@@ -352,6 +352,11 @@ export interface UpdateConnectionInput {
   lineStyle?: LineStyle | null
   markerStart?: EdgeMarker | null
   markerEnd?: EdgeMarker | null
+  // Endpoint re-anchoring (drag a connector end to another handle/object).
+  sourceId?: number
+  targetId?: number
+  sourceHandle?: string | null
+  targetHandle?: string | null
 }
 
 export interface ElementRequirementLink {

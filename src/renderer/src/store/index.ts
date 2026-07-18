@@ -22,7 +22,7 @@ import { summarize, type AcSummaryEntry } from './acSummary'
 import { revertToBaseline } from '../components/ArchitectureCanvas/nodes'
 
 const ELEMENT_PROP_KEYS = ['name', 'color', 'elementTypeId', 'description', 'blockId', 'lineStyle', 'fillColor'] as const
-const CONNECTION_PROP_KEYS = ['name', 'connectionTypeId', 'description', 'connId', 'lineStyle', 'markerStart', 'markerEnd'] as const
+const CONNECTION_PROP_KEYS = ['name', 'connectionTypeId', 'description', 'connId', 'lineStyle', 'markerStart', 'markerEnd', 'sourceId', 'targetId', 'sourceHandle', 'targetHandle'] as const
 
 interface UndoCommand {
   undo: () => Promise<void>

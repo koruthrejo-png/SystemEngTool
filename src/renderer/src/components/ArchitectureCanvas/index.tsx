@@ -274,7 +274,7 @@ function CanvasInner(): JSX.Element {
   const {
     project, elements, connections, elementTypes, selectedElementId, selectedConnectionId,
     layers, elementLayers, connectionLayers, colourByType,
-    addElement, updateElement, removeElement, addConnection, removeConnection,
+    addElement, updateElement, removeElement, addConnection, updateConnection, removeConnection,
     selectElement, selectConnection, undo, redo, undoStack, redoStack
   } = useStore()
 
@@ -411,6 +411,20 @@ function CanvasInner(): JSX.Element {
     // edges are re-derived from store via useEffect — no manual setEdges needed
   }, [project, addConnection])
 
+  // Drag a connector endpoint onto another handle/object to re-anchor it.
+  // Node ids are element ids; handle ids are the side (left/right/top/bottom).
+  // Dropping on empty canvas never fires this, so the edge is left unchanged.
+  const onReconnect = useCallback((oldEdge: Edge, c: Connection) => {
+    if (!c.source || !c.target) return
+    updateConnection(Number(oldEdge.id), {
+      sourceId: Number(c.source),
+      targetId: Number(c.target),
+      sourceHandle: c.sourceHandle ?? null,
+      targetHandle: c.targetHandle ?? null
+    })
+    // edges re-derive from store via useEffect
+  }, [updateConnection])
+
   function handleAddBlock(): void {
     if (!project) return
     addElement({
@@ -524,6 +538,7 @@ function CanvasInner(): JSX.Element {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onReconnect={onReconnect}
             onNodeClick={onNodeClick}
             onEdgeClick={onEdgeClick}
             onPaneClick={onPaneClick}

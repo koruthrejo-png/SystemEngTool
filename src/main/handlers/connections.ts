@@ -69,7 +69,9 @@ export function updateConnection(id: number, input: UpdateConnectionInput): Arch
   db.prepare(`
     UPDATE architecture_connections SET
       conn_id = ?, name = ?, connection_type_id = ?, description = ?,
-      line_style = ?, marker_start = ?, marker_end = ?, updated_at = ?
+      line_style = ?, marker_start = ?, marker_end = ?,
+      source_id = ?, target_id = ?, source_handle = ?, target_handle = ?,
+      updated_at = ?
     WHERE id = ?
   `).run(
     input.connId ?? existing.conn_id,
@@ -79,6 +81,10 @@ export function updateConnection(id: number, input: UpdateConnectionInput): Arch
     'lineStyle' in input ? (input.lineStyle ?? null) : existing.line_style,
     'markerStart' in input ? (input.markerStart ?? null) : existing.marker_start,
     'markerEnd' in input ? (input.markerEnd ?? null) : existing.marker_end,
+    'sourceId' in input ? input.sourceId : existing.source_id,
+    'targetId' in input ? input.targetId : existing.target_id,
+    'sourceHandle' in input ? (input.sourceHandle ?? null) : existing.source_handle,
+    'targetHandle' in input ? (input.targetHandle ?? null) : existing.target_handle,
     now(), id
   )
   return rowToConnection(db.prepare('SELECT * FROM architecture_connections WHERE id = ?').get(id))

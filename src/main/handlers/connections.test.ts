@@ -57,6 +57,16 @@ describe('connections handler', () => {
     expect(updated.connId).toBe(conn.connId)
   })
 
+  it('updateConnection re-anchors handle and endpoint object', () => {
+    const conn = createConnection({ projectId, sourceId, targetId, sourceHandle: 'right', targetHandle: 'left' })
+    const other = createElement({ projectId }).id
+    const updated = updateConnection(conn.id, { sourceHandle: 'top', targetId: other, targetHandle: 'bottom' })
+    expect(updated.sourceHandle).toBe('top')
+    expect(updated.targetHandle).toBe('bottom')
+    expect(updated.targetId).toBe(other)
+    expect(updated.sourceId).toBe(sourceId) // unchanged fields stay put
+  })
+
   it('restoreConnection clears deleted_at and returns the row to the list', () => {
     const a = createElement({ projectId })
     const b = createElement({ projectId })
