@@ -439,8 +439,14 @@ function CanvasInner(): JSX.Element {
     selectElement(Number(node.id))
   }
 
+  // Single click highlights the connector (so you can see which one, then reconnect it);
+  // double click opens the Properties drawer.
   function onEdgeClick(_: React.MouseEvent, edge: Edge): void {
-    selectConnection(Number(edge.id))
+    selectConnection(Number(edge.id), false)
+  }
+
+  function onEdgeDoubleClick(_: React.MouseEvent, edge: Edge): void {
+    selectConnection(Number(edge.id), true)
   }
 
   function onPaneClick(): void {
@@ -541,6 +547,7 @@ function CanvasInner(): JSX.Element {
             onReconnect={onReconnect}
             onNodeClick={onNodeClick}
             onEdgeClick={onEdgeClick}
+            onEdgeDoubleClick={onEdgeDoubleClick}
             onPaneClick={onPaneClick}
             onNodeDragStop={onNodeDragStop}
             onNodesDelete={onNodesDelete}
