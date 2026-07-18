@@ -148,7 +148,8 @@
       "Bash(find /nix -name \"node\" -maxdepth 6)",
       "Bash(brew --prefix)",
       "Bash(curl -s https://nodejs.org/dist/index.json)",
-      "Bash(node -e 'let d=\"\";process.stdin.on\\(\"data\",c=>d+=c\\).on\\(\"end\",\\(\\)=>{const j=JSON.parse\\(d\\);const lts=j.filter\\(v=>v.lts\\);console.log\\(\"latest LTS lines:\"\\);const seen=new Set\\(\\);for\\(const v of lts\\){if\\(seen.has\\(v.lts\\)\\)continue;seen.add\\(v.lts\\);console.log\\(\" \",v.version,v.lts,v.date\\);}}\\)')"
+      "Bash(node -e 'let d=\"\";process.stdin.on\\(\"data\",c=>d+=c\\).on\\(\"end\",\\(\\)=>{const j=JSON.parse\\(d\\);const lts=j.filter\\(v=>v.lts\\);console.log\\(\"latest LTS lines:\"\\);const seen=new Set\\(\\);for\\(const v of lts\\){if\\(seen.has\\(v.lts\\)\\)continue;seen.add\\(v.lts\\);console.log\\(\" \",v.version,v.lts,v.date\\);}}\\)')",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('./package.json'\\).scripts,null,2\\)\\)\")"
     ]
   }
 }
