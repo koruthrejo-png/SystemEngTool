@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import BlockNode, { type BlockNodeData } from './BlockNode'
+import { CANVAS_AIDS_DEFAULTS } from './canvasAids'
 
 const handleSpy = vi.fn()
 const resizerSpy = vi.fn()
@@ -15,6 +16,7 @@ const data: BlockNodeData = {
   label: 'Engine', blockId: 'SYS-001', color: null, lineStyle: null, fillColor: null, selected: true,
   nested: false, childCount: 0,
   typeName: null, connectionCount: 0, faded: false,
+  aids: CANVAS_AIDS_DEFAULTS,
   onResizeEnd: vi.fn()
 }
 

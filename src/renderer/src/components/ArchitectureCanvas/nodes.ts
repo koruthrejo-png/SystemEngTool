@@ -2,6 +2,7 @@ import type { Node } from '@xyflow/react'
 import type { ArchitectureElement, ElementType, ArchitectureConnection, UpdateElementInput } from '../../../../types'
 import type { BlockNodeData } from './BlockNode'
 import type { Visibility } from './layers'
+import { type CanvasAids, CANVAS_AIDS_DEFAULTS } from './canvasAids'
 
 export function absolutePosition(
   el: ArchitectureElement,
@@ -115,7 +116,8 @@ export function buildNodes(
   selectedId: number | null,
   onResizeEnd: (id: number, x: number, y: number, width: number, height: number) => void,
   visibilityById: Map<number, Visibility>,
-  colourByType = false
+  colourByType = false,
+  aids: CanvasAids = CANVAS_AIDS_DEFAULTS
 ): Node[] {
   const typeName = new Map(elementTypes.map((t) => [t.id, t.name]))
   const typeColor = new Map(elementTypes.map((t) => [t.id, t.color]))
@@ -165,6 +167,7 @@ export function buildNodes(
       // ponytail: O(elements×connections) count, fine at desktop canvas scale
       connectionCount: connections.filter((c) => c.sourceId === el.id || c.targetId === el.id).length,
       faded: visibilityById.get(el.id) === 'faded',
+      aids,
       onResizeEnd: (x: number, y: number, w: number, h: number) => onResizeEnd(el.id, x, y, w, h)
     } satisfies BlockNodeData,
     style: { width: el.width, height: el.height, ...(visibilityById.get(el.id) === 'faded' ? { opacity: 0.35 } : {}) }

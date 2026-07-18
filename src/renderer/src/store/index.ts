@@ -20,9 +20,19 @@ import type {
 } from '../../../types'
 import { summarize, type AcSummaryEntry } from './acSummary'
 import { revertToBaseline } from '../components/ArchitectureCanvas/nodes'
+import { type AidKey, type CanvasAids, CANVAS_AIDS_DEFAULTS, CANVAS_AIDS_KEY } from '../components/ArchitectureCanvas/canvasAids'
 
 const ELEMENT_PROP_KEYS = ['name', 'color', 'elementTypeId', 'description', 'blockId', 'lineStyle', 'fillColor'] as const
 const CONNECTION_PROP_KEYS = ['name', 'connectionTypeId', 'description', 'connId', 'lineStyle', 'markerStart', 'markerEnd', 'sourceId', 'targetId', 'sourceHandle', 'targetHandle'] as const
+
+function loadCanvasAids(): CanvasAids {
+  try {
+    // Merge over defaults so aids added in a later version default on.
+    return { ...CANVAS_AIDS_DEFAULTS, ...JSON.parse(localStorage.getItem(CANVAS_AIDS_KEY) ?? '{}') }
+  } catch {
+    return { ...CANVAS_AIDS_DEFAULTS }
+  }
+}
 
 interface UndoCommand {
   undo: () => Promise<void>
@@ -37,6 +47,8 @@ interface Store {
   clearError: () => void
   colourByType: boolean
   setColourByType: (v: boolean) => void
+  canvasAids: CanvasAids
+  setCanvasAid: (key: AidKey, on: boolean) => void
   /** You, per machine. Not a preference — main owns it, because main stamps it. */
   me: LocalIdentity | null
   loadMe: () => Promise<void>
@@ -174,6 +186,12 @@ export const useStore = create<Store>((set, get) => ({
   setColourByType: (v) => {
     localStorage.setItem('reqarch.prefs.colourByType', String(v))
     set({ colourByType: v })
+  },
+  canvasAids: loadCanvasAids(),
+  setCanvasAid: (key, on) => {
+    const next = { ...get().canvasAids, [key]: on }
+    localStorage.setItem(CANVAS_AIDS_KEY, JSON.stringify(next))
+    set({ canvasAids: next })
   },
   me: null,
   users: [],

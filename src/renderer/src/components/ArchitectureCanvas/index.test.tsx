@@ -59,6 +59,7 @@ vi.mock('../../store', () => {
     layers: [],
     elementLayers: [],
     connectionLayers: [],
+    canvasAids: { connectionNames: true, connectionIds: true, nested: true, contains: true, connectionCount: true, objectId: true, objectName: true },
     addElement: mockAddElement,
     updateElement: mockUpdateElement,
     removeElement: vi.fn(),

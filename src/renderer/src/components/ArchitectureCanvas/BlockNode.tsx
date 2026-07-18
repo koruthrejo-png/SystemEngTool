@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react'
 import type { LineStyle } from '../../../../types'
 import { NAVY } from './swatches'
+import type { CanvasAids } from './canvasAids'
 
 export type BlockNodeData = {
   label: string
@@ -15,6 +16,7 @@ export type BlockNodeData = {
   typeName: string | null
   connectionCount: number
   faded: boolean
+  aids: CanvasAids
   onResizeEnd: (x: number, y: number, width: number, height: number) => void
 }
 
@@ -46,16 +48,16 @@ export default memo(function BlockNode({ data }: NodeProps) {
         {named ? (
           <span className="flex items-baseline gap-2 min-w-0 normal-case tracking-normal">
             {d.typeName && <span className="uppercase tracking-[0.05em] text-white/60 shrink-0">{d.typeName}</span>}
-            <span className="text-[11px] truncate">{d.label}</span>
-            <span className="font-mono font-medium text-white/70 shrink-0">{d.blockId}</span>
+            {d.aids.objectName && <span className="text-[11px] truncate">{d.label}</span>}
+            {d.aids.objectId && <span className="font-mono font-medium text-white/70 shrink-0">{d.blockId}</span>}
           </span>
         ) : (
           <span>{d.typeName ?? 'Object'}</span>
         )}
         <span className="flex items-center gap-2 font-medium normal-case tracking-normal text-white/75 shrink-0">
-          {d.nested && <span className="border border-white/40 rounded px-1 leading-tight">Nested</span>}
-          {d.childCount > 0 && <span>Contains {d.childCount}</span>}
-          {d.connectionCount > 0 && (
+          {d.aids.nested && d.nested && <span className="border border-white/40 rounded px-1 leading-tight">Nested</span>}
+          {d.aids.contains && d.childCount > 0 && <span>Contains {d.childCount}</span>}
+          {d.aids.connectionCount && d.connectionCount > 0 && (
             <span className="border border-white/40 rounded px-1 leading-tight">⇆ {d.connectionCount}</span>
           )}
         </span>
@@ -67,7 +69,7 @@ export default memo(function BlockNode({ data }: NodeProps) {
       }`}>
         {!named && (
           <>
-            <div className="text-[11px] text-ink-faint font-mono mb-0.5">{d.blockId}</div>
+            {d.aids.objectId && <div className="text-[11px] text-ink-faint font-mono mb-0.5">{d.blockId}</div>}
             <div className="text-ink-faint/50 italic font-medium">Unnamed</div>
           </>
         )}

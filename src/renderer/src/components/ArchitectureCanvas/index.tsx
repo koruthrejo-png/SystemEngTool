@@ -273,7 +273,7 @@ export default function ArchitectureCanvas(): JSX.Element {
 function CanvasInner(): JSX.Element {
   const {
     project, elements, connections, elementTypes, selectedElementId, selectedConnectionId,
-    layers, elementLayers, connectionLayers, colourByType,
+    layers, elementLayers, connectionLayers, colourByType, canvasAids,
     addElement, updateElement, removeElement, addConnection, updateConnection, removeConnection,
     selectElement, selectConnection, undo, redo, undoStack, redoStack
   } = useStore()
@@ -316,8 +316,8 @@ function CanvasInner(): JSX.Element {
         return
       }
       updateElement(id, { posX: x, posY: y, width, height, ...cleared })
-    }, visById, colourByType))
-  }, [elements, elementTypes, connections, selectedElementId, visById, colourByType])
+    }, visById, colourByType, canvasAids))
+  }, [elements, elementTypes, connections, selectedElementId, visById, colourByType, canvasAids])
 
   // Body-drag reconnect (EdgeLabel): the end that moved re-anchors to the
   // dropped-on element + side. Same persistence/undo as onReconnect. Defined
@@ -347,13 +347,13 @@ function CanvasInner(): JSX.Element {
           type: 'labeled' as const,
           markerStart: edgeMarker(c.markerStart, strokeColor),
           markerEnd: edgeMarker(c.markerEnd, strokeColor),
-          data: { label: c.name ?? '', faded: vis === 'faded', lineStyle: c.lineStyle ?? null, onBodyReconnect },
+          data: { label: c.name ?? '', connId: c.connId, faded: vis === 'faded', lineStyle: c.lineStyle ?? null, onBodyReconnect, showConnectionNames: canvasAids.connectionNames, showConnectionIds: canvasAids.connectionIds },
           selected: c.id === selectedConnectionId,
           hidden: vis === 'hidden'
         }
       })
     )
-  }, [connections, selectedConnectionId, connectionLayers, layersById, visById, onBodyReconnect])
+  }, [connections, selectedConnectionId, connectionLayers, layersById, visById, onBodyReconnect, canvasAids])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {

@@ -448,4 +448,12 @@ describe('preferences', () => {
     useStore.getState().setColourByType(false)
     expect(localStorage.getItem('reqarch.prefs.colourByType')).toBe('false')
   })
+
+  it('setCanvasAid flips one flag and persists the whole map as JSON', () => {
+    useStore.getState().setCanvasAid('connectionNames', false)
+    expect(useStore.getState().canvasAids.connectionNames).toBe(false)
+    const stored = JSON.parse(localStorage.getItem('reqarch.prefs.canvasAids') ?? '{}')
+    expect(stored.connectionNames).toBe(false)
+    expect(stored.nested).toBe(true) // other aids untouched
+  })
 })
