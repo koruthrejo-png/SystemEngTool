@@ -249,7 +249,7 @@ export default function RequirementsList(): JSX.Element {
                   draggable
                   onDragStart={(e) => { setDragHeadingId(row.heading.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move' }}
                   onDragEnd={() => { setDragHeadingId(null); setDragOverKey(null) }}
-                  className="w-12 shrink-0 whitespace-nowrap text-xs font-mono text-ink-faint cursor-grab active:cursor-grabbing"
+                  className="min-w-[3rem] shrink-0 whitespace-nowrap pr-2 text-xs font-mono text-ink-faint cursor-grab active:cursor-grabbing"
                 >
                   {row.number}
                 </span>
