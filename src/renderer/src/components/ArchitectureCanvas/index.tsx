@@ -319,6 +319,15 @@ function CanvasInner(): JSX.Element {
     }, visById, colourByType))
   }, [elements, elementTypes, connections, selectedElementId, visById, colourByType])
 
+  // Body-drag reconnect (EdgeLabel): the end that moved re-anchors to the
+  // dropped-on element + side. Same persistence/undo as onReconnect. Defined
+  // before the edge-building effect below, which lists it as a dependency.
+  const onBodyReconnect = useCallback((edgeId: string, end: 'source' | 'target', nodeId: number, side: string | null) => {
+    const connId = Number(edgeId)
+    if (end === 'source') updateConnection(connId, { sourceId: nodeId, sourceHandle: side })
+    else updateConnection(connId, { targetId: nodeId, targetHandle: side })
+  }, [updateConnection])
+
   useEffect(() => {
     const connMemberIds = new Map<number, number[]>()
     for (const { connectionId, layerId } of connectionLayers) {
@@ -338,13 +347,13 @@ function CanvasInner(): JSX.Element {
           type: 'labeled' as const,
           markerStart: edgeMarker(c.markerStart, strokeColor),
           markerEnd: edgeMarker(c.markerEnd, strokeColor),
-          data: { label: c.name ?? '', faded: vis === 'faded', lineStyle: c.lineStyle ?? null },
+          data: { label: c.name ?? '', faded: vis === 'faded', lineStyle: c.lineStyle ?? null, onBodyReconnect },
           selected: c.id === selectedConnectionId,
           hidden: vis === 'hidden'
         }
       })
     )
-  }, [connections, selectedConnectionId, connectionLayers, layersById, visById])
+  }, [connections, selectedConnectionId, connectionLayers, layersById, visById, onBodyReconnect])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
@@ -435,8 +444,13 @@ function CanvasInner(): JSX.Element {
     })
   }
 
+  // Single click highlights the object (move / restyle it); double click opens Properties.
   function onNodeClick(_: React.MouseEvent, node: Node): void {
-    selectElement(Number(node.id))
+    selectElement(Number(node.id), false)
+  }
+
+  function onNodeDoubleClick(_: React.MouseEvent, node: Node): void {
+    selectElement(Number(node.id), true)
   }
 
   // Single click highlights the connector (so you can see which one, then reconnect it);
@@ -546,6 +560,7 @@ function CanvasInner(): JSX.Element {
             onConnect={onConnect}
             onReconnect={onReconnect}
             onNodeClick={onNodeClick}
+            onNodeDoubleClick={onNodeDoubleClick}
             onEdgeClick={onEdgeClick}
             onEdgeDoubleClick={onEdgeDoubleClick}
             onPaneClick={onPaneClick}

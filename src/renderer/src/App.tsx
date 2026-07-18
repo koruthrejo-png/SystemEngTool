@@ -16,7 +16,7 @@ import InterfaceNav from './components/InterfaceRegister/InterfaceNav'
 import Settings from './components/Settings'
 
 export default function App(): JSX.Element {
-  const { project, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, connectionPanelOpen, selectedRequirementId, lastError, clearError } = useStore()
+  const { project, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, detailPanelOpen, selectedRequirementId, lastError, clearError } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
@@ -159,7 +159,7 @@ export default function App(): JSX.Element {
           <div className="flex-1 overflow-hidden">
             <ArchitectureCanvas />
           </div>
-          {(selectedElementId !== null || (selectedConnectionId !== null && connectionPanelOpen)) && (
+          {((selectedElementId !== null || selectedConnectionId !== null) && detailPanelOpen) && (
             <Panel className="w-96 shrink-0 border-l overflow-y-auto">
               {selectedElementId !== null ? <ElementPanel /> : <ConnectionPanel />}
             </Panel>

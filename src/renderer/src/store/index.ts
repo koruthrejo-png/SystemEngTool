@@ -61,9 +61,9 @@ interface Store {
   connectionTypes: ConnectionType[]
   selectedElementId: number | null
   selectedConnectionId: number | null
-  // Highlighting a connector (single click) and opening its Properties drawer
-  // (double click, or any Interface-register/create action) are separate concerns.
-  connectionPanelOpen: boolean
+  // Highlighting an object/connector (single click) and opening its Properties
+  // drawer (double click, or any register/create action) are separate concerns.
+  detailPanelOpen: boolean
   interfaceArchFilter: number | 'all'
   projectRequirements: Requirement[]
   customFields: RequirementCustomField[]
@@ -151,7 +151,7 @@ interface Store {
   removeLayer: (id: number) => Promise<void>
   toggleElementLayer: (elementId: number, layerId: number) => Promise<void>
   toggleConnectionLayer: (connectionId: number, layerId: number) => Promise<void>
-  selectElement: (id: number | null) => void
+  selectElement: (id: number | null, openPanel?: boolean) => void
   selectConnection: (id: number | null, openPanel?: boolean) => void
   setInterfaceArchFilter: (f: number | 'all') => void
   addElement: (input: CreateElementInput) => Promise<void>
@@ -190,7 +190,7 @@ export const useStore = create<Store>((set, get) => ({
   headings: [], collapsedHeadingIds: [],
   architectures: [], activeArchitectureId: null,
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
-  selectedElementId: null, selectedConnectionId: null, connectionPanelOpen: false, interfaceArchFilter: 'all', projectRequirements: [],
+  selectedElementId: null, selectedConnectionId: null, detailPanelOpen: false, interfaceArchFilter: 'all', projectRequirements: [],
   customFields: [], connectionCustomFields: [], projectConnectionCustomFields: [],
   acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
   statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
@@ -488,7 +488,7 @@ export const useStore = create<Store>((set, get) => ({
   setActiveArchitecture: async (id) => {
     const { project } = get()
     if (project) localStorage.setItem(`reqarch.activeArchitecture.${project.id}`, String(id))
-    set({ activeArchitectureId: id, selectedElementId: null, selectedConnectionId: null, connectionPanelOpen: false, undoStack: [], redoStack: [] })
+    set({ activeArchitectureId: id, selectedElementId: null, selectedConnectionId: null, detailPanelOpen: false, undoStack: [], redoStack: [] })
     await get().loadArchitecture()
   },
 
@@ -632,17 +632,19 @@ export const useStore = create<Store>((set, get) => ({
 
   clearHistory: () => set({ undoStack: [], redoStack: [] }),
 
-  selectElement: (id) => set({ selectedElementId: id, selectedConnectionId: null, connectionPanelOpen: false }),
+  // openPanel defaults true so trace-to-architecture navigation and object creation keep
+  // opening the drawer; the canvas passes false on single click to highlight only.
+  selectElement: (id, openPanel = true) => set({ selectedElementId: id, selectedConnectionId: null, detailPanelOpen: id !== null && openPanel }),
 
   // openPanel defaults true so Interface-register clicks and connection creation keep
   // opening the drawer; the canvas passes false on single click to highlight only.
-  selectConnection: (id, openPanel = true) => set({ selectedConnectionId: id, selectedElementId: null, connectionPanelOpen: id !== null && openPanel }),
+  selectConnection: (id, openPanel = true) => set({ selectedConnectionId: id, selectedElementId: null, detailPanelOpen: id !== null && openPanel }),
 
   setInterfaceArchFilter: (f) => set({ interfaceArchFilter: f }),
 
   addElement: (input) => run(async () => {
     const el = await window.api.elements.create({ ...input, architectureId: get().activeArchitectureId })
-    set((s) => ({ elements: [...s.elements, el], selectedElementId: el.id, selectedConnectionId: null }))
+    set((s) => ({ elements: [...s.elements, el], selectedElementId: el.id, selectedConnectionId: null, detailPanelOpen: true }))
     pushUndo({
       undo: async () => { await window.api.elements.delete(el.id) },
       redo: async () => { await window.api.elements.restore(el.id) }
@@ -709,7 +711,7 @@ export const useStore = create<Store>((set, get) => ({
 
   addConnection: (input) => run(async () => {
     const conn = await window.api.connections.create({ ...input, architectureId: get().activeArchitectureId })
-    set((s) => ({ connections: [...s.connections, conn], selectedConnectionId: conn.id, selectedElementId: null, connectionPanelOpen: true }))
+    set((s) => ({ connections: [...s.connections, conn], selectedConnectionId: conn.id, selectedElementId: null, detailPanelOpen: true }))
     pushUndo({
       undo: async () => { await window.api.connections.delete(conn.id) },
       redo: async () => { await window.api.connections.restore(conn.id) }
