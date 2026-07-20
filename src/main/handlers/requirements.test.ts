@@ -41,6 +41,24 @@ describe('requirements handler', () => {
     expect(createRequirement({ moduleId, text: 'Second' }).reqId).toBe('SRS-0002')
   })
 
+  it('afterId inserts the new requirement directly below its target and persists order', () => {
+    const a = createRequirement({ moduleId, text: 'A' })
+    const b = createRequirement({ moduleId, text: 'B' })
+    const c = createRequirement({ moduleId, text: 'C' })
+    // insert D below A → order should be A, D, B, C
+    const d = createRequirement({ moduleId, text: 'D', afterId: a.id })
+    expect(listRequirements(moduleId).map((r) => r.id)).toEqual([a.id, d.id, b.id, c.id])
+    // insert E below C (last) → A, D, B, C, E
+    const e = createRequirement({ moduleId, text: 'E', afterId: c.id })
+    expect(listRequirements(moduleId).map((r) => r.id)).toEqual([a.id, d.id, b.id, c.id, e.id])
+  })
+
+  it('afterId inherits the target requirement section', () => {
+    const a = createRequirement({ moduleId, text: 'A', headingId: null })
+    const b = createRequirement({ moduleId, text: 'B', afterId: a.id })
+    expect(b.headingId).toBe(a.headingId)
+  })
+
   it('listRequirements returns only active requirements', () => {
     const r1 = createRequirement({ moduleId, text: 'Keep me' })
     const r2 = createRequirement({ moduleId, text: 'Delete me' })

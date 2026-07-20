@@ -45,11 +45,36 @@ export function createRequirement(input: CreateRequirementInput): Requirement {
     const reqId = `${mod.id_prefix}-${String(mod.next_counter).padStart(mod.id_padding, '0')}`
     db.prepare('UPDATE modules SET next_counter = ?, updated_at = ? WHERE id = ?')
       .run(mod.next_counter + 1, ts, input.moduleId)
+
+    // When inserting below a specific requirement, the new row inherits that row's section
+    // (unless a heading was passed explicitly) and its order is made durable by renumbering
+    // below. Otherwise append to the end of the module.
+    const target = input.afterId != null
+      ? db.prepare('SELECT id, heading_id FROM requirements WHERE id = ? AND module_id = ? AND deleted_at IS NULL').get(input.afterId, input.moduleId) as any
+      : null
+    const headingId = input.headingId !== undefined ? input.headingId : (target ? target.heading_id ?? null : null)
+    const nextPos = (db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS p FROM requirements WHERE module_id = ? AND deleted_at IS NULL').get(input.moduleId) as any).p
+
     const r = db.prepare(`
       INSERT INTO requirements (module_id, req_id, text, acceptance_criteria, source, rationale, heading_id, position, created_at, updated_at, created_by, updated_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
-    `).run(input.moduleId, reqId, input.text, input.acceptanceCriteria ?? null, input.source ?? null, input.rationale ?? null, input.headingId ?? null, ts, ts, author, author)
-    return db.prepare('SELECT * FROM requirements WHERE id = ?').get(r.lastInsertRowid)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(input.moduleId, reqId, input.text, input.acceptanceCriteria ?? null, input.source ?? null, input.rationale ?? null, headingId, nextPos, ts, ts, author, author)
+    const newId = Number(r.lastInsertRowid)
+
+    // Insert-below: rewrite the whole module's positions into a dense 0..n sequence with the
+    // new row placed immediately after its target, so (position, id) ordering is stable on
+    // reload even though legacy rows all share position 0.
+    if (target) {
+      const others = (db.prepare('SELECT id FROM requirements WHERE module_id = ? AND deleted_at IS NULL AND id != ? ORDER BY position, id')
+        .all(input.moduleId, newId) as any[]).map((x) => x.id)
+      const order: number[] = []
+      for (const id of others) { order.push(id); if (id === target.id) order.push(newId) }
+      if (!order.includes(newId)) order.push(newId)
+      const setPos = db.prepare('UPDATE requirements SET position = ? WHERE id = ?')
+      order.forEach((id, i) => setPos.run(i, id))
+    }
+
+    return db.prepare('SELECT * FROM requirements WHERE id = ?').get(newId)
   })()
 
   return rowToRequirement(row)

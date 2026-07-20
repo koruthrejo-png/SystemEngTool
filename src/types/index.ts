@@ -117,6 +117,8 @@ export interface CreateRequirementInput {
   source?: string
   rationale?: string
   headingId?: number | null
+  // Insert the new requirement directly below this one (same section), instead of appending.
+  afterId?: number
 }
 
 export interface UpdateRequirementInput {

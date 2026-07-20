@@ -116,6 +116,7 @@ interface Store {
   removeModule: (id: number) => Promise<void>
   moveModule: (id: number, newParentId: number | null) => Promise<void>
   addRequirement: (input: CreateRequirementInput) => Promise<void>
+  addRequirementBelow: (afterId: number) => Promise<void>
   updateRequirement: (id: number, input: UpdateRequirementInput) => Promise<void>
   removeRequirement: (id: number) => Promise<void>
   restoreRequirement: (id: number) => Promise<void>
@@ -273,6 +274,16 @@ export const useStore = create<Store>((set, get) => ({
   addRequirement: (input) => run(async () => {
     const req = await window.api.requirements.create(input)
     set((s) => ({ requirements: [...s.requirements, req], selectedRequirementId: req.id }))
+    await ensureAuthorKnown(req.updatedBy, get, set)
+  }),
+
+  // Insert a blank requirement directly below `afterId` (same section). Renumbering happens
+  // server-side, so reload the module list to pick up the new order.
+  addRequirementBelow: (afterId) => run(async () => {
+    const target = get().requirements.find((r) => r.id === afterId)
+    if (!target) return
+    const req = await window.api.requirements.create({ moduleId: target.moduleId, text: '', headingId: target.headingId, afterId })
+    set({ requirements: await window.api.requirements.list(target.moduleId), selectedRequirementId: req.id })
     await ensureAuthorKnown(req.updatedBy, get, set)
   }),
 

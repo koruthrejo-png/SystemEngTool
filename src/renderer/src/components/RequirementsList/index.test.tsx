@@ -65,9 +65,11 @@ describe('RequirementsList', () => {
     expect(screen.getByText(/The system shall respond/)).toBeInTheDocument()
   })
 
-  it('calls selectRequirement when a row is clicked', async () => {
+  it('opens detail on double-click; single click only highlights', async () => {
     render(<RequirementsList />)
     await userEvent.click(screen.getByText('SRS-0001'))
+    expect(storeState.selectRequirement).not.toHaveBeenCalled()
+    await userEvent.dblClick(screen.getByText('SRS-0001'))
     expect(storeState.selectRequirement).toHaveBeenCalledWith(1)
   })
 
@@ -201,7 +203,7 @@ describe('RequirementsList', () => {
   it('renders resize handles on data column headers only', () => {
     render(<RequirementsList />)
     expect(screen.getByLabelText('Resize ID column')).toBeInTheDocument()
-    expect(screen.getByLabelText('Resize Requirement column')).toBeInTheDocument()
+    expect(screen.getByLabelText('Resize Text column')).toBeInTheDocument()
     expect(screen.getByLabelText('Resize Priority column')).toBeInTheDocument()
     expect(screen.queryAllByLabelText(/Resize .* column/)).toHaveLength(8)
   })
@@ -216,8 +218,8 @@ describe('RequirementsList', () => {
     fireEvent.mouseUp(window)
     const cols = header.style.gridTemplateColumns.split(' ')
     expect(cols[1]).toBe(`${parseInt(idBefore) + 60}px`)
-    const saved = JSON.parse(localStorage.getItem('reqarch.reqTable.colWidths.v1')!)
-    expect(saved[1]).toBe(parseInt(idBefore) + 60)
+    const saved = JSON.parse(localStorage.getItem('reqarch.reqTable.columns.v2')!)
+    expect(saved.find((c: { key: string }) => c.key === 'reqId').width).toBe(parseInt(idBefore) + 60)
   })
 
   it('a resize never shrinks a column below the minimum', () => {

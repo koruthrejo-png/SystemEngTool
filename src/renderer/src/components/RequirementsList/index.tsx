@@ -1,38 +1,57 @@
-import { useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useStore } from '../../store'
+import { isTyping } from '../ArchitectureCanvas/deleteKey'
 import { Button, Chip, SectionLabel, Select } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES } from '../../../../types'
 import { buildOutline, visibleRows, canReparent, moveTargets, type OutlineRow } from './outline'
 import { applyFilters } from './filter'
 import FilterPanel from './FilterPanel'
 
-// label '' = structural column (checkbox / actions), not resizable
-const COLUMNS = [
-  { label: '', width: 28 },
-  { label: 'ID', width: 90 },
-  { label: 'Requirement', width: 280 },
-  { label: 'Acceptance Criteria', width: 200 },
-  { label: 'Source', width: 110 },
-  { label: 'Rationale', width: 180 },
-  { label: 'Type', width: 100 },
-  { label: 'Status', width: 92 },
-  { label: 'Priority', width: 80 },
-  { label: '', width: 56 }
-] as const
+// The checkbox (left) and actions (right) columns are structural: fixed position/width,
+// never reordered or resized. Only these data columns in between are drag-reorderable and
+// resizable, keyed so the header and every row body cell follow the same live order.
+type DataColKey = 'reqId' | 'text' | 'ac' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority'
+interface DataCol {
+  key: DataColKey
+  label: string
+  width: number
+}
 
+const CHECKBOX_WIDTH = 28
+const ACTIONS_WIDTH = 56
 const MIN_COL_WIDTH = 48
-const WIDTHS_STORAGE_KEY = 'reqarch.reqTable.colWidths.v1'
+const COLUMNS_STORAGE_KEY = 'reqarch.reqTable.columns.v2'
 
-function loadWidths(): number[] {
+const DEFAULT_DATA_COLUMNS: DataCol[] = [
+  { key: 'reqId', label: 'ID', width: 90 },
+  { key: 'text', label: 'Text', width: 280 },
+  { key: 'ac', label: 'Acceptance Criteria', width: 200 },
+  { key: 'source', label: 'Source', width: 110 },
+  { key: 'rationale', label: 'Rationale', width: 180 },
+  { key: 'reqType', label: 'Type', width: 100 },
+  { key: 'status', label: 'Status', width: 92 },
+  { key: 'priority', label: 'Priority', width: 80 }
+]
+
+const DEFAULT_KEYS = DEFAULT_DATA_COLUMNS.map((c) => c.key).sort().join(',')
+
+// Restore saved order + widths, but only if the set of keys still matches the defaults
+// exactly (guards against a stale saved layout after columns are added/removed in code).
+// Labels always come from code so a rename like Requirement → Text takes effect on reload.
+function loadColumns(): DataCol[] {
   try {
-    const saved = JSON.parse(localStorage.getItem(WIDTHS_STORAGE_KEY) ?? '')
-    if (Array.isArray(saved) && saved.length === COLUMNS.length && saved.every((n) => typeof n === 'number')) {
-      return saved
+    const saved = JSON.parse(localStorage.getItem(COLUMNS_STORAGE_KEY) ?? '') as DataCol[]
+    const keysMatch =
+      Array.isArray(saved) &&
+      saved.every((c) => typeof c?.width === 'number') &&
+      saved.map((c) => c.key).sort().join(',') === DEFAULT_KEYS
+    if (keysMatch) {
+      return saved.map((c) => ({ ...DEFAULT_DATA_COLUMNS.find((d) => d.key === c.key)!, width: c.width }))
     }
   } catch {
     /* fall through to defaults */
   }
-  return COLUMNS.map((c) => c.width)
+  return DEFAULT_DATA_COLUMNS.map((c) => ({ ...c }))
 }
 
 export default function RequirementsList(): JSX.Element {
@@ -41,18 +60,34 @@ export default function RequirementsList(): JSX.Element {
     showDeleted, setShowDeleted,
     filterRules, setFilterRules, filterCombine, setFilterCombine,
     selectedRequirementId, selectRequirement,
-    addRequirement, updateRequirement, removeRequirement, restoreRequirement,
+    addRequirement, addRequirementBelow, updateRequirement, removeRequirement, restoreRequirement,
     checkedIds, toggleChecked, setChecked,
     updateRequirements, removeRequirements,
     headings, collapsedHeadingIds, toggleHeadingCollapsed,
     addHeading, renameHeading, moveHeading, reparentHeading, removeHeading
   } = useStore()
-  const [colWidths, setColWidths] = useState<number[]>(loadWidths)
+  const [columns, setColumns] = useState<DataCol[]>(loadColumns)
+  const [dragCol, setDragCol] = useState<DataColKey | null>(null)
+  const [dragOverCol, setDragOverCol] = useState<DataColKey | null>(null)
   const [dragReqId, setDragReqId] = useState<number | null>(null)
   const [dragHeadingId, setDragHeadingId] = useState<number | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   // single click highlights a row (view-only); double click opens its detail panel
   const [highlightedId, setHighlightedId] = useState<number | null>(null)
+  // right-click context menu, anchored at the cursor for one requirement
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; reqId: number } | null>(null)
+
+  // Escape → close the context menu and deselect (drop highlight + close detail panel).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent): void {
+      if (e.key !== 'Escape' || isTyping(e)) return
+      setCtxMenu(null)
+      setHighlightedId(null)
+      if (useStore.getState().selectedRequirementId !== null) selectRequirement(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectRequirement])
   const [movingHeadingId, setMovingHeadingId] = useState<number | null>(null)
 
   // Every drop target names the section it puts the dragged row into: a heading row names
@@ -82,15 +117,20 @@ export default function RequirementsList(): JSX.Element {
     }
   }
 
-  function startResize(e: ReactMouseEvent, index: number): void {
+  function persistColumns(cols: DataCol[]): void {
+    localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(cols))
+  }
+
+  function startResize(e: ReactMouseEvent, key: DataColKey): void {
     e.preventDefault()
     const startX = e.clientX
-    const startWidth = colWidths[index]
+    const startWidth = columns.find((c) => c.key === key)!.width
     const onMove = (ev: MouseEvent): void => {
-      setColWidths((prev) => {
-        const next = [...prev]
-        next[index] = Math.max(MIN_COL_WIDTH, Math.round(startWidth + ev.clientX - startX))
-        localStorage.setItem(WIDTHS_STORAGE_KEY, JSON.stringify(next))
+      setColumns((prev) => {
+        const next = prev.map((c) =>
+          c.key === key ? { ...c, width: Math.max(MIN_COL_WIDTH, Math.round(startWidth + ev.clientX - startX)) } : c
+        )
+        persistColumns(next)
         return next
       })
     }
@@ -102,7 +142,74 @@ export default function RequirementsList(): JSX.Element {
     window.addEventListener('mouseup', onUp)
   }
 
-  const gridStyle = { gridTemplateColumns: colWidths.map((w) => `${w}px`).join(' ') }
+  // Drop the dragged column next to the target. Direction-aware so both ways work:
+  // dragging right drops it AFTER the target, dragging left drops it BEFORE — otherwise
+  // a rightward move onto the immediate neighbour would land in the same spot (no-op).
+  function reorderColumns(dragKey: DataColKey, targetKey: DataColKey): void {
+    setDragCol(null)
+    setDragOverCol(null)
+    if (dragKey === targetKey) return
+    setColumns((prev) => {
+      const movingRight = prev.findIndex((c) => c.key === dragKey) < prev.findIndex((c) => c.key === targetKey)
+      const dragged = prev.find((c) => c.key === dragKey)!
+      const without = prev.filter((c) => c.key !== dragKey)
+      const at = without.findIndex((c) => c.key === targetKey) + (movingRight ? 1 : 0)
+      without.splice(at, 0, dragged)
+      persistColumns(without)
+      return without
+    })
+  }
+
+  const gridStyle = {
+    gridTemplateColumns: `${CHECKBOX_WIDTH}px ${columns.map((c) => `${c.width}px`).join(' ')} ${ACTIONS_WIDTH}px`
+  }
+
+  // One data cell, rendered by column key so header and body share the live column order.
+  function cell(key: DataColKey, req: (typeof requirements)[number]): JSX.Element {
+    switch (key) {
+      case 'reqId':
+        return <span className="text-xs font-mono text-ink-faint pt-0.5 truncate">{req.reqId}</span>
+      case 'text':
+        return (
+          <span className="text-sm text-ink break-words pr-1">
+            {req.text || <span className="text-ink-faint/50 italic">—</span>}
+          </span>
+        )
+      case 'ac':
+        return (
+          <span className="text-sm text-ink-muted break-words pr-1">
+            {acSummary[req.id] ? (
+              <>
+                <span className="text-xs font-mono text-ink-faint mr-1.5">
+                  {acSummary[req.id].passed}/{acSummary[req.id].total}
+                </span>
+                {acSummary[req.id].first}
+              </>
+            ) : (
+              <span className="text-ink-faint/50">—</span>
+            )}
+          </span>
+        )
+      case 'source':
+        return (
+          <span className="text-xs text-ink-muted truncate">
+            {req.source || <span className="text-ink-faint/50">—</span>}
+          </span>
+        )
+      case 'rationale':
+        return (
+          <span className="text-sm text-ink-muted break-words pr-1">
+            {req.rationale || <span className="text-ink-faint/50">—</span>}
+          </span>
+        )
+      case 'reqType':
+        return <span className="text-xs text-ink-muted pt-0.5 truncate">{req.reqType}</span>
+      case 'status':
+        return <div className="pt-0.5"><Chip value={req.status} /></div>
+      case 'priority':
+        return <div className="pt-0.5"><Chip value={req.priority} /></div>
+    }
+  }
 
   if (!selectedModuleId) {
     return (
@@ -188,33 +295,46 @@ export default function RequirementsList(): JSX.Element {
             style={gridStyle}
             className="grid gap-x-3 px-4 py-2 border-b border-line bg-workspace sticky top-0 z-10"
           >
-            {COLUMNS.map((col, i) =>
-              col.label === '' ? (
-                <span key={i} className="flex items-center">
-                  {i === 0 && !showDeleted && (
-                    <input
-                      type="checkbox"
-                      aria-label="Select all"
-                      checked={allChecked}
-                      onChange={() => setChecked(allChecked ? [] : displayed.map((r) => r.id))}
-                      className="w-3.5 h-3.5 rounded accent-action"
-                    />
-                  )}
-                </span>
-              ) : (
-                <span key={i} className="relative flex items-center min-w-0">
+            <span className="flex items-center">
+              {!showDeleted && (
+                <input
+                  type="checkbox"
+                  aria-label="Select all"
+                  checked={allChecked}
+                  onChange={() => setChecked(allChecked ? [] : displayed.map((r) => r.id))}
+                  className="w-3.5 h-3.5 rounded accent-action"
+                />
+              )}
+            </span>
+            {columns.map((col) => (
+              <span
+                key={col.key}
+                onDragOver={(e) => { if (dragCol && dragCol !== col.key) { e.preventDefault(); setDragOverCol(col.key) } }}
+                onDragLeave={() => setDragOverCol((k) => (k === col.key ? null : k))}
+                onDrop={(e) => { e.preventDefault(); if (dragCol) reorderColumns(dragCol, col.key) }}
+                className={`relative flex items-center min-w-0 -my-2 py-2 ${dragCol === col.key ? 'bg-action-tint/50' : ''} ${dragOverCol === col.key ? 'shadow-[inset_2px_0_0_0_var(--tw-shadow-color)] shadow-action' : ''}`}
+              >
+                {/* Only the label grabs, so the resize handle (mousedown) still works. */}
+                <span
+                  draggable
+                  title="Drag to reorder column"
+                  onDragStart={(e) => { setDragCol(col.key); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move' }}
+                  onDragEnd={() => { setDragCol(null); setDragOverCol(null) }}
+                  className="cursor-grab active:cursor-grabbing select-none"
+                >
                   <SectionLabel>{col.label}</SectionLabel>
-                  <span
-                    role="separator"
-                    aria-label={`Resize ${col.label} column`}
-                    onMouseDown={(e) => startResize(e, i)}
-                    className="absolute -right-2.5 -top-2 -bottom-2 w-2.5 cursor-col-resize flex justify-center group/handle"
-                  >
-                    <span className="w-px h-full bg-transparent group-hover/handle:bg-action" />
-                  </span>
                 </span>
-              )
-            )}
+                <span
+                  role="separator"
+                  aria-label={`Resize ${col.label} column`}
+                  onMouseDown={(e) => startResize(e, col.key)}
+                  className="absolute -right-2.5 -top-2 -bottom-2 w-2.5 cursor-col-resize flex justify-center group/handle"
+                >
+                  <span className="w-px h-full bg-transparent group-hover/handle:bg-action" />
+                </span>
+              </span>
+            ))}
+            <span />
           </div>
 
           {/* Rows */}
@@ -319,6 +439,12 @@ export default function RequirementsList(): JSX.Element {
                     key={req.id}
                     onClick={() => !showDeleted && setHighlightedId(req.id)}
                     onDoubleClick={() => !showDeleted && selectRequirement(req.id)}
+                    onContextMenu={(e) => {
+                      if (showDeleted) return
+                      e.preventDefault()
+                      setHighlightedId(req.id)
+                      setCtxMenu({ x: e.clientX, y: e.clientY, reqId: req.id })
+                    }}
                     draggable={!showDeleted}
                     onDragStart={(e) => { setDragReqId(req.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move' }}
                     onDragEnd={() => { setDragReqId(null); setDragOverKey(null) }}
@@ -347,31 +473,14 @@ export default function RequirementsList(): JSX.Element {
                         />
                       )}
                     </div>
-                    <span className="text-xs font-mono text-ink-faint pt-0.5 truncate">{req.reqId}</span>
-                    <span className="text-sm text-ink break-words pr-1">
-                      {req.text || <span className="text-ink-faint/50 italic">—</span>}
-                    </span>
-                    <span className="text-sm text-ink-muted break-words pr-1">
-                      {acSummary[req.id] ? (
-                        <>
-                          <span className="text-xs font-mono text-ink-faint mr-1.5">
-                            {acSummary[req.id].passed}/{acSummary[req.id].total}
-                          </span>
-                          {acSummary[req.id].first}
-                        </>
-                      ) : (
-                        <span className="text-ink-faint/50">—</span>
-                      )}
-                    </span>
-                    <span className="text-xs text-ink-muted truncate">
-                      {req.source || <span className="text-ink-faint/50">—</span>}
-                    </span>
-                    <span className="text-sm text-ink-muted break-words pr-1">
-                      {req.rationale || <span className="text-ink-faint/50">—</span>}
-                    </span>
-                    <span className="text-xs text-ink-muted pt-0.5 truncate">{req.reqType}</span>
-                    <div className="pt-0.5"><Chip value={req.status} /></div>
-                    <div className="pt-0.5"><Chip value={req.priority} /></div>
+                    {columns.map((col) => (
+                      <span
+                        key={col.key}
+                        className={`min-w-0 -my-3 py-3 ${dragCol === col.key ? 'bg-action-tint/40' : ''}`}
+                      >
+                        {cell(col.key, req)}
+                      </span>
+                    ))}
                     <div className="flex items-start justify-center pt-0.5">
                       {showDeleted ? (
                         <button
@@ -398,6 +507,30 @@ export default function RequirementsList(): JSX.Element {
           )}
         </div>
       </div>
+
+      {ctxMenu && (
+        <>
+          {/* full-screen backdrop: any click (or another right-click) dismisses the menu */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setCtxMenu(null)}
+            onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }}
+          />
+          <div
+            role="menu"
+            style={{ top: ctxMenu.y, left: ctxMenu.x }}
+            className="fixed z-50 min-w-[190px] bg-white border border-line rounded shadow-lg py-1 text-sm"
+          >
+            <button
+              role="menuitem"
+              onClick={() => { addRequirementBelow(ctxMenu.reqId); setCtxMenu(null) }}
+              className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+            >
+              Add requirement below
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
