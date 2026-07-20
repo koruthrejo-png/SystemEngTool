@@ -1,8 +1,10 @@
 import { useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useStore } from '../../store'
 import { Button, Chip, SectionLabel, Select } from '../ui'
-import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES } from '../../../../types'
+import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES } from '../../../../types'
 import { buildOutline, visibleRows, canReparent, moveTargets, type OutlineRow } from './outline'
+import { applyFilters } from './filter'
+import FilterPanel from './FilterPanel'
 
 // label '' = structural column (checkbox / actions), not resizable
 const COLUMNS = [
@@ -37,9 +39,7 @@ export default function RequirementsList(): JSX.Element {
   const {
     selectedModuleId, modules, requirements, deletedRequirements, acSummary,
     showDeleted, setShowDeleted,
-    statusFilter, setStatusFilter,
-    priorityFilter, setPriorityFilter,
-    typeFilter, setTypeFilter,
+    filterRules, setFilterRules, filterCombine, setFilterCombine,
     selectedRequirementId, selectRequirement,
     addRequirement, updateRequirement, removeRequirement, restoreRequirement,
     checkedIds, toggleChecked, setChecked,
@@ -111,11 +111,7 @@ export default function RequirementsList(): JSX.Element {
   }
 
   const module = modules.find((m) => m.id === selectedModuleId)
-  const displayed = (showDeleted ? deletedRequirements : requirements).filter((r) =>
-    (statusFilter === 'All' || r.status === statusFilter) &&
-    (priorityFilter === 'All' || r.priority === priorityFilter) &&
-    (typeFilter === 'All' || r.reqType === typeFilter)
-  )
+  const displayed = applyFilters(showDeleted ? deletedRequirements : requirements, filterRules, filterCombine)
   const allChecked = displayed.length > 0 && displayed.every((r) => checkedIds.includes(r.id))
   const rows: OutlineRow[] = showDeleted
     ? displayed.map((r) => ({ kind: 'requirement' as const, requirement: r }))
@@ -152,12 +148,13 @@ export default function RequirementsList(): JSX.Element {
         </div>
       </div>
 
-      {/* Filter toolbar */}
-      <div className="h-10 px-4 border-b border-line bg-white flex items-center gap-5 shrink-0">
-        <FilterSelect label="Status" value={statusFilter} options={REQUIREMENT_STATUSES} onChange={setStatusFilter} />
-        <FilterSelect label="Priority" value={priorityFilter} options={REQUIREMENT_PRIORITIES} onChange={setPriorityFilter} />
-        <FilterSelect label="Type" value={typeFilter} options={REQUIREMENT_TYPES} onChange={setTypeFilter} />
-      </div>
+      {/* Filter builder */}
+      <FilterPanel
+        rules={filterRules}
+        combine={filterCombine}
+        onRulesChange={setFilterRules}
+        onCombineChange={setFilterCombine}
+      />
 
       {/* Bulk actions */}
       {!showDeleted && checkedIds.length > 0 && (
@@ -399,32 +396,6 @@ export default function RequirementsList(): JSX.Element {
         </div>
       </div>
     </div>
-  )
-}
-
-function FilterSelect<T extends string>({
-  label, value, options, onChange
-}: {
-  label: string
-  value: T | 'All'
-  options: readonly T[]
-  onChange: (value: T | 'All') => void
-}): JSX.Element {
-  return (
-    <label className="flex items-center gap-1.5">
-      <SectionLabel>{label}</SectionLabel>
-      <Select
-        aria-label={`Filter by ${label.toLowerCase()}`}
-        value={value}
-        onChange={(e) => onChange(e.target.value as T | 'All')}
-        className="!w-auto !py-1 !px-2 !text-xs"
-      >
-        <option value="All">All</option>
-        {options.map((o) => (
-          <option key={o} value={o}>{o}</option>
-        ))}
-      </Select>
-    </label>
   )
 }
 

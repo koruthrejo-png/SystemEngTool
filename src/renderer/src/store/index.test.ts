@@ -127,20 +127,18 @@ describe('store', () => {
   })
 
   it('filter setters update filter state', () => {
-    useStore.getState().setStatusFilter('Approved')
-    useStore.getState().setPriorityFilter('High')
-    useStore.getState().setTypeFilter('Functional')
-    expect(useStore.getState().statusFilter).toBe('Approved')
-    expect(useStore.getState().priorityFilter).toBe('High')
-    expect(useStore.getState().typeFilter).toBe('Functional')
+    const rules = [{ id: 'r1', attr: 'status', op: 'equals', value: 'Approved' } as const]
+    useStore.getState().setFilterRules(rules)
+    useStore.getState().setFilterCombine('OR')
+    expect(useStore.getState().filterRules).toEqual(rules)
+    expect(useStore.getState().filterCombine).toBe('OR')
   })
 
-  it('selectModule resets filters to All', async () => {
-    useStore.setState({ statusFilter: 'Approved', priorityFilter: 'High', typeFilter: 'Functional' })
+  it('selectModule resets filters', async () => {
+    useStore.setState({ filterRules: [{ id: 'r1', attr: 'status', op: 'equals', value: 'Approved' }], filterCombine: 'OR' })
     await useStore.getState().selectModule(1)
-    expect(useStore.getState().statusFilter).toBe('All')
-    expect(useStore.getState().priorityFilter).toBe('All')
-    expect(useStore.getState().typeFilter).toBe('All')
+    expect(useStore.getState().filterRules).toEqual([])
+    expect(useStore.getState().filterCombine).toBe('AND')
   })
 
   it('toggleChecked adds then removes an id', () => {
@@ -163,15 +161,11 @@ describe('store', () => {
 
   it('filter setters and selectModule clear checkedIds', async () => {
     useStore.setState({ checkedIds: [1] })
-    useStore.getState().setStatusFilter('Approved')
+    useStore.getState().setFilterRules([])
     expect(useStore.getState().checkedIds).toEqual([])
 
     useStore.setState({ checkedIds: [1] })
-    useStore.getState().setPriorityFilter('High')
-    expect(useStore.getState().checkedIds).toEqual([])
-
-    useStore.setState({ checkedIds: [1] })
-    useStore.getState().setTypeFilter('Functional')
+    useStore.getState().setFilterCombine('OR')
     expect(useStore.getState().checkedIds).toEqual([])
 
     useStore.setState({ checkedIds: [1] })

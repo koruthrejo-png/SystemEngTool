@@ -31,7 +31,7 @@ beforeEach(() => {
     requirements: [req1, req2],
     deletedRequirements: [],
     showDeleted: false,
-    statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All',
+    filterRules: [], filterCombine: 'AND',
     selectedRequirementId: null,
     selectRequirement: vi.fn(),
     addRequirement: vi.fn().mockResolvedValue(undefined),
@@ -39,9 +39,8 @@ beforeEach(() => {
     removeRequirement: vi.fn().mockResolvedValue(undefined),
     restoreRequirement: vi.fn().mockResolvedValue(undefined),
     setShowDeleted: vi.fn().mockResolvedValue(undefined),
-    setStatusFilter: vi.fn(),
-    setPriorityFilter: vi.fn(),
-    setTypeFilter: vi.fn(),
+    setFilterRules: vi.fn(),
+    setFilterCombine: vi.fn(),
     acSummary: {},
     checkedIds: [],
     toggleChecked: vi.fn(),
@@ -85,27 +84,26 @@ describe('RequirementsList', () => {
     expect(within(row).getByText('Functional')).toBeInTheDocument()
   })
 
-  it('filters rows by status', () => {
-    storeState.statusFilter = 'Approved'
+  it('filters rows by a status rule', () => {
+    storeState.filterRules = [{ id: 'a', attr: 'status', op: 'equals', value: 'Approved' }]
     render(<RequirementsList />)
     expect(screen.getByText('SRS-0001')).toBeInTheDocument()
     expect(screen.queryByText('SRS-0002')).not.toBeInTheDocument()
   })
 
   it('item count reflects filtered rows', () => {
-    storeState.priorityFilter = 'High'
+    storeState.filterRules = [{ id: 'a', attr: 'priority', op: 'equals', value: 'High' }]
     render(<RequirementsList />)
     expect(screen.getByText('1 item')).toBeInTheDocument()
   })
 
-  it('filter selects call store setters', async () => {
+  it('+ Add filter appends a default rule via the store setter', async () => {
     render(<RequirementsList />)
-    await userEvent.selectOptions(screen.getByLabelText('Filter by status'), 'Approved')
-    expect(storeState.setStatusFilter).toHaveBeenCalledWith('Approved')
-    await userEvent.selectOptions(screen.getByLabelText('Filter by priority'), 'Low')
-    expect(storeState.setPriorityFilter).toHaveBeenCalledWith('Low')
-    await userEvent.selectOptions(screen.getByLabelText('Filter by type'), 'Interface')
-    expect(storeState.setTypeFilter).toHaveBeenCalledWith('Interface')
+    await userEvent.click(screen.getByRole('button', { name: /^Filter/ }))
+    await userEvent.click(screen.getByText('+ Add filter'))
+    expect(storeState.setFilterRules).toHaveBeenCalledWith([
+      expect.objectContaining({ attr: 'text', op: 'contains', value: '' })
+    ])
   })
 
   it('show-deleted checkbox calls setShowDeleted', async () => {

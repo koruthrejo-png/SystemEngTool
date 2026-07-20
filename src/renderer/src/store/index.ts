@@ -12,13 +12,13 @@ import type {
   CreateConnectionInput, UpdateConnectionInput,
   RequirementCustomField, UpdateCustomFieldInput,
   ConnectionCustomField, UpdateConnectionCustomFieldInput,
-  RequirementStatus, RequirementPriority, RequirementType,
   ReqHeading, CreateHeadingInput,
   ElementRequirementLink, RequirementLink,
   AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   Layer, LayerState, ElementLayerLink, ConnectionLayerLink
 } from '../../../types'
 import { summarize, type AcSummaryEntry } from './acSummary'
+import type { FilterRule, FilterCombine } from '../components/RequirementsList/filter'
 import { revertToBaseline } from '../components/ArchitectureCanvas/nodes'
 import { type AidKey, type CanvasAids, CANVAS_AIDS_DEFAULTS, CANVAS_AIDS_KEY } from '../components/ArchitectureCanvas/canvasAids'
 
@@ -85,9 +85,8 @@ interface Store {
   acSummary: Record<number, AcSummaryEntry>
   showDeleted: boolean
   deletedRequirements: Requirement[]
-  statusFilter: RequirementStatus | 'All'
-  priorityFilter: RequirementPriority | 'All'
-  typeFilter: RequirementType | 'All'
+  filterRules: FilterRule[]
+  filterCombine: FilterCombine
   checkedIds: number[]
   traceLinks: ElementRequirementLink[]
   reqLinks: RequirementLink[]
@@ -127,9 +126,8 @@ interface Store {
   removeHeading: (id: number) => Promise<void>
   toggleHeadingCollapsed: (id: number) => void
   setShowDeleted: (show: boolean) => Promise<void>
-  setStatusFilter: (f: RequirementStatus | 'All') => void
-  setPriorityFilter: (f: RequirementPriority | 'All') => void
-  setTypeFilter: (f: RequirementType | 'All') => void
+  setFilterRules: (rules: FilterRule[]) => void
+  setFilterCombine: (combine: FilterCombine) => void
   toggleChecked: (id: number) => void
   setChecked: (ids: number[]) => void
   updateRequirements: (ids: number[], patch: UpdateRequirementInput) => Promise<void>
@@ -211,7 +209,7 @@ export const useStore = create<Store>((set, get) => ({
   selectedElementId: null, selectedConnectionId: null, detailPanelOpen: false, interfaceArchFilter: 'all', projectRequirements: [],
   customFields: [], connectionCustomFields: [], projectConnectionCustomFields: [],
   acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
-  statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [],
+  filterRules: [], filterCombine: 'AND', checkedIds: [],
   traceLinks: [], reqLinks: [],
   layers: [], elementLayers: [], connectionLayers: [],
   undoStack: [], redoStack: [],
@@ -230,7 +228,7 @@ export const useStore = create<Store>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   selectModule: async (id) => {
-    set({ selectedModuleId: id, requirements: [], headings: [], collapsedHeadingIds: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], acItems: [], acSummary: {}, statusFilter: 'All', priorityFilter: 'All', typeFilter: 'All', checkedIds: [] })
+    set({ selectedModuleId: id, requirements: [], headings: [], collapsedHeadingIds: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], acItems: [], acSummary: {}, filterRules: [], filterCombine: 'AND', checkedIds: [] })
     if (id === null) return
     const [requirements, headings, moduleAcItems] = await Promise.all([
       window.api.requirements.list(id),
@@ -357,9 +355,8 @@ export const useStore = create<Store>((set, get) => ({
     }
   },
 
-  setStatusFilter: (f) => set({ statusFilter: f, checkedIds: [] }),
-  setPriorityFilter: (f) => set({ priorityFilter: f, checkedIds: [] }),
-  setTypeFilter: (f) => set({ typeFilter: f, checkedIds: [] }),
+  setFilterRules: (rules) => set({ filterRules: rules, checkedIds: [] }),
+  setFilterCombine: (combine) => set({ filterCombine: combine, checkedIds: [] }),
 
   toggleChecked: (id) => set((s) => ({
     checkedIds: s.checkedIds.includes(id)
