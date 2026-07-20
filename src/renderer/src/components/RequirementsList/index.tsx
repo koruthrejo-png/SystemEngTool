@@ -51,6 +51,8 @@ export default function RequirementsList(): JSX.Element {
   const [dragReqId, setDragReqId] = useState<number | null>(null)
   const [dragHeadingId, setDragHeadingId] = useState<number | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
+  // single click highlights a row (view-only); double click opens its detail panel
+  const [highlightedId, setHighlightedId] = useState<number | null>(null)
   const [movingHeadingId, setMovingHeadingId] = useState<number | null>(null)
 
   // Every drop target names the section it puts the dragged row into: a heading row names
@@ -315,7 +317,8 @@ export default function RequirementsList(): JSX.Element {
                 return (
                   <div
                     key={req.id}
-                    onClick={() => !showDeleted && selectRequirement(req.id)}
+                    onClick={() => !showDeleted && setHighlightedId(req.id)}
+                    onDoubleClick={() => !showDeleted && selectRequirement(req.id)}
                     draggable={!showDeleted}
                     onDragStart={(e) => { setDragReqId(req.id); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move' }}
                     onDragEnd={() => { setDragReqId(null); setDragOverKey(null) }}
@@ -329,7 +332,7 @@ export default function RequirementsList(): JSX.Element {
                     i % 2 === 1 ? 'bg-workspace/50' : 'bg-white',
                     showDeleted ? 'opacity-60 border-l-transparent' : 'cursor-pointer hover:bg-action-tint/20',
                     dragOverKey === `r-${req.id}` ? 'ring-2 ring-inset ring-action' : '',
-                    !showDeleted && selectedRequirementId === req.id
+                    !showDeleted && (selectedRequirementId === req.id || highlightedId === req.id)
                       ? '!bg-action-tint/40 border-l-action'
                       : 'border-l-transparent'
                   ].join(' ')}>
