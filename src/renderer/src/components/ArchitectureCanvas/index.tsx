@@ -359,6 +359,16 @@ function CanvasInner(): JSX.Element {
     function onKey(e: KeyboardEvent): void {
       if (e.repeat) return
 
+      // Escape → deselect the current object (and close its detail panel).
+      if (e.key === 'Escape' && !isTyping(e)) {
+        const { selectedElementId, selectedConnectionId } = useStore.getState()
+        if (selectedElementId !== null || selectedConnectionId !== null) {
+          selectElement(null)
+          selectConnection(null)
+        }
+        return
+      }
+
       // Delete / Backspace → remove the selected connection. Blocks are deleted by React
       // Flow's own deleteKeyCode="Delete" + onNodesDelete, which is why this predicate only
       // covers connections. (Asymmetry that follows: Backspace removes a connection but not
@@ -406,7 +416,7 @@ function CanvasInner(): JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [undo, redo, removeConnection, addElement])
+  }, [undo, redo, removeConnection, addElement, selectElement, selectConnection])
 
   const onConnect = useCallback((params: Connection) => {
     if (!project) return
