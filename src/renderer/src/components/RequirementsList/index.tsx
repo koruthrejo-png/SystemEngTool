@@ -10,7 +10,7 @@ import FilterPanel from './FilterPanel'
 // The checkbox (left) and actions (right) columns are structural: fixed position/width,
 // never reordered or resized. Only these data columns in between are drag-reorderable and
 // resizable, keyed so the header and every row body cell follow the same live order.
-type DataColKey = 'reqId' | 'text' | 'ac' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority'
+type DataColKey = 'reqId' | 'entryType' | 'text' | 'ac' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority'
 interface DataCol {
   key: DataColKey
   label: string
@@ -24,6 +24,7 @@ const COLUMNS_STORAGE_KEY = 'reqarch.reqTable.columns.v2'
 
 const DEFAULT_DATA_COLUMNS: DataCol[] = [
   { key: 'reqId', label: 'ID', width: 90 },
+  { key: 'entryType', label: 'Entry Type', width: 120 },
   { key: 'text', label: 'Text', width: 280 },
   { key: 'ac', label: 'Acceptance Criteria', width: 200 },
   { key: 'source', label: 'Source', width: 110 },
@@ -169,6 +170,25 @@ export default function RequirementsList(): JSX.Element {
     switch (key) {
       case 'reqId':
         return <span className="text-xs font-mono text-ink-faint pt-0.5 truncate">{req.reqId}</span>
+      case 'entryType':
+        // Inline free-text with preset suggestions (datalist). stopPropagation so editing the
+        // cell doesn't trigger the row's single/double-click select handlers.
+        return (
+          <input
+            key={req.entryType}
+            defaultValue={req.entryType}
+            className="w-full text-xs text-ink-muted bg-transparent border border-transparent hover:border-line focus:border-action rounded px-1 py-0.5 focus:outline-none"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+            onBlur={(e) => {
+              const v = e.target.value.trim()
+              if (v && v !== req.entryType) updateRequirement(req.id, { entryType: v })
+              else e.target.value = req.entryType
+            }}
+          />
+        )
       case 'text':
         return (
           <span className="text-sm text-ink break-words pr-1">
@@ -251,7 +271,7 @@ export default function RequirementsList(): JSX.Element {
           {!showDeleted && (
             <>
               <Button variant="secondary" onClick={() => addHeading({ moduleId: selectedModuleId! })}>+ Heading</Button>
-              <Button onClick={handleAdd}>+ New Requirement</Button>
+              <Button onClick={handleAdd}>+ New Entry</Button>
             </>
           )}
         </div>
@@ -526,7 +546,7 @@ export default function RequirementsList(): JSX.Element {
               onClick={() => { addRequirementBelow(ctxMenu.reqId); setCtxMenu(null) }}
               className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
             >
-              Add requirement below
+              Add entry below
             </button>
           </div>
         </>

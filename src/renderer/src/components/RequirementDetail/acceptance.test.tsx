@@ -12,7 +12,7 @@ const mockMoveAcItem = vi.fn().mockResolvedValue(undefined)
 const req: Requirement = {
   id: 5, moduleId: 3, reqId: 'SRS-0001', text: 'The system shall X.',
   acceptanceCriteria: null, source: null, rationale: null, position: 0,
-  status: 'Draft', priority: 'Medium', reqType: 'Functional', headingId: null,
+  status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement', headingId: null,
   deletedAt: null, createdAt: '', updatedAt: ''
 } as Requirement
 

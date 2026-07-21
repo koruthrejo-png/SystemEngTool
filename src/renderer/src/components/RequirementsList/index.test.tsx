@@ -12,13 +12,13 @@ vi.mock('../../store', () => ({
 const req1 = {
   id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'The system shall respond within 2s',
   acceptanceCriteria: null, source: null, rationale: null,
-  status: 'Approved', priority: 'High', reqType: 'Functional', headingId: null,
+  status: 'Approved', priority: 'High', reqType: 'Functional', entryType: 'Requirement', headingId: null,
   position: 0, deletedAt: null, createdAt: '', updatedAt: ''
 }
 const req2 = {
   id: 2, moduleId: 1, reqId: 'SRS-0002', text: 'The system shall log all faults',
   acceptanceCriteria: null, source: null, rationale: null,
-  status: 'Draft', priority: 'Low', reqType: 'Non-Functional', headingId: null,
+  status: 'Draft', priority: 'Low', reqType: 'Non-Functional', entryType: 'Requirement', headingId: null,
   position: 1, deletedAt: null, createdAt: '', updatedAt: ''
 }
 
@@ -73,9 +73,9 @@ describe('RequirementsList', () => {
     expect(storeState.selectRequirement).toHaveBeenCalledWith(1)
   })
 
-  it('shows + New Requirement button', () => {
+  it('shows + New Entry button', () => {
     render(<RequirementsList />)
-    expect(screen.getByText('+ New Requirement')).toBeInTheDocument()
+    expect(screen.getByText('+ New Entry')).toBeInTheDocument()
   })
 
   it('renders status and priority chips and type text in the row', () => {
@@ -205,7 +205,7 @@ describe('RequirementsList', () => {
     expect(screen.getByLabelText('Resize ID column')).toBeInTheDocument()
     expect(screen.getByLabelText('Resize Text column')).toBeInTheDocument()
     expect(screen.getByLabelText('Resize Priority column')).toBeInTheDocument()
-    expect(screen.queryAllByLabelText(/Resize .* column/)).toHaveLength(8)
+    expect(screen.queryAllByLabelText(/Resize .* column/)).toHaveLength(9)
   })
 
   it('dragging a handle resizes the column and persists the widths', () => {

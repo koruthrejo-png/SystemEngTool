@@ -21,7 +21,7 @@ function results(over: Partial<SearchResults>): SearchResults {
 const req: Requirement = {
   id: 7, moduleId: 3, reqId: 'SRS-0007', text: 'The system shall search.',
   acceptanceCriteria: null, source: null, rationale: null, position: 0,
-  status: 'Draft', priority: 'Medium', reqType: 'Functional', headingId: null,
+  status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement', headingId: null,
   deletedAt: null, createdAt: '', updatedAt: '', createdBy: null, updatedBy: null
 }
 const mod: Module = { id: 3, projectId: 1, parentId: null, kind: 'module', name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 1, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }

@@ -11,7 +11,7 @@ vi.mock('../../store', () => ({
 const req = (id: number): any => ({
   id, moduleId: 1, reqId: `SRS-${id}`, text: `Req ${id}`,
   acceptanceCriteria: null, source: null, rationale: null,
-  status: 'Draft', priority: 'Medium', reqType: 'Functional',
+  status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement',
   headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: ''
 })
 

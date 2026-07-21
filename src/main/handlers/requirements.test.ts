@@ -116,7 +116,7 @@ describe('requirements handler', () => {
 
   it('updateRequirement changes status, priority, and type without touching other fields', () => {
     const req = createRequirement({ moduleId, text: 'Keep this text' })
-    const updated = updateRequirement(req.id, { status: 'Approved', priority: 'High', reqType: 'Interface' })
+    const updated = updateRequirement(req.id, { status: 'Approved', priority: 'High', reqType: 'Interface', entryType: 'Requirement' })
     expect(updated.status).toBe('Approved')
     expect(updated.priority).toBe('High')
     expect(updated.reqType).toBe('Interface')

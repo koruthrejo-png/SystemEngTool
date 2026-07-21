@@ -5,7 +5,7 @@ export type FilterOperator =
   | 'contains' | 'notContains' | 'equals' | 'startsWith' | 'isEmpty' | 'isNotEmpty'
 
 export type FilterAttrKey =
-  | 'reqId' | 'text' | 'acceptanceCriteria' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority'
+  | 'reqId' | 'entryType' | 'text' | 'acceptanceCriteria' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority'
 
 export interface FilterRule {
   id: string
@@ -36,6 +36,7 @@ export interface FilterableAttr {
 // Ordered for the attribute dropdown; `get` coerces null/undefined to ''.
 export const FILTERABLE_ATTRS: readonly FilterableAttr[] = [
   { key: 'reqId', label: 'ID', kind: 'text', get: (r) => r.reqId ?? '' },
+  { key: 'entryType', label: 'Entry Type', kind: 'text', get: (r) => r.entryType ?? '' },
   { key: 'text', label: 'Requirement', kind: 'text', get: (r) => r.text ?? '' },
   { key: 'acceptanceCriteria', label: 'Acceptance Criteria', kind: 'text', get: (r) => r.acceptanceCriteria ?? '' },
   { key: 'source', label: 'Source', kind: 'text', get: (r) => r.source ?? '' },

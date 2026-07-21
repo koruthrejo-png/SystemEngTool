@@ -11,7 +11,7 @@ const mockSetActiveTab = vi.fn()
 const req = {
   id: 5, moduleId: 3, reqId: 'SRS-0005', text: 'The system shall regulate temperature.',
   acceptanceCriteria: null, source: null, rationale: null, position: 0,
-  status: 'Draft', priority: 'Medium', reqType: 'Functional', headingId: null,
+  status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement', headingId: null,
   deletedAt: null, createdAt: '', updatedAt: ''
 } as Requirement
 

@@ -10,7 +10,7 @@ export function rowToRequirement(row: any): Requirement {
     id: row.id, moduleId: row.module_id, reqId: row.req_id, text: row.text,
     acceptanceCriteria: row.acceptance_criteria ?? null,
     source: row.source ?? null, rationale: row.rationale ?? null,
-    status: row.status, priority: row.priority, reqType: row.req_type,
+    status: row.status, priority: row.priority, reqType: row.req_type, entryType: row.entry_type,
     headingId: row.heading_id ?? null,
     position: row.position, deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at, updatedAt: row.updated_at,
@@ -86,7 +86,7 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
   if (!existing) throw new Error(`Requirement ${id} not found`)
   // `created_by` is deliberately absent from the SET list — who wrote it first never changes.
   db.prepare(`
-    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, heading_id = ?, updated_at = ?, updated_by = ? WHERE id = ?
+    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, entry_type = ?, heading_id = ?, updated_at = ?, updated_by = ? WHERE id = ?
   `).run(
     // nullable text fields coerce '' → null; NOT NULL enum fields have no empty state, so plain ??
     input.text ?? existing.text,
@@ -96,6 +96,7 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
     input.status ?? existing.status,
     input.priority ?? existing.priority,
     input.reqType ?? existing.req_type,
+    input.entryType ?? existing.entry_type,
     input.headingId !== undefined ? input.headingId : existing.heading_id,
     now(), currentUserRowId(db), id
   )

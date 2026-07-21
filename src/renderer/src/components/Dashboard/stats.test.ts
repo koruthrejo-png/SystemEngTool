@@ -6,7 +6,7 @@ function req(partial: Partial<Requirement> & { id: number }): Requirement {
   return {
     moduleId: 1, reqId: `SRS-${partial.id}`, text: `R${partial.id}`,
     acceptanceCriteria: null, source: null, rationale: null,
-    status: 'Draft', priority: 'Medium', reqType: 'Functional',
+    status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement',
     headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: '2026-01-01',
     createdBy: null, updatedBy: null, ...partial
   }

@@ -29,14 +29,17 @@ export interface Module {
   updatedAt: string
 }
 
-export const REQUIREMENT_STATUSES = ['Draft', 'Review', 'Approved', 'Rejected'] as const
+export const REQUIREMENT_STATUSES = ['Draft', 'Review', 'Approved', 'Rejected', 'N/A'] as const
 export type RequirementStatus = (typeof REQUIREMENT_STATUSES)[number]
 
-export const REQUIREMENT_PRIORITIES = ['High', 'Medium', 'Low'] as const
+export const REQUIREMENT_PRIORITIES = ['High', 'Medium', 'Low', 'N/A'] as const
 export type RequirementPriority = (typeof REQUIREMENT_PRIORITIES)[number]
 
-export const REQUIREMENT_TYPES = ['Functional', 'Non-Functional', 'Interface', 'Performance', 'Constraint'] as const
+export const REQUIREMENT_TYPES = ['Functional', 'Non-Functional', 'Interface', 'Performance', 'Constraint', 'N/A'] as const
 export type RequirementType = (typeof REQUIREMENT_TYPES)[number]
+
+// Entry Type is free-form: the user types their own value, no preset list. Stored as a plain
+// string (NOT NULL DEFAULT 'Requirement').
 
 export const AC_STATUSES = ['Unverified', 'Passed', 'Failed'] as const
 export type AcStatus = (typeof AC_STATUSES)[number]
@@ -67,6 +70,7 @@ export interface Requirement {
   status: RequirementStatus
   priority: RequirementPriority
   reqType: RequirementType
+  entryType: string
   headingId: number | null
   position: number
   deletedAt: string | null
@@ -129,6 +133,7 @@ export interface UpdateRequirementInput {
   status?: RequirementStatus
   priority?: RequirementPriority
   reqType?: RequirementType
+  entryType?: string
   headingId?: number | null
 }
 
