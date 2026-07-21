@@ -476,6 +476,28 @@ Repo pushed to GitHub for the first time this session: remote `origin` → `http
 
 **Uncommitted at session start reminder:** dev app (`npm run dev`, HMR) was left running through this session for live testing — the `dev` HMR trap fixed 2026-07-17 means edits now actually hot-reload.
 
+## Session 2026-07-21c/22 — Two-row header, Entry Type, inline cell editing, column hide/show
+
+All on `main`, live-verified via the Playwright driver against fresh builds. Typecheck (node+web) clean throughout; renderer suite ~123 passing.
+
+**1. Two-row header (`f443eb6`).** Split the single navy bar into a slim utility bar (`bg-navy-deep`: breadcrumb project switcher `ReqArch Suite / <project> ▾`, fixed-width search, `+ New Project`, account menu `R ▾`) + a nav bar (`bg-navy`) for the 5 module tabs. Project name no longer wraps. Open moved into the switcher dropdown; Settings moved into the far-right account menu. New `src/renderer/src/components/HeaderMenu.tsx` — generic click-outside + Escape dropdown (trigger + `children(close)`), reused for switcher + account (+ later the Columns menu). `GlobalSearch` root `w-64`→`w-full` (width now parent-controlled).
+
+**2. Backlog 32–43 + 3 specs (`67b0bbf`).** See the 2026-07-21b section below — unchanged.
+
+**3. Entry Type column + N/A (`991b835`).** New free-form `entry_type` column on `requirements` (`TEXT NOT NULL DEFAULT 'Requirement'`, migration mirrors `req_type`), between ID and Text, filterable (text attr in `filter.ts`). **Purely user-typed — no preset list/datalist** (an earlier datalist was removed per user). Added `N/A` to `REQUIREMENT_TYPES`/`STATUSES`/`PRIORITIES` (Chip renders N/A via its existing unknown-value neutral fallback — no style entry). Renamed add affordances requirement→entry: `+ New Entry` button, right-click `Add entry below`. `mockReq.reqType` pinned `as const` (latent widening surfaced when `entryType` became required).
+
+**4. Inline cell editing + column hide/show — UNCOMMITTED AT HANDOFF TIME, committing now.** Renderer-only, isolated to `RequirementsList/index.tsx` (+ `HeaderMenu` reuse); reuses `updateRequirement`/`selectRequirement`. No backend/type/store/IPC changes.
+- **Inline editing** for the free-text columns Text, Source, Rationale, Entry Type via a local `EditableCell` component (uncontrolled `defaultValue`, `key`-remount on external change, `onMouseDown` stopPropagation so caret-click doesn't start the row drag; blur saves via `updateRequirement`, Esc reverts, Enter blurs single-line / newline in multiline; Text/Rationale are auto-growing `<textarea>` via `autoGrow`). **Box-less by user request:** transparent border, reveals a faint outline only on hover/focus — plain-text look on unselected rows. Double-click a row still opens Properties.
+- **Column hide/show:** `DataCol` gained `hidden?`; render `visibleColumns = columns.filter(!hidden)`. Left-click a column header → cursor-anchored `colMenu` with "Hide column". Toolbar **Columns ▾** (HeaderMenu) lists all columns with show/hide checkboxes (the unhide home). Persist bumped to localStorage `reqarch.reqTable.columns.v3` (adds `hidden`; old v2 ignored → falls back to code defaults once).
+- **Acceptance Criteria in the table = read-only summary** (`passed/total` + first item) that **opens the Properties drawer on click**. An inline multi-item AC checklist (editable boxes + status chips per row, module-wide `acByReq` store map + `groupByReq`) was built this session then **fully reverted** at the user's request ("too much going on") — AC editing lives only in the drawer. `acByReq`/`groupByReq` were removed (no dead code). If you see them in history (built ~2026-07-22), they are intentionally gone.
+
+Plan file for the inline-edit/AC work: `~/.claude/plans/fuzzy-knitting-wolf.md`.
+
+**⚠️ Live-verify notes / residue:**
+- **`[EDIT]` on Satellite Demo SAT-001 text is CLEANED** in the DB (verified by fresh-launch read `…designated target region.`). A 2026-07-21c programmatic revert had silently failed (programmatic `.blur()` didn't fire React's onBlur→save); refixed 2026-07-22 with real keyboard Backspace+Tab, confirmed persisted across relaunch.
+- **Two Electron instances share one `.reqarch` file** when the dev app (`npm run dev`) and the verify-driver run together. Keep driver runs brief; don't edit the same rows in both mid-verify (stale-overwrite risk). The dev app can show stale in-memory values (e.g. `[EDIT]`) until the module is re-selected/relaunched.
+- Satellite Demo has real AC items on SAT-001 (`DND test report…`, `testv2`, both Passed) — user's own data, left as-is.
+
 ## Session 2026-07-21b — Backlog expansion + 3 high-value specs (NO CODE YET)
 
 Brainstorm + spec-authoring session. **No code shipped** — backlog doc + three design specs only. Suite untouched (443). Dev app was left running (`npm run dev`, HMR).
