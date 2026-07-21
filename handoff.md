@@ -476,6 +476,31 @@ Repo pushed to GitHub for the first time this session: remote `origin` → `http
 
 **Uncommitted at session start reminder:** dev app (`npm run dev`, HMR) was left running through this session for live testing — the `dev` HMR trap fixed 2026-07-17 means edits now actually hot-reload.
 
+## Session 2026-07-21b — Backlog expansion + 3 high-value specs (NO CODE YET)
+
+Brainstorm + spec-authoring session. **No code shipped** — backlog doc + three design specs only. Suite untouched (443). Dev app was left running (`npm run dev`, HMR).
+
+**Backlog items 32–43 added** to `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md` (§6, "2026-07-21 additions"). High-value 32–35 (specs written this session); medium 36–43 parked (not specced).
+- 32 CSV/Excel export · 33 ReqIF import/export · 34 requirement change history · 35 baselines/snapshots
+- 36 comments/review threads · 37 requirement quality linter · 38 saved filter views · 39 verification/test-method field · 40 canvas auto-layout · 41 export canvas PNG/SVG · 42 interface-table export · 43 right-click menu more actions
+
+**Three design specs written (parallel general-purpose subagents; NOT cavecrew-builder — it refuses new-feature files).** All three lean on the existing identity/uuid model, `run()`/`lastError` store convention, and dual-copy better-sqlite3 ABI test setup — **no new native deps**.
+
+1. **Export / ReqIF interchange (items 32/33)** — `docs/superpowers/specs/2026-07-21-requirements-export-import-design.md`. Zero-dep phase 1: hand-rolled pure `csv.ts` + `reqif.ts` export; ReqIF *import* fast-follow with one pure-JS dep `fast-xml-parser`. xlsx deferred. Thin `io.ts` handler (reuses `projects.ts` dialog pattern); import routes through `createRequirement`/`updateRequirement` so main stamps attribution. 4 IPC (`io:exportCsv`/`exportReqif`/`importCsv`/`importReqif`); Export ▾/Import ▾ in RequirementsList toolbar. Merge = match-by-req_id → update else create, one transaction, bad rows skip-and-report. Scope note: only legacy `acceptance_criteria` TEXT round-trips, not structured AC items.
+
+2. **Requirement change history (item 34)** — `docs/superpowers/specs/2026-07-21-requirement-history-design.md`. One `requirement_history` table, **row-per-changed-field** (id, requirement_id FK, field, old_value, new_value, changed_by FK→users, changed_at). Diff computed **in main** inside `updateRequirement` vs pre-update row, in the UPDATE transaction (renderer can't spoof what/who; no-op writes zero rows). Tracks 7 core fields; custom fields + AC = follow-up. Never fabricates history for legacy rows. One read-only IPC `requirementHistory:list`; collapsed timeline in `RequirementDetail`, author via `userName()`.
+
+3. **Baselines / snapshots (item 35)** — `docs/superpowers/specs/2026-07-21-baselines-snapshots-design.md`. Storage = single `baselines` table, project serialized to **JSON in a TEXT column** (beats sibling-file + per-table-rows; gzip-BLOB upgrade path noted). `created_by` integer FK, but frozen requirements resolve author int→uuid at freeze time (survives server ingest). Diff keyed by stable `reqId` text via pure `diffSnapshots()` → `{added, removed, modified}`; `baselines:create/list/diff/delete` (`list` omits blob). UI = Dashboard card. v1 = requirements-only, view/diff, hard delete; deferred: architecture in snapshot, restore/revert, export.
+
+**⚠️ OPEN DECISIONS blocking plan/build — user has NOT answered yet:**
+- **Export:** xlsx or CSV-only v1? (spec recommends CSV-only)
+- **History:** log AC/custom-field changes now or core-7-fields first? (recommends core first) · retention (keep-all default) · word-level text diff vs truncated old→new
+- **Baselines:** requirements-only vs +architecture v1? · view/diff-only vs restore-to-baseline? · export a baseline? · hard vs soft delete?
+
+**User-chosen v1 scopes (2026-07-21b, no build started):** Export = **CSV-only** (ReqIF export in, ReqIF import + xlsx deferred). History = **core 7 fields** (custom fields + AC = follow-up). Baselines = **requirements-only, view/diff, hard delete** (no restore, no architecture). Build order NOT chosen — user stopped at the handoff. These lock the v1 shape when a plan is written.
+
+Each spec has a fuller "Open questions" section. Next step: pick a build target → write plan → subagent-driven build.
+
 ## Session 2026-07-20/21 — Requirements filter builder + table interaction polish
 
 All on `main`, each feature live-verified via the Playwright driver against a fresh build. Suite **441 → 443 passing / 0 failed**, typecheck (node + web) clean. Five features, commits `10db547`, `79a674e`, `4dde19e`, `1949072` (filter builder was `10db547`; the earlier three-dropdown Status/Priority/Type filters were **removed**, subsumed by the builder).

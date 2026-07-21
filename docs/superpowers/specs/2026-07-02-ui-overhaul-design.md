@@ -181,6 +181,26 @@ Recorded so they can be planned as future feature work.
 30. ~~**ID digits default + live preview.** The module create form defaulted to 4 ID digits and gave no indication what the minted ID would look like~~ — DONE 2026-07-15 (`4d26a13`, merged; tooltip tidied in `e5963bf`). Digits now default to **1** (`SRS-1`) and the field stays editable so `SRS-001` remains reachable; a live `First ID:` preview mirrors `requirements.ts:37` exactly — uppercasing the prefix as `handleSubmit` does, using the literal counter `1` a new module always starts at, and keeping the hardcoded hyphen so a prefix ending in `-` honestly previews the double hyphen it really mints (the live `thermal` project has exactly this: `SRS-TRS-` → `SRS-TRS--1`). **No migration, by user decision:** existing modules keep `id_padding = 4` and the `DEFAULT 4` column stays — minted IDs are stored strings, so flipping padding retroactively could not rewrite them and would only produce a mid-module discontinuity (`SRS-0007` then `SRS-8`). Mixed formats across modules is the accepted trade.
 31. ~~**Keyboard-accessible section re-parenting**~~ — **DONE 2026-07-16** (⇄ "Move to…" `<select>` on heading rows, reusing item 28's `headings:reparent` IPC + the pure `canReparent` guard; `moveTargets()` in `outline.ts` excludes self + descendants. Additive to the drag path). Original entry (raised by item 28, 2026-07-15): Item 28 shipped section re-nesting as drag-only, so keyboard users cannot change a section's nesting depth: `moveHeading` (↑/↓) reorders among siblings only and cannot cross levels. `ModuleTree` already solves the equivalent problem with a keyboard-reachable "Move to…" `<select>` (`ModuleNode.tsx`, the `⇄` button + `Move ${name} to` select listing valid targets) — porting that idiom to heading rows would reuse the `headings:reparent` IPC and the `canReparent` guard item 28 already built, so this is UI-only. Folds naturally into the batched a11y pass already queued (tree rows and nav rows are still `<div onClick>`).
 
+### 2026-07-21 additions (brainstorm pass)
+
+**High value — specs being written 2026-07-21:**
+
+32. **CSV / Excel export of requirements** — round-trip requirements to stakeholders who live in spreadsheets. Flat export of the current module (or whole project) with all data columns + custom fields. Likely also import. Spec: `docs/superpowers/specs/2026-07-21-requirements-export-import-design.md`.
+33. **ReqIF import/export** — industry interchange standard (DOORS, Polarion, Jama). The credible "systems engineering tool" interoperability checkbox. Grouped with item 32 in the export/interchange spec.
+34. **Requirement versioning / change history** — attribution shipped who+when (item 13), not *what changed*. Per-requirement change log: snapshot old→new field values on each update. The system-of-record payoff of the identity work. Spec: `docs/superpowers/specs/2026-07-21-requirement-history-design.md`.
+35. **Baselines / snapshots** — freeze a labelled version of the whole project ("Rev A, PDR"), diff against it later. Core SE workflow; builds on item 34. Spec: `docs/superpowers/specs/2026-07-21-baselines-snapshots-design.md`.
+
+**Medium — backlog only, not yet specced:**
+
+36. **Comments / review threads on requirements** — discussion attached to a req; pairs with the SSO team-collaboration server goal.
+37. **Requirement quality linter** — flag weak language ("should", "etc.", "user-friendly"), missing acceptance criteria, no verification method. Cheap heuristics, high perceived intelligence.
+38. **Saved filter views** — the filter builder (item 3 rework) is session-only; let users name + persist a filter set ("Open safety reqs").
+39. **Verification / test-method field** — SE reqs carry a verification method (Test / Analysis / Inspection / Demonstration). Mirrors the existing enum-field machinery (status/priority/type).
+40. **Canvas auto-layout** — one button to tidy the diagram (dagre/elk). Recurring pain in node editors.
+41. **Export canvas as PNG/SVG** — smaller than the item-14 PDF, likely more used.
+42. **Interface/connection table export** — the Interface Register is already on screen; export it (folds into item 32's export machinery).
+43. **Right-click row menu — more actions** — the context menu shipped extensible with only "Add requirement below"; add duplicate, delete, move-to-section, copy-ID, etc.
+
 ### Ratified deviations from the mockups (accepted at final review, 2026-07-03)
 
 - Focus/selection rings use `ring-action/60` (60% opacity), not full-opacity action green
