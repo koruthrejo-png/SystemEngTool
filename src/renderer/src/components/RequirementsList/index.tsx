@@ -6,6 +6,7 @@ import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES } from '../../../../types'
 import { buildOutline, visibleRows, canReparent, moveTargets, type OutlineRow } from './outline'
 import { applyFilters } from './filter'
 import FilterPanel from './FilterPanel'
+import HeaderMenu from '../HeaderMenu'
 
 // The checkbox (left) and actions (right) columns are structural: fixed position/width,
 // never reordered or resized. Only these data columns in between are drag-reorderable and
@@ -15,12 +16,66 @@ interface DataCol {
   key: DataColKey
   label: string
   width: number
+  hidden?: boolean
 }
 
 const CHECKBOX_WIDTH = 28
 const ACTIONS_WIDTH = 56
 const MIN_COL_WIDTH = 48
-const COLUMNS_STORAGE_KEY = 'reqarch.reqTable.columns.v2'
+const COLUMNS_STORAGE_KEY = 'reqarch.reqTable.columns.v3'
+
+// Grow a textarea to fit its content (inline-edit cells have no fixed height).
+function autoGrow(el: HTMLTextAreaElement): void {
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
+// Excel-style always-editable cell for free-text fields. Uncontrolled (defaultValue) so
+// typing is smooth; remount via a `key` at the call site when the stored value changes.
+// stopPropagation on mousedown so clicking to place the caret doesn't start the row drag;
+// click/dblclick are left to bubble so the row still highlights / opens the drawer.
+function EditableCell({ value, multiline, onSave, allowEmpty = true }: {
+  value: string
+  multiline: boolean
+  onSave: (v: string) => void
+  allowEmpty?: boolean
+}): JSX.Element {
+  // Plain-text look: no visible box until you hover or focus, so unselected rows read clean.
+  const base =
+    'w-full bg-transparent border border-transparent rounded px-1.5 py-0.5 hover:border-line/70 focus:border-action focus:bg-white focus:outline-none transition-colors'
+  function commit(el: HTMLInputElement | HTMLTextAreaElement): void {
+    const trimmed = el.value.trim()
+    if (!allowEmpty && trimmed === '') { el.value = value; return } // NOT NULL field: revert
+    if (trimmed !== value) onSave(trimmed)
+    else el.value = value
+  }
+  if (multiline) {
+    return (
+      <textarea
+        defaultValue={value}
+        rows={1}
+        ref={(el) => { if (el) autoGrow(el) }}
+        onInput={(e) => autoGrow(e.currentTarget)}
+        onMouseDown={(e) => e.stopPropagation()}
+        onBlur={(e) => commit(e.currentTarget)}
+        onKeyDown={(e) => { if (e.key === 'Escape') { e.currentTarget.value = value; e.currentTarget.blur() } }}
+        className={`${base} text-sm text-ink leading-snug resize-none overflow-hidden block`}
+      />
+    )
+  }
+  return (
+    <input
+      defaultValue={value}
+      onMouseDown={(e) => e.stopPropagation()}
+      onBlur={(e) => commit(e.currentTarget)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Escape') { e.currentTarget.value = value; e.currentTarget.blur() }
+      }}
+      className={`${base} text-xs text-ink-muted`}
+    />
+  )
+}
 
 const DEFAULT_DATA_COLUMNS: DataCol[] = [
   { key: 'reqId', label: 'ID', width: 90 },
@@ -47,7 +102,7 @@ function loadColumns(): DataCol[] {
       saved.every((c) => typeof c?.width === 'number') &&
       saved.map((c) => c.key).sort().join(',') === DEFAULT_KEYS
     if (keysMatch) {
-      return saved.map((c) => ({ ...DEFAULT_DATA_COLUMNS.find((d) => d.key === c.key)!, width: c.width }))
+      return saved.map((c) => ({ ...DEFAULT_DATA_COLUMNS.find((d) => d.key === c.key)!, width: c.width, hidden: !!c.hidden }))
     }
   } catch {
     /* fall through to defaults */
@@ -77,12 +132,15 @@ export default function RequirementsList(): JSX.Element {
   const [highlightedId, setHighlightedId] = useState<number | null>(null)
   // right-click context menu, anchored at the cursor for one requirement
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; reqId: number } | null>(null)
+  // left-click on a column header, anchored at the cursor, to hide that column
+  const [colMenu, setColMenu] = useState<{ x: number; y: number; key: DataColKey } | null>(null)
 
   // Escape → close the context menu and deselect (drop highlight + close detail panel).
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
       if (e.key !== 'Escape' || isTyping(e)) return
       setCtxMenu(null)
+      setColMenu(null)
       setHighlightedId(null)
       if (useStore.getState().selectedRequirementId !== null) selectRequirement(null)
     }
@@ -161,8 +219,19 @@ export default function RequirementsList(): JSX.Element {
     })
   }
 
+  function setColumnHidden(key: DataColKey, hidden: boolean): void {
+    setColumns((prev) => {
+      const next = prev.map((c) => (c.key === key ? { ...c, hidden } : c))
+      persistColumns(next)
+      return next
+    })
+  }
+
+  // Only visible columns drive the header, body cells, and the grid track template.
+  const visibleColumns = columns.filter((c) => !c.hidden)
+
   const gridStyle = {
-    gridTemplateColumns: `${CHECKBOX_WIDTH}px ${columns.map((c) => `${c.width}px`).join(' ')} ${ACTIONS_WIDTH}px`
+    gridTemplateColumns: `${CHECKBOX_WIDTH}px ${visibleColumns.map((c) => `${c.width}px`).join(' ')} ${ACTIONS_WIDTH}px`
   }
 
   // One data cell, rendered by column key so header and body share the live column order.
@@ -171,33 +240,23 @@ export default function RequirementsList(): JSX.Element {
       case 'reqId':
         return <span className="text-xs font-mono text-ink-faint pt-0.5 truncate">{req.reqId}</span>
       case 'entryType':
-        // Inline free-text with preset suggestions (datalist). stopPropagation so editing the
-        // cell doesn't trigger the row's single/double-click select handlers.
         return (
-          <input
-            key={req.entryType}
-            defaultValue={req.entryType}
-            className="w-full text-xs text-ink-muted bg-transparent border border-transparent hover:border-line focus:border-action rounded px-1 py-0.5 focus:outline-none"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-            onBlur={(e) => {
-              const v = e.target.value.trim()
-              if (v && v !== req.entryType) updateRequirement(req.id, { entryType: v })
-              else e.target.value = req.entryType
-            }}
-          />
+          <EditableCell key={req.entryType} value={req.entryType} multiline={false} allowEmpty={false}
+            onSave={(v) => updateRequirement(req.id, { entryType: v })} />
         )
       case 'text':
         return (
-          <span className="text-sm text-ink break-words pr-1">
-            {req.text || <span className="text-ink-faint/50 italic">—</span>}
-          </span>
+          <EditableCell key={req.text} value={req.text} multiline
+            onSave={(v) => updateRequirement(req.id, { text: v })} />
         )
       case 'ac':
+        // Read-only glance; the full checklist editor lives in the Properties drawer.
         return (
-          <span className="text-sm text-ink-muted break-words pr-1">
+          <div
+            onClick={(e) => { e.stopPropagation(); selectRequirement(req.id) }}
+            title="Open acceptance criteria"
+            className="text-sm text-ink-muted break-words pr-1 cursor-pointer hover:text-ink pt-0.5"
+          >
             {acSummary[req.id] ? (
               <>
                 <span className="text-xs font-mono text-ink-faint mr-1.5">
@@ -208,19 +267,17 @@ export default function RequirementsList(): JSX.Element {
             ) : (
               <span className="text-ink-faint/50">—</span>
             )}
-          </span>
+          </div>
         )
       case 'source':
         return (
-          <span className="text-xs text-ink-muted truncate">
-            {req.source || <span className="text-ink-faint/50">—</span>}
-          </span>
+          <EditableCell key={req.source ?? ''} value={req.source ?? ''} multiline={false}
+            onSave={(v) => updateRequirement(req.id, { source: v })} />
         )
       case 'rationale':
         return (
-          <span className="text-sm text-ink-muted break-words pr-1">
-            {req.rationale || <span className="text-ink-faint/50">—</span>}
-          </span>
+          <EditableCell key={req.rationale ?? ''} value={req.rationale ?? ''} multiline
+            onSave={(v) => updateRequirement(req.id, { rationale: v })} />
         )
       case 'reqType':
         return <span className="text-xs text-ink-muted pt-0.5 truncate">{req.reqType}</span>
@@ -268,6 +325,33 @@ export default function RequirementsList(): JSX.Element {
           <span className="text-xs text-ink-faint">
             {displayed.length} item{displayed.length !== 1 ? 's' : ''}
           </span>
+          <HeaderMenu
+            align="right"
+            trigger={
+              <span className="flex items-center gap-1 text-xs text-ink-faint hover:text-ink">
+                Columns <span className="text-[10px]">▾</span>
+              </span>
+            }
+          >
+            {() => (
+              <div className="py-1">
+                {columns.map((col) => (
+                  <label
+                    key={col.key}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-ink hover:bg-workspace cursor-pointer whitespace-nowrap"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!col.hidden}
+                      onChange={(e) => setColumnHidden(col.key, !e.target.checked)}
+                      className="w-3.5 h-3.5 rounded accent-action"
+                    />
+                    {col.label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </HeaderMenu>
           {!showDeleted && (
             <>
               <Button variant="secondary" onClick={() => addHeading({ moduleId: selectedModuleId! })}>+ Heading</Button>
@@ -326,7 +410,7 @@ export default function RequirementsList(): JSX.Element {
                 />
               )}
             </span>
-            {columns.map((col) => (
+            {visibleColumns.map((col) => (
               <span
                 key={col.key}
                 onDragOver={(e) => { if (dragCol && dragCol !== col.key) { e.preventDefault(); setDragOverCol(col.key) } }}
@@ -334,10 +418,12 @@ export default function RequirementsList(): JSX.Element {
                 onDrop={(e) => { e.preventDefault(); if (dragCol) reorderColumns(dragCol, col.key) }}
                 className={`relative flex items-center min-w-0 -my-2 py-2 ${dragCol === col.key ? 'bg-action-tint/50' : ''} ${dragOverCol === col.key ? 'shadow-[inset_2px_0_0_0_var(--tw-shadow-color)] shadow-action' : ''}`}
               >
-                {/* Only the label grabs, so the resize handle (mousedown) still works. */}
+                {/* Label: drag to reorder; plain click opens a menu to hide it. Resize handle
+                    (mousedown) stays separate. */}
                 <span
                   draggable
-                  title="Drag to reorder column"
+                  title="Drag to reorder · click to hide"
+                  onClick={(e) => { e.stopPropagation(); setColMenu({ x: e.clientX, y: e.clientY, key: col.key }) }}
                   onDragStart={(e) => { setDragCol(col.key); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move' }}
                   onDragEnd={() => { setDragCol(null); setDragOverCol(null) }}
                   className="cursor-grab active:cursor-grabbing select-none"
@@ -493,7 +579,7 @@ export default function RequirementsList(): JSX.Element {
                         />
                       )}
                     </div>
-                    {columns.map((col) => (
+                    {visibleColumns.map((col) => (
                       <span
                         key={col.key}
                         className={`min-w-0 -my-3 py-3 ${dragCol === col.key ? 'bg-action-tint/40' : ''}`}
@@ -547,6 +633,29 @@ export default function RequirementsList(): JSX.Element {
               className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
             >
               Add entry below
+            </button>
+          </div>
+        </>
+      )}
+
+      {colMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setColMenu(null)}
+            onContextMenu={(e) => { e.preventDefault(); setColMenu(null) }}
+          />
+          <div
+            role="menu"
+            style={{ top: colMenu.y, left: colMenu.x }}
+            className="fixed z-50 min-w-[170px] bg-white border border-line rounded shadow-lg py-1 text-sm"
+          >
+            <button
+              role="menuitem"
+              onClick={() => { setColumnHidden(colMenu.key, true); setColMenu(null) }}
+              className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+            >
+              Hide column
             </button>
           </div>
         </>

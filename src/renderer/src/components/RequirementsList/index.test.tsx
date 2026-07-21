@@ -218,7 +218,7 @@ describe('RequirementsList', () => {
     fireEvent.mouseUp(window)
     const cols = header.style.gridTemplateColumns.split(' ')
     expect(cols[1]).toBe(`${parseInt(idBefore) + 60}px`)
-    const saved = JSON.parse(localStorage.getItem('reqarch.reqTable.columns.v2')!)
+    const saved = JSON.parse(localStorage.getItem('reqarch.reqTable.columns.v3')!)
     expect(saved.find((c: { key: string }) => c.key === 'reqId').width).toBe(parseInt(idBefore) + 60)
   })
 
@@ -375,10 +375,33 @@ describe('RequirementsList', () => {
     expect(screen.getByText('boots in 2s')).toBeInTheDocument()
   })
 
-  it('acceptance criteria cell shows em-dash when requirement has no items', () => {
-    storeState.acSummary = {}
+  it('clicking the acceptance-criteria cell opens the requirement detail', async () => {
+    storeState.acSummary = { [req1.id]: { passed: 1, total: 2, first: 'boots' } }
     render(<RequirementsList />)
-    const row = screen.getByText(req1.reqId).closest('div[style]') as HTMLElement
-    expect(within(row).queryByText(/\d+\/\d+/)).toBeNull()
+    await userEvent.click(screen.getByText('boots'))
+    expect(storeState.selectRequirement).toHaveBeenCalledWith(1)
+  })
+
+  it('editing a Text cell inline saves via updateRequirement on blur', () => {
+    render(<RequirementsList />)
+    const field = screen.getByDisplayValue('The system shall respond within 2s')
+    fireEvent.change(field, { target: { value: 'The system shall respond within 1s' } })
+    fireEvent.blur(field)
+    expect(storeState.updateRequirement).toHaveBeenCalledWith(1, { text: 'The system shall respond within 1s' })
+  })
+
+  it('hides a column via its header menu, restores it from the Columns menu', async () => {
+    render(<RequirementsList />)
+    expect(screen.getByLabelText('Resize Source column')).toBeInTheDocument()
+    // header label click → Hide column
+    await userEvent.click(screen.getByText('Source'))
+    await userEvent.click(screen.getByText('Hide column'))
+    expect(screen.queryByLabelText('Resize Source column')).toBeNull()
+    // toolbar Columns menu → re-check Source
+    await userEvent.click(screen.getByText('Columns'))
+    const sourceToggle = screen.getByRole('checkbox', { name: 'Source' })
+    expect(sourceToggle).not.toBeChecked()
+    await userEvent.click(sourceToggle)
+    expect(screen.getByLabelText('Resize Source column')).toBeInTheDocument()
   })
 })
