@@ -60,7 +60,7 @@ export default function GlobalSearch(): JSX.Element | null {
   }
 
   return (
-    <div ref={rootRef} className="relative w-64">
+    <div ref={rootRef} className="relative w-full">
       <input
         ref={inputRef}
         value={term}

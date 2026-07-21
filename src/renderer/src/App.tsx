@@ -14,9 +14,10 @@ import GlobalSearch from './components/GlobalSearch'
 import InterfaceRegister from './components/InterfaceRegister'
 import InterfaceNav from './components/InterfaceRegister/InterfaceNav'
 import Settings from './components/Settings'
+import HeaderMenu, { MenuItem } from './components/HeaderMenu'
 
 export default function App(): JSX.Element {
-  const { project, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, detailPanelOpen, selectedRequirementId, lastError, clearError } = useStore()
+  const { project, me, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, detailPanelOpen, selectedRequirementId, lastError, clearError } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
@@ -62,30 +63,70 @@ export default function App(): JSX.Element {
 
   return (
     <div className="flex flex-col h-screen bg-workspace text-ink">
-      <header className="flex items-center h-14 px-4 gap-6 bg-navy shrink-0">
-        <span className="font-semibold text-lg tracking-tight text-white">ReqArch Suite</span>
-        <nav className="flex h-full">
-          {([['requirements', 'Requirements'], ['architecture', 'Architecture'], ['interfaces', 'Interfaces'], ['traceability', 'Traceability'], ['dashboard', 'Dashboard']] as const).map(([tab, label]) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 h-full text-sm font-medium border-b-[3px] transition-colors
-                ${activeTab === tab
-                  ? 'border-action-tint text-white'
-                  : 'border-transparent text-white/60 hover:text-white'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
+      {/* Utility bar: brand + project switcher, search, primary action, account */}
+      <header className="flex items-center h-11 px-4 gap-4 bg-navy-deep shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-semibold tracking-tight text-white/70 whitespace-nowrap">ReqArch Suite</span>
+          <span className="text-white/30">/</span>
+          <HeaderMenu
+            trigger={
+              <span className="flex items-center gap-1 text-sm font-medium text-white whitespace-nowrap hover:text-white/80">
+                {project ? project.name : 'No project'}
+                <span className="text-white/50 text-xs">▾</span>
+              </span>
+            }
+          >
+            {(close) => (
+              <>
+                <MenuItem onClick={() => { close(); handleOpen() }}>Open project…</MenuItem>
+                <MenuItem onClick={() => { close(); setShowNewDialog(true) }}>New project…</MenuItem>
+              </>
+            )}
+          </HeaderMenu>
+        </div>
         <div className="ml-auto flex items-center gap-3">
-          <GlobalSearch />
-          {project && <span className="text-sm text-white/50">{project.name}</span>}
-          <Button variant="secondary-on-navy" onClick={handleOpen}>Open</Button>
-          <Button onClick={() => setShowNewDialog(true)}>New Project</Button>
-          <button aria-label="Settings" onClick={() => setShowSettings(true)} className="text-white/60 hover:text-white text-lg leading-none">⚙</button>
+          <div className="w-56"><GlobalSearch /></div>
+          <Button onClick={() => setShowNewDialog(true)}>+ New Project</Button>
+          <div className="w-px h-6 bg-white/20" />
+          <HeaderMenu
+            align="right"
+            trigger={
+              <span className="flex items-center gap-2 text-sm text-white/80 hover:text-white whitespace-nowrap">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-white/15 text-xs font-medium">
+                  {(me?.displayName?.[0] ?? '?').toUpperCase()}
+                </span>
+                <span className="text-white/50 text-xs">▾</span>
+              </span>
+            }
+          >
+            {(close) => (
+              <>
+                <div className="px-3 py-2 border-b border-line">
+                  <div className="text-sm font-medium text-ink truncate">{me?.displayName ?? 'You'}</div>
+                  {me?.email && <div className="text-xs text-ink-faint truncate">{me.email}</div>}
+                </div>
+                <MenuItem onClick={() => { close(); setShowSettings(true) }}>Settings</MenuItem>
+              </>
+            )}
+          </HeaderMenu>
         </div>
       </header>
+
+      {/* Nav bar: module tabs only */}
+      <nav className="flex items-stretch h-11 px-4 bg-navy shrink-0">
+        {([['requirements', 'Requirements'], ['architecture', 'Architecture'], ['interfaces', 'Interfaces'], ['traceability', 'Traceability'], ['dashboard', 'Dashboard']] as const).map(([tab, label]) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 text-sm font-medium border-b-[3px] transition-colors
+              ${activeTab === tab
+                ? 'border-action-tint text-white'
+                : 'border-transparent text-white/60 hover:text-white'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
 
       {lastError && (
         <div role="alert" className="flex items-center gap-3 px-4 py-2 bg-red-600 text-white text-sm shrink-0">
