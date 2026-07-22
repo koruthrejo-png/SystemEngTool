@@ -13,7 +13,8 @@ import type {
   CreateConnectionInput, UpdateConnectionInput,
   ElementRequirementLink, RequirementLink, SearchResults,
   ConnectionCustomField, UpdateConnectionCustomFieldInput,
-  Layer, LayerState, LayerAssignments
+  Layer, LayerState, LayerAssignments,
+  ExportResult, ImportResult
 } from './index'
 
 declare global {
@@ -136,6 +137,11 @@ declare global {
       }
       search: {
         query(projectId: number, term: string): Promise<SearchResults>
+      }
+      io: {
+        exportCsv(projectId: number, moduleId: number | null): Promise<ExportResult | null>
+        exportReqif(projectId: number, moduleId: number | null): Promise<ExportResult | null>
+        importCsv(moduleId: number): Promise<ImportResult | null>
       }
     }
   }

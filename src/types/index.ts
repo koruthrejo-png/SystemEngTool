@@ -417,3 +417,6 @@ export interface SearchResults {
   modules: Module[]
   headings: ReqHeading[]
 }
+
+export interface ExportResult { path: string; count: number }
+export interface ImportResult { created: number; updated: number; skipped: number; errors: string[] }

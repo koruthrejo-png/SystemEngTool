@@ -14,7 +14,8 @@ import type {
   CreateConnectionInput, UpdateConnectionInput,
   ElementRequirementLink, RequirementLink, SearchResults,
   ConnectionCustomField, UpdateConnectionCustomFieldInput,
-  Layer, LayerState, LayerAssignments
+  Layer, LayerState, LayerAssignments,
+  ExportResult, ImportResult
 } from '../types'
 
 contextBridge.exposeInMainWorld('api', {
@@ -137,5 +138,10 @@ contextBridge.exposeInMainWorld('api', {
   },
   search: {
     query: (projectId: number, term: string): Promise<SearchResults> => ipcRenderer.invoke('search:query', projectId, term)
+  },
+  io: {
+    exportCsv: (projectId: number, moduleId: number | null): Promise<ExportResult | null> => ipcRenderer.invoke('io:exportCsv', projectId, moduleId),
+    exportReqif: (projectId: number, moduleId: number | null): Promise<ExportResult | null> => ipcRenderer.invoke('io:exportReqif', projectId, moduleId),
+    importCsv: (moduleId: number): Promise<ImportResult | null> => ipcRenderer.invoke('io:importCsv', moduleId)
   }
 })
