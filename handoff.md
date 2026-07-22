@@ -1,5 +1,24 @@
 # Handoff: ReqArch2 — Current State
 
+## Session 2026-07-22b — CSV/ReqIF export + CSV import (backlog items 32/33 phase 1)
+
+All on `main`, subagent-driven (plan `docs/superpowers/plans/2026-07-22-requirements-csv-reqif-export.md`, ledger section in `.superpowers/sdd/progress.md`). Base `26889f9`, commits `2991415..785a3d2`. Final whole-branch review (opus): **READY TO MERGE, zero Critical, zero Important.** User picked build order 32 → 34 → 35; this is 32 (34 history + 35 baselines still to do).
+
+**Shipped:** requirements → CSV export (current module / whole project), ReqIF export (write-only), and CSV import. Toolbar **Export ▾** (4 scope×format items) + **Import CSV** button in `RequirementsList`.
+- **Pure, Electron-free modules** `src/main/export/` — the whole unit-test surface (they import only types, so they dodge the sqlite ABI baseline): `model.ts` (ExportRow/ParsedRow, `escapeXml`, section title-path helpers), `csv.ts` (RFC 4180 writer+parser, round-trip tested), `reqif.ts` (ReqIF envelope, write-only), `merge.ts` (`planImport`/`resolveDerivedFrom` — the create/update/skip decision). ~25 new tests.
+- **Handler** `src/main/handlers/io.ts` (IPC `io:exportCsv`/`io:exportReqif`/`io:importCsv`) — dialogs + file I/O + DB assembly; import upserts in **one `db.transaction`**, routing every requirement write through `createRequirement`/`updateRequirement`/`addRequirementLink` so **attribution is stamped by main** (renderer never asserts author). Merge = match-by-`req_id` → update else create (mints fresh reqId); bad enum / missing-text rows **skipped-and-reported**, not fatal. **Two-pass derivation links** resolve after all rows exist (the file's reqId is mapped for creates AND updates so forward `derived_from` refs work — this was a real bug caught in task-5 review, fixed `613197e`). Custom fields round-trip as `cf:<Key>` columns.
+- Store actions `exportCsv`/`exportReqif`/`importCsv` via the `run()`/`lastError` convention; import re-syncs the module list and surfaces a skipped-count summary.
+- **`entry_type` round-trips** (`2cbcd20`) — it was missing from the whole pipeline because the spec predated that column; a CSV round-trip would have silently dropped it. Now in model/csv/reqif/io.
+- **Unmatched section paths on import are reported** (`785a3d2`, final-review Minor 1) — import never creates headings, so a section that doesn't match an existing heading is left unsectioned WITH an error message, not silently dropped.
+
+**Locked v1 scope (user, 2026-07-21):** CSV both ways + ReqIF export. **Deferred, NOT built:** ReqIF *import* (would add the one pure-JS dep `fast-xml-parser` — no `io:importReqif` channel exists); xlsx (Excel opens CSV); structured AC items (only the legacy `acceptance_criteria` TEXT field round-trips); creating heading trees from a file.
+
+**Gate:** both typechecks clean, `electron-vite build` clean (3 targets), full suite **467 passed / 1 failed**. The 1 failure is **PRE-EXISTING and unrelated**: `src/renderer/src/App.test.tsx` expects an "Open" button that was moved into the project-switcher dropdown on 2026-07-21c and the test was never updated — it fails identically on the feature base `26889f9` and predates this work. **Someone should update that stale test** (out of scope here).
+
+**⚠️ NOT live-verified end-to-end.** Export/import fire **native OS save/open dialogs**, which the Playwright renderer driver cannot drive — so the usual click-through live-verify doesn't apply. The pure pipeline is unit-tested (round-trips proven) and the DB-mutating handler got a careful opus task-review + the opus final review, but no automated run has exercised the real dialog→file→DB path. **The app should be launched for a hands-on pass** (like the item-21/29 close-out flow): export a module to CSV, edit a row + add a blank-`req_id` row, re-import, confirm update-not-duplicate + one new minted reqId; try a bad-enum row and confirm it's skipped with the `lastError` banner; check ReqIF export opens. Then this is fully closed.
+
+**Non-blocking follow-ups (final-review Minors, recorded — none block merge):** CSV formula-injection — cells starting `= + - @` aren't neutralized (deliberate: prefixing would break round-trip fidelity; self-authored tool); `escapeXml` doesn't strip XML-illegal control chars (0x00–0x1F) — export-only, low likelihood; whole-project CSV `module` column is export-only (import targets one module by design); reqif `objId()` could collide adversarially-crafted reqIds.
+
 ## What's Been Built (as of 2026-07-15)
 
 ### Core App — Working

@@ -185,8 +185,8 @@ Recorded so they can be planned as future feature work.
 
 **High value — specs being written 2026-07-21:**
 
-32. **CSV / Excel export of requirements** — round-trip requirements to stakeholders who live in spreadsheets. Flat export of the current module (or whole project) with all data columns + custom fields. Likely also import. Spec: `docs/superpowers/specs/2026-07-21-requirements-export-import-design.md`.
-33. **ReqIF import/export** — industry interchange standard (DOORS, Polarion, Jama). The credible "systems engineering tool" interoperability checkbox. Grouped with item 32 in the export/interchange spec.
+32. ~~**CSV / Excel export of requirements**~~ — **PHASE 1 DONE 2026-07-22** (`2991415..785a3d2`; plan `docs/superpowers/plans/2026-07-22-requirements-csv-reqif-export.md`). CSV export (current module / whole project) + CSV import (merge-by-`req_id`: update-on-match else create, one transaction, bad rows skipped-and-reported, two-pass derivation links). All data columns incl. `entry_type` + custom fields (`cf:<Key>`) round-trip. **Deferred (follow-up):** xlsx (Excel opens CSV); structured AC items (only the legacy TEXT field round-trips); building new heading trees on import (unmatched section paths are reported, not created). Spec: `docs/superpowers/specs/2026-07-21-requirements-export-import-design.md`.
+33. ~~**ReqIF import/export**~~ — **EXPORT DONE 2026-07-22** (grouped with item 32; write-only, best-effort for foreign tools, lossless for our fields). **ReqIF IMPORT deferred** — needs the one pure-JS dep `fast-xml-parser`; not added yet, no `io:importReqif` channel exists.
 34. **Requirement versioning / change history** — attribution shipped who+when (item 13), not *what changed*. Per-requirement change log: snapshot old→new field values on each update. The system-of-record payoff of the identity work. Spec: `docs/superpowers/specs/2026-07-21-requirement-history-design.md`.
 35. **Baselines / snapshots** — freeze a labelled version of the whole project ("Rev A, PDR"), diff against it later. Core SE workflow; builds on item 34. Spec: `docs/superpowers/specs/2026-07-21-baselines-snapshots-design.md`.
 
