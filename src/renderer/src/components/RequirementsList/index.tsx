@@ -120,7 +120,8 @@ export default function RequirementsList(): JSX.Element {
     checkedIds, toggleChecked, setChecked,
     updateRequirements, removeRequirements,
     headings, collapsedHeadingIds, toggleHeadingCollapsed,
-    addHeading, renameHeading, moveHeading, reparentHeading, removeHeading
+    addHeading, renameHeading, moveHeading, reparentHeading, removeHeading,
+    exportCsv, exportReqif, importCsv
   } = useStore()
   const [columns, setColumns] = useState<DataCol[]>(loadColumns)
   const [dragCol, setDragCol] = useState<DataColKey | null>(null)
@@ -354,6 +355,34 @@ export default function RequirementsList(): JSX.Element {
           </HeaderMenu>
           {!showDeleted && (
             <>
+              <HeaderMenu
+                align="right"
+                trigger={
+                  <span className="flex items-center gap-1 text-xs text-ink-faint hover:text-ink px-2">
+                    Export <span className="text-[10px]">▾</span>
+                  </span>
+                }
+              >
+                {(close) => (
+                  <div className="py-1 text-sm text-ink whitespace-nowrap">
+                    {([
+                      ['Current module (CSV)', () => exportCsv(selectedModuleId)],
+                      ['Whole project (CSV)', () => exportCsv(null)],
+                      ['Current module (ReqIF)', () => exportReqif(selectedModuleId)],
+                      ['Whole project (ReqIF)', () => exportReqif(null)]
+                    ] as const).map(([label, fn]) => (
+                      <button
+                        key={label}
+                        className="block w-full text-left px-3 py-1.5 hover:bg-workspace"
+                        onClick={() => { fn(); close() }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </HeaderMenu>
+              <Button variant="secondary" onClick={() => importCsv(selectedModuleId!)}>Import CSV</Button>
               <Button variant="secondary" onClick={() => addHeading({ moduleId: selectedModuleId! })}>+ Heading</Button>
               <Button onClick={handleAdd}>+ New Entry</Button>
             </>
