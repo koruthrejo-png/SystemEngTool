@@ -149,9 +149,10 @@ async function importCsvFile(e: Electron.IpcMainInvokeEvent, moduleId: number): 
         created++
       }
       reqIdToRowId.set(req.reqId, req.id)
-      // A create's minted reqId differs from the file's, so links key off the file's reqId
-      // for existing rows and the freshly minted one for creates. Resolve after all rows exist.
-      if (action.kind === 'update' && action.row.reqId) reqIdToRowId.set(action.row.reqId, req.id)
+      // A create mints a fresh reqId, but derived_from cells in the file reference the file's
+      // reqId, not the minted one — so register the file's reqId too (for creates and updates
+      // alike). Resolve links after all rows exist.
+      if (action.row.reqId) reqIdToRowId.set(action.row.reqId, req.id)
       if (action.row.derivedFrom.length) rowByChildId.push({ childRowId: req.id, derivedFrom: action.row.derivedFrom })
       // custom fields: upsert each non-empty cell for this requirement
       for (const [key, value] of Object.entries(action.row.custom)) {
