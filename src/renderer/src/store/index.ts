@@ -176,6 +176,11 @@ interface Store {
   addConnectionLink: (connectionId: number, requirementId: number) => Promise<void>
   removeConnectionLink: (connectionId: number, requirementId: number) => Promise<void>
   updateElementType: (id: number, input: UpdateElementTypeInput) => Promise<void>
+
+  // actions — export/import
+  exportCsv: (moduleId: number | null) => Promise<void>
+  exportReqif: (moduleId: number | null) => Promise<void>
+  importCsv: (moduleId: number) => Promise<void>
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -311,6 +316,23 @@ export const useStore = create<Store>((set, get) => ({
       window.api.requirements.listDeleted(selectedModuleId)
     ])
     set({ requirements, deletedRequirements, selectedRequirementId: null, customFields: [] })
+  }),
+
+  exportCsv: (moduleId) => run(async () => {
+    const { project } = get(); if (!project) return
+    await window.api.io.exportCsv(project.id, moduleId)
+  }),
+  exportReqif: (moduleId) => run(async () => {
+    const { project } = get(); if (!project) return
+    await window.api.io.exportReqif(project.id, moduleId)
+  }),
+  importCsv: (moduleId) => run(async () => {
+    const res = await window.api.io.importCsv(moduleId)
+    if (!res) return
+    set({ requirements: await window.api.requirements.list(moduleId) })
+    if (res.errors.length || res.skipped) {
+      set({ lastError: `Imported ${res.created} new, ${res.updated} updated, ${res.skipped} skipped` })
+    }
   }),
 
   addHeading: (input) => run(async () => {
