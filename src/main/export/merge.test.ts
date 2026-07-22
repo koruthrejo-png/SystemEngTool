@@ -3,7 +3,7 @@ import { planImport, resolveDerivedFrom } from './merge'
 import type { ParsedRow } from './model'
 
 const p = (over: Partial<ParsedRow> = {}): ParsedRow => ({
-  reqId: '', section: '', text: 'shall', acceptanceCriteria: '', source: '', rationale: '',
+  reqId: '', section: '', text: 'shall', acceptanceCriteria: '', source: '', rationale: '', entryType: '',
   reqType: '', status: '', priority: '', derivedFrom: [], custom: {}, ...over
 })
 

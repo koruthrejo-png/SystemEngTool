@@ -4,7 +4,7 @@ import type { ExportRow } from './model'
 
 const row = (over: Partial<ExportRow> = {}): ExportRow => ({
   reqId: 'SRS-1', module: 'Sys', section: '', text: 'The system shall work',
-  acceptanceCriteria: '', source: '', rationale: '', reqType: 'Functional',
+  acceptanceCriteria: '', source: '', rationale: '', entryType: 'Requirement', reqType: 'Functional',
   status: 'Draft', priority: 'Medium', derivedFrom: [], custom: {}, ...over
 })
 
@@ -36,13 +36,13 @@ describe('parseCsv', () => {
 describe('round-trip', () => {
   it('parseCsv(rowsToCsv(rows)) equals the logical rows', () => {
     const rows = [
-      row({ reqId: 'SRS-1', section: 'Power > Thermal', derivedFrom: ['SRS-2'], custom: { Owner: 'Jo' } }),
+      row({ reqId: 'SRS-1', section: 'Power > Thermal', derivedFrom: ['SRS-2'], custom: { Owner: 'Jo' }, entryType: 'Heading' }),
       row({ reqId: 'SRS-2', text: 'line1\nline2', priority: 'High' })
     ]
     const parsed = parseCsv(rowsToCsv(rows, ['Owner']))
     expect(parsed[0]).toMatchObject({
       reqId: 'SRS-1', section: 'Power > Thermal', text: 'The system shall work',
-      reqType: 'Functional', status: 'Draft', priority: 'Medium',
+      entryType: 'Heading', reqType: 'Functional', status: 'Draft', priority: 'Medium',
       derivedFrom: ['SRS-2'], custom: { Owner: 'Jo' }
     })
     expect(parsed[1]).toMatchObject({ reqId: 'SRS-2', text: 'line1\nline2', priority: 'High' })

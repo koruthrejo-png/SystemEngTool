@@ -10,6 +10,7 @@ export interface ExportRow {
   acceptanceCriteria: string
   source: string
   rationale: string
+  entryType: string
   reqType: RequirementType
   status: RequirementStatus
   priority: RequirementPriority
@@ -24,6 +25,7 @@ export interface ParsedRow {
   acceptanceCriteria: string
   source: string
   rationale: string
+  entryType: string
   reqType: string
   status: string
   priority: string

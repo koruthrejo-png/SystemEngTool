@@ -2,7 +2,7 @@ import type { ExportRow, ParsedRow } from './model'
 
 export const CORE_COLUMNS = [
   'req_id', 'module', 'section', 'text', 'acceptance_criteria',
-  'source', 'rationale', 'type', 'status', 'priority', 'derived_from'
+  'source', 'rationale', 'entry_type', 'type', 'status', 'priority', 'derived_from'
 ] as const
 
 function esc(v: string): string {
@@ -16,7 +16,7 @@ export function rowsToCsv(rows: ExportRow[], customKeys: string[]): string {
   for (const r of rows) {
     const cells = [
       r.reqId, r.module, r.section, r.text, r.acceptanceCriteria,
-      r.source, r.rationale, r.reqType, r.status, r.priority, r.derivedFrom.join(';'),
+      r.source, r.rationale, r.entryType, r.reqType, r.status, r.priority, r.derivedFrom.join(';'),
       ...customKeys.map((k) => r.custom[k] ?? '')
     ]
     lines.push(cells.map(esc).join(','))
@@ -72,6 +72,7 @@ export function parseCsv(text: string): ParsedRow[] {
     acceptanceCriteria: at(cells, 'acceptance_criteria'),
     source: at(cells, 'source'),
     rationale: at(cells, 'rationale'),
+    entryType: at(cells, 'entry_type'),
     reqType: at(cells, 'type'),
     status: at(cells, 'status'),
     priority: at(cells, 'priority'),

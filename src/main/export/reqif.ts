@@ -5,7 +5,7 @@ import { REQUIREMENT_TYPES, REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES } from 
 // Stable-ish id derived from a reqId (ReqIF IDENTIFIERs must be unique within a file).
 const objId = (reqId: string): string => `SPEC-OBJECT-${reqId.replace(/[^a-zA-Z0-9_-]/g, '_')}`
 
-const STRING_ATTRS = ['reqId', 'section', 'text', 'acceptanceCriteria', 'source', 'rationale'] as const
+const STRING_ATTRS = ['reqId', 'section', 'text', 'acceptanceCriteria', 'source', 'rationale', 'entryType'] as const
 const ENUMS: Record<string, readonly string[]> = {
   type: REQUIREMENT_TYPES, status: REQUIREMENT_STATUSES, priority: REQUIREMENT_PRIORITIES
 }
@@ -34,6 +34,7 @@ function specObject(r: ExportRow, customKeys: string[]): string {
   const strVals = [
     ['reqId', r.reqId], ['section', r.section], ['text', r.text],
     ['acceptanceCriteria', r.acceptanceCriteria], ['source', r.source], ['rationale', r.rationale],
+    ['entryType', r.entryType],
     ...customKeys.map((k) => [`cf:${k}`, r.custom[k] ?? ''])
   ].map(([name, val]) =>
     `<ATTRIBUTE-VALUE-STRING THE-VALUE="${escapeXml(val)}"><DEFINITION><ATTRIBUTE-DEFINITION-STRING-REF>AD-STR-${escapeXml(name)}</ATTRIBUTE-DEFINITION-STRING-REF></DEFINITION></ATTRIBUTE-VALUE-STRING>`
