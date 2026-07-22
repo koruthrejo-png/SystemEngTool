@@ -134,6 +134,11 @@ async function importCsvFile(e: Electron.IpcMainInvokeEvent, moduleId: number): 
   db.transaction(() => {
     for (const action of plan.actions) {
       const headingId = findHeadingByPath(action.row.section, headings)
+      // Import never creates headings (no-schema-change constraint); a section path that
+      // doesn't match an existing heading is dropped — surface it rather than lose it silently.
+      if (action.row.section && headingId == null) {
+        errors.push(`${action.row.reqId || 'row'}: section "${action.row.section}" not found, left unsectioned`)
+      }
       let req: Requirement
       if (action.kind === 'update' && action.targetId != null) {
         req = updateRequirement(action.targetId, toUpdateInput(action.row, headingId))
