@@ -175,16 +175,6 @@ export function runMigrations(db: Database.Database): void {
       PRIMARY KEY (parent_req_id, child_req_id)
     );
 
-    CREATE TABLE IF NOT EXISTS acceptance_criteria (
-      id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      requirement_id INTEGER NOT NULL REFERENCES requirements(id),
-      text           TEXT    NOT NULL,
-      status         TEXT    NOT NULL DEFAULT 'Unverified',
-      position       INTEGER NOT NULL,
-      created_at     TEXT    NOT NULL,
-      updated_at     TEXT    NOT NULL
-    );
-
     CREATE TABLE IF NOT EXISTS connection_custom_fields (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       connection_id INTEGER NOT NULL REFERENCES architecture_connections(id),
@@ -254,23 +244,26 @@ export function runMigrations(db: Database.Database): void {
     })()
   }
 
-  // One-time conversion: split legacy free-text acceptance_criteria into checklist items.
-  // Per-row idempotent — each converted row is set to NULL, so re-runs are no-ops.
-  const legacyRows = db
-    .prepare("SELECT id, acceptance_criteria FROM requirements WHERE acceptance_criteria IS NOT NULL AND TRIM(acceptance_criteria) != ''")
-    .all() as { id: number; acceptance_criteria: string }[]
-  if (legacyRows.length > 0) {
-    const ts = new Date().toISOString()
-    const insert = db.prepare(
-      'INSERT INTO acceptance_criteria (requirement_id, text, status, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
-    )
-    const clear = db.prepare('UPDATE requirements SET acceptance_criteria = NULL WHERE id = ?')
+  // Item-7 reversal: acceptance criteria return to a free-text column on requirements.
+  // Collapse any existing child-table items back into requirements.acceptance_criteria
+  // (joined by newline, ordered by position), leave verification_status at its default,
+  // then drop the table. Guarded on the table existing → idempotent: once dropped this is a
+  // no-op, and fresh installs never create it. Requirement text/IDs are untouched.
+  const acTableExists = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='acceptance_criteria'")
+    .get()
+  if (acTableExists) {
+    const withItems = db
+      .prepare('SELECT DISTINCT requirement_id FROM acceptance_criteria')
+      .all() as { requirement_id: number }[]
+    const getItems = db.prepare('SELECT text FROM acceptance_criteria WHERE requirement_id = ? ORDER BY position, id')
+    const setAc = db.prepare('UPDATE requirements SET acceptance_criteria = ? WHERE id = ?')
     db.transaction(() => {
-      for (const row of legacyRows) {
-        const lines = row.acceptance_criteria.split('\n').map((l) => l.trim()).filter((l) => l !== '')
-        lines.forEach((line, i) => insert.run(row.id, line, 'Unverified', i, ts, ts))
-        clear.run(row.id)
+      for (const { requirement_id } of withItems) {
+        const joined = (getItems.all(requirement_id) as { text: string }[]).map((r) => r.text).join('\n')
+        setAc.run(joined, requirement_id)
       }
+      db.exec('DROP TABLE acceptance_criteria')
     })()
   }
 

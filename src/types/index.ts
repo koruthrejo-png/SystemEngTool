@@ -44,24 +44,6 @@ export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number]
 // Entry Type is free-form: the user types their own value, no preset list. Stored as a plain
 // string (NOT NULL DEFAULT 'Requirement').
 
-export const AC_STATUSES = ['Unverified', 'Passed', 'Failed'] as const
-export type AcStatus = (typeof AC_STATUSES)[number]
-
-export interface AcceptanceCriterion {
-  id: number
-  requirementId: number
-  text: string
-  status: AcStatus
-  position: number
-  createdAt: string
-  updatedAt: string
-}
-
-export interface UpdateAcceptanceCriterionInput {
-  text?: string
-  status?: AcStatus
-}
-
 export interface Requirement {
   id: number
   moduleId: number

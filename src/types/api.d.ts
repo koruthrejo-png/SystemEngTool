@@ -4,7 +4,6 @@ import type {
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
   RequirementCustomField, UpdateCustomFieldInput,
-  AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   ElementType, ConnectionType,
   User, LocalIdentity, UpdateMeInput,
   Architecture, ArchitectureElement, ArchitectureConnection,
@@ -55,14 +54,6 @@ declare global {
         create(requirementId: number): Promise<RequirementCustomField>
         update(id: number, patch: UpdateCustomFieldInput): Promise<RequirementCustomField>
         delete(id: number): Promise<void>
-      }
-      acceptanceCriteria: {
-        list(requirementId: number): Promise<AcceptanceCriterion[]>
-        listByModule(moduleId: number): Promise<AcceptanceCriterion[]>
-        create(requirementId: number, text: string): Promise<AcceptanceCriterion>
-        update(id: number, patch: UpdateAcceptanceCriterionInput): Promise<AcceptanceCriterion>
-        remove(id: number): Promise<void>
-        move(id: number, direction: 'up' | 'down'): Promise<void>
       }
       users: {
         me(): Promise<LocalIdentity | null>
