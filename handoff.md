@@ -1,5 +1,22 @@
 # Handoff: ReqArch2 — Current State
 
+## Session 2026-07-23/24 — AC as free text + per-requirement Verification status (COMPLETE, supersedes item 7)
+
+Spec `docs/superpowers/specs/2026-07-23-ac-freetext-verification-status-design.md`, plan `docs/superpowers/plans/2026-07-23-ac-freetext-verification-status.md`. Subagent-driven (5 tasks, each task-reviewed clean — sonnet). Base `71054e1`. Ledger: `.superpowers/sdd/progress.md` "Feature: AC free-text + Verification status" section. **Awaiting final whole-branch review + user sign-off.**
+
+**Why:** A live-drive of item 32 (2026-07-23) found acceptance criteria did NOT round-trip through CSV/ReqIF — item 7 had moved AC to a child table that export/import never touched, so imported AC vanished from the UI and exported AC came out blank. User chose to fix it by **dropping the structured checklist entirely**: AC becomes a free-text field (like Source/Rationale), plus ONE Verification tracker per requirement.
+
+**Shipped:**
+- **Data model:** AC returns to the (previously dead) `requirements.acceptance_criteria` TEXT column; new `verification_status TEXT NOT NULL DEFAULT 'Unverified'`. New enum `VERIFICATION_STATUSES = ['Unverified','In Progress','Passed','Failed']`. `In Progress` chip = `bg-amber-100 text-amber-800`.
+- **Removed:** the `acceptance_criteria` child table + its handler/6 IPC channels + preload/api bridge + `AC_STATUSES`/`AcStatus`/`AcceptanceCriterion`/`UpdateAcceptanceCriterionInput` types + store `acItems`/`acSummary` slices (+`acSummary.ts`) + the drawer checklist UI + the table passed/total badge.
+- **UI:** drawer AC is now a `Textarea` (blur-save, like Rationale); a **Verification** `Select` sits below Type/Status/Priority; the requirements-table `ac` column renders the free text (`EditableCell`), no badge. Filter gained a `verificationStatus` enum attribute (and the AC text filter, which read the dead column, now works).
+- **Migration** (`migrations.ts`, idempotent, transactional): removed the child-table DDL + item-7 split; added a collapse step guarded on `sqlite_master` — joins each requirement's child items by `\n` (ordered by position,id) into `requirements.acceptance_criteria`, leaves verification at default, then `DROP TABLE acceptance_criteria`. No-op once dropped; fresh DBs never create it; requirement text/IDs untouched.
+- **Item 32 fix falls out:** `acceptance_criteria` round-trips (plain column again) and `verification_status` was added to CSV `CORE_COLUMNS` (after priority), `ExportRow`/`ParsedRow`, the ReqIF enum, and `merge.ts` `ENUM_SETS` (invalid value → row skipped-and-reported; blank leaves existing on update).
+
+**Gate + live-verify (driver + main-process `dialog` stub — osascript keystrokes blocked by macOS Accessibility, error 1002):** typecheck+build clean, vitest **373/374** (the 1 failure is the PRE-EXISTING `App.test.tsx` "open" button test — fails on base too, still needs updating). Migration verified on real `Satellite Demo` (SAT-001 → `"…deployed\ntestv2"`, SAT-016 → `"battery level check ui"`, table dropped, 17 reqs/IDs intact) and `SmokeTest` (SRS-0002 collapsed, table dropped), idempotent on relaunch. Drawer Verification set→persisted. Export CSV carries both columns; import updated-not-duplicated a row (AC landed in the live column, now UI-visible — the bug fix), created a blank-req_id row (In Progress), skipped a bad-enum row (banner "Imported 1 new, 1 updated, 1 skipped").
+
+**Main-process DB tests remain dark** (`ERR_DLOPEN_FAILED`, item 23) — the migration + requirements handler tests are authored but gated on live-verify, not CI here. **Scratch pollution (harmless):** `SmokeTest` gained DEM-0009 + DEM-0002 AC/verification test edits; `Satellite Demo` was permanently migrated (shipped behavior, no test rows added). Note: the driver gained a `maineval` command (main-process eval) for the dialog-stub technique — uncommitted tooling.
+
 ## Session 2026-07-22b — CSV/ReqIF export + CSV import (backlog items 32/33 phase 1)
 
 All on `main`, subagent-driven (plan `docs/superpowers/plans/2026-07-22-requirements-csv-reqif-export.md`, ledger section in `.superpowers/sdd/progress.md`). Base `26889f9`, commits `2991415..785a3d2`. Final whole-branch review (opus): **READY TO MERGE, zero Critical, zero Important.** User picked build order 32 → 34 → 35; this is 32 (34 history + 35 baselines still to do).
