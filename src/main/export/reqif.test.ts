@@ -5,7 +5,7 @@ import type { ExportRow } from './model'
 const row = (over: Partial<ExportRow> = {}): ExportRow => ({
   reqId: 'SRS-1', module: 'Sys', section: '', text: 'shall',
   acceptanceCriteria: '', source: '', rationale: '', entryType: 'Requirement', reqType: 'Functional',
-  status: 'Draft', priority: 'Medium', derivedFrom: [], custom: {}, ...over
+  status: 'Draft', priority: 'Medium', verificationStatus: 'Unverified', derivedFrom: [], custom: {}, ...over
 })
 const meta = { projectName: 'Demo', timestamp: '2026-07-22T00:00:00.000Z', identifier: 'urn:x' }
 
@@ -25,9 +25,9 @@ describe('rowsToReqif', () => {
     expect(xml).toContain('a &lt; b &amp; c')
     expect(xml).not.toContain('a < b & c')
   })
-  it('declares the three enumeration datatypes', () => {
+  it('declares the four enumeration datatypes', () => {
     const xml = rowsToReqif([row()], [], meta)
-    expect(xml.match(/<DATATYPE-DEFINITION-ENUMERATION /g)?.length).toBe(3)
+    expect(xml.match(/<DATATYPE-DEFINITION-ENUMERATION /g)?.length).toBe(4)
   })
   it('emits one SPEC-RELATION per derivation link', () => {
     const xml = rowsToReqif([row({ reqId: 'SRS-1', derivedFrom: ['SRS-2'] }), row({ reqId: 'SRS-2' })], [], meta)

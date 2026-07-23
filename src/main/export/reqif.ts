@@ -1,13 +1,14 @@
 import type { ExportRow } from './model'
 import { escapeXml } from './model'
-import { REQUIREMENT_TYPES, REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES } from '../../types'
+import { REQUIREMENT_TYPES, REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, VERIFICATION_STATUSES } from '../../types'
 
 // Stable-ish id derived from a reqId (ReqIF IDENTIFIERs must be unique within a file).
 const objId = (reqId: string): string => `SPEC-OBJECT-${reqId.replace(/[^a-zA-Z0-9_-]/g, '_')}`
 
 const STRING_ATTRS = ['reqId', 'section', 'text', 'acceptanceCriteria', 'source', 'rationale', 'entryType'] as const
 const ENUMS: Record<string, readonly string[]> = {
-  type: REQUIREMENT_TYPES, status: REQUIREMENT_STATUSES, priority: REQUIREMENT_PRIORITIES
+  type: REQUIREMENT_TYPES, status: REQUIREMENT_STATUSES, priority: REQUIREMENT_PRIORITIES,
+  verificationStatus: VERIFICATION_STATUSES
 }
 
 function enumDatatype(name: string, values: readonly string[]): string {
@@ -39,7 +40,7 @@ function specObject(r: ExportRow, customKeys: string[]): string {
   ].map(([name, val]) =>
     `<ATTRIBUTE-VALUE-STRING THE-VALUE="${escapeXml(val)}"><DEFINITION><ATTRIBUTE-DEFINITION-STRING-REF>AD-STR-${escapeXml(name)}</ATTRIBUTE-DEFINITION-STRING-REF></DEFINITION></ATTRIBUTE-VALUE-STRING>`
   ).join('')
-  const enumVals = [['type', r.reqType], ['status', r.status], ['priority', r.priority]].map(([name, val]) => {
+  const enumVals = [['type', r.reqType], ['status', r.status], ['priority', r.priority], ['verificationStatus', r.verificationStatus]].map(([name, val]) => {
     const i = ENUMS[name].indexOf(val)
     return `<ATTRIBUTE-VALUE-ENUMERATION><DEFINITION><ATTRIBUTE-DEFINITION-ENUMERATION-REF>AD-ENUM-${name}</ATTRIBUTE-DEFINITION-ENUMERATION-REF></DEFINITION><VALUES><ENUM-VALUE-REF>ENUMVAL-${name}-${i}</ENUM-VALUE-REF></VALUES></ATTRIBUTE-VALUE-ENUMERATION>`
   }).join('')
@@ -76,6 +77,7 @@ export function rowsToReqif(
 ${enumDatatype('type', REQUIREMENT_TYPES)}
 ${enumDatatype('status', REQUIREMENT_STATUSES)}
 ${enumDatatype('priority', REQUIREMENT_PRIORITIES)}
+${enumDatatype('verificationStatus', VERIFICATION_STATUSES)}
 </DATATYPES>
 <SPEC-TYPES>
 <SPEC-OBJECT-TYPE IDENTIFIER="SOT-REQ" LONG-NAME="Requirement"><SPEC-ATTRIBUTES>${attrDefsString(customKeys)}${attrDefsEnum()}</SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE>

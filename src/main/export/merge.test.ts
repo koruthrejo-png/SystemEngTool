@@ -4,7 +4,7 @@ import type { ParsedRow } from './model'
 
 const p = (over: Partial<ParsedRow> = {}): ParsedRow => ({
   reqId: '', section: '', text: 'shall', acceptanceCriteria: '', source: '', rationale: '', entryType: '',
-  reqType: '', status: '', priority: '', derivedFrom: [], custom: {}, ...over
+  reqType: '', status: '', priority: '', verificationStatus: '', derivedFrom: [], custom: {}, ...over
 })
 
 describe('planImport', () => {
@@ -28,6 +28,14 @@ describe('planImport', () => {
     expect(plan.actions).toHaveLength(0)
     expect(plan.skipped).toBe(1)
     expect(plan.errors[0]).toMatch(/status/i)
+  })
+  it('skips a row with invalid verification_status', () => {
+    const rows = [{ reqId: '', section: '', text: 'T', acceptanceCriteria: '', source: '', rationale: '',
+      entryType: '', reqType: 'Functional', status: 'Draft', priority: 'Medium',
+      verificationStatus: 'Bogus', derivedFrom: [], custom: {} }]
+    const plan = planImport(rows as any, new Map())
+    expect(plan.skipped).toBe(1)
+    expect(plan.errors[0]).toContain('verification_status')
   })
 })
 

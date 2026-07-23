@@ -2,7 +2,7 @@ import type { ExportRow, ParsedRow } from './model'
 
 export const CORE_COLUMNS = [
   'req_id', 'module', 'section', 'text', 'acceptance_criteria',
-  'source', 'rationale', 'entry_type', 'type', 'status', 'priority', 'derived_from'
+  'source', 'rationale', 'entry_type', 'type', 'status', 'priority', 'verification_status', 'derived_from'
 ] as const
 
 function esc(v: string): string {
@@ -16,7 +16,7 @@ export function rowsToCsv(rows: ExportRow[], customKeys: string[]): string {
   for (const r of rows) {
     const cells = [
       r.reqId, r.module, r.section, r.text, r.acceptanceCriteria,
-      r.source, r.rationale, r.entryType, r.reqType, r.status, r.priority, r.derivedFrom.join(';'),
+      r.source, r.rationale, r.entryType, r.reqType, r.status, r.priority, r.verificationStatus, r.derivedFrom.join(';'),
       ...customKeys.map((k) => r.custom[k] ?? '')
     ]
     lines.push(cells.map(esc).join(','))
@@ -76,6 +76,7 @@ export function parseCsv(text: string): ParsedRow[] {
     reqType: at(cells, 'type'),
     status: at(cells, 'status'),
     priority: at(cells, 'priority'),
+    verificationStatus: at(cells, 'verification_status'),
     derivedFrom: at(cells, 'derived_from').split(';').map((x) => x.trim()).filter(Boolean),
     custom: Object.fromEntries(
       cfKeys.map(({ key, i }) => [key, cells[i] ?? '']).filter(([, v]) => v !== '')

@@ -1,4 +1,4 @@
-import type { RequirementType, RequirementStatus, RequirementPriority } from '../../types'
+import type { RequirementType, RequirementStatus, RequirementPriority, VerificationStatus } from '../../types'
 
 // A flat requirement shape both CSV and ReqIF export consume. Enums are typed on the way
 // out (assembled from typed rows); ParsedRow keeps them as raw strings, validated on import.
@@ -14,6 +14,7 @@ export interface ExportRow {
   reqType: RequirementType
   status: RequirementStatus
   priority: RequirementPriority
+  verificationStatus: VerificationStatus
   derivedFrom: string[]
   custom: Record<string, string>
 }
@@ -29,6 +30,7 @@ export interface ParsedRow {
   reqType: string
   status: string
   priority: string
+  verificationStatus: string
   derivedFrom: string[]
   custom: Record<string, string>
 }
