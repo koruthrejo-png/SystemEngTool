@@ -10,7 +10,7 @@ vi.mock('../../store', () => ({
 
 const req = (id: number, moduleId: number, text: string): any => ({
   id, moduleId, reqId: `R-${id}`, text,
-  acceptanceCriteria: null, source: null, rationale: null,
+  acceptanceCriteria: null, source: null, rationale: null, verificationStatus: 'Unverified',
   status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement',
   headingId: null, position: 0, deletedAt: null, createdAt: '', updatedAt: ''
 })
@@ -37,12 +37,6 @@ beforeEach(() => {
     addReqLink: vi.fn().mockResolvedValue(undefined),
     removeReqLink: vi.fn().mockResolvedValue(undefined),
     openRequirement: vi.fn().mockResolvedValue(undefined),
-    acItems: [],
-    loadAcItems: vi.fn(),
-    addAcItem: vi.fn(),
-    updateAcItem: vi.fn(),
-    removeAcItem: vi.fn(),
-    moveAcItem: vi.fn(),
     traceLinks: [],
     elements: [],
     selectElement: vi.fn(),

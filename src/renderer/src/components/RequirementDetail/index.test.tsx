@@ -11,7 +11,7 @@ const storeState = {
     id: 1, moduleId: 1, reqId: 'SRS-0001',
     text: 'The system shall respond within 2s',
     acceptanceCriteria: 'Measured under load',
-    source: 'Customer spec', rationale: 'Performance SLA',
+    source: 'Customer spec', rationale: 'Performance SLA', verificationStatus: 'Unverified',
     status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement', headingId: null,
     position: 0, deletedAt: null, createdAt: '', updatedAt: ''
   }],
@@ -29,12 +29,6 @@ const storeState = {
   addReqLink: vi.fn(),
   removeReqLink: vi.fn(),
   openRequirement: vi.fn(),
-  acItems: [],
-  loadAcItems: vi.fn(),
-  addAcItem: vi.fn(),
-  updateAcItem: vi.fn(),
-  removeAcItem: vi.fn(),
-  moveAcItem: vi.fn(),
   traceLinks: [],
   elements: [],
   selectElement: vi.fn(),
@@ -56,7 +50,7 @@ describe('RequirementDetail', () => {
     expect(screen.getByDisplayValue('The system shall respond within 2s')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Customer spec')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Performance SLA')).toBeInTheDocument()
-    expect(screen.getByTestId('ac-section')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Measured under load')).toBeInTheDocument()
   })
 
   it('shows req_id read-only', () => {
@@ -92,6 +86,12 @@ describe('RequirementDetail', () => {
     render(<RequirementDetail />)
     await userEvent.selectOptions(screen.getByLabelText('Priority'), 'High')
     expect(mockUpdateRequirement).toHaveBeenCalledWith(1, { priority: 'High' })
+  })
+
+  it('changing Verification calls updateRequirement', () => {
+    render(<RequirementDetail />)
+    fireEvent.change(screen.getByLabelText('Verification'), { target: { value: 'Passed' } })
+    expect(mockUpdateRequirement).toHaveBeenCalledWith(1, { verificationStatus: 'Passed' })
   })
 
   it('shows the section select with numbered heading options and (none)', () => {

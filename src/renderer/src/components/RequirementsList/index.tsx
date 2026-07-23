@@ -112,7 +112,7 @@ function loadColumns(): DataCol[] {
 
 export default function RequirementsList(): JSX.Element {
   const {
-    selectedModuleId, modules, requirements, deletedRequirements, acSummary,
+    selectedModuleId, modules, requirements, deletedRequirements,
     showDeleted, setShowDeleted,
     filterRules, setFilterRules, filterCombine, setFilterCombine,
     selectedRequirementId, selectRequirement,
@@ -251,24 +251,9 @@ export default function RequirementsList(): JSX.Element {
             onSave={(v) => updateRequirement(req.id, { text: v })} />
         )
       case 'ac':
-        // Read-only glance; the full checklist editor lives in the Properties drawer.
         return (
-          <div
-            onClick={(e) => { e.stopPropagation(); selectRequirement(req.id) }}
-            title="Open acceptance criteria"
-            className="text-sm text-ink-muted break-words pr-1 cursor-pointer hover:text-ink pt-0.5"
-          >
-            {acSummary[req.id] ? (
-              <>
-                <span className="text-xs font-mono text-ink-faint mr-1.5">
-                  {acSummary[req.id].passed}/{acSummary[req.id].total}
-                </span>
-                {acSummary[req.id].first}
-              </>
-            ) : (
-              <span className="text-ink-faint/50">—</span>
-            )}
-          </div>
+          <EditableCell key={req.acceptanceCriteria ?? ''} value={req.acceptanceCriteria ?? ''} multiline
+            onSave={(v) => updateRequirement(req.id, { acceptanceCriteria: v })} />
         )
       case 'source':
         return (

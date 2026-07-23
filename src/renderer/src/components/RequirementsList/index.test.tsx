@@ -11,13 +11,13 @@ vi.mock('../../store', () => ({
 
 const req1 = {
   id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'The system shall respond within 2s',
-  acceptanceCriteria: null, source: null, rationale: null,
+  acceptanceCriteria: null, source: null, rationale: null, verificationStatus: 'Unverified',
   status: 'Approved', priority: 'High', reqType: 'Functional', entryType: 'Requirement', headingId: null,
   position: 0, deletedAt: null, createdAt: '', updatedAt: ''
 }
 const req2 = {
   id: 2, moduleId: 1, reqId: 'SRS-0002', text: 'The system shall log all faults',
-  acceptanceCriteria: null, source: null, rationale: null,
+  acceptanceCriteria: null, source: null, rationale: null, verificationStatus: 'Unverified',
   status: 'Draft', priority: 'Low', reqType: 'Non-Functional', entryType: 'Requirement', headingId: null,
   position: 1, deletedAt: null, createdAt: '', updatedAt: ''
 }
@@ -41,7 +41,6 @@ beforeEach(() => {
     setShowDeleted: vi.fn().mockResolvedValue(undefined),
     setFilterRules: vi.fn(),
     setFilterCombine: vi.fn(),
-    acSummary: {},
     checkedIds: [],
     toggleChecked: vi.fn(),
     setChecked: vi.fn(),
@@ -368,18 +367,13 @@ describe('RequirementsList', () => {
     expect(storeState.toggleHeadingCollapsed).toHaveBeenCalledWith(5)
   })
 
-  it('acceptance criteria cell shows passed/total and first item text', () => {
-    storeState.acSummary = { [req1.id]: { passed: 2, total: 5, first: 'boots in 2s' } }
+  it('editing the AC cell inline saves via updateRequirement on blur', () => {
+    Object.assign(storeState, { requirements: [{ ...req1, acceptanceCriteria: 'boots in 2s' }, req2] })
     render(<RequirementsList />)
-    expect(screen.getByText('2/5')).toBeInTheDocument()
-    expect(screen.getByText('boots in 2s')).toBeInTheDocument()
-  })
-
-  it('clicking the acceptance-criteria cell opens the requirement detail', async () => {
-    storeState.acSummary = { [req1.id]: { passed: 1, total: 2, first: 'boots' } }
-    render(<RequirementsList />)
-    await userEvent.click(screen.getByText('boots'))
-    expect(storeState.selectRequirement).toHaveBeenCalledWith(1)
+    const field = screen.getByDisplayValue('boots in 2s')
+    fireEvent.change(field, { target: { value: 'boots in 1s' } })
+    fireEvent.blur(field)
+    expect(storeState.updateRequirement).toHaveBeenCalledWith(1, { acceptanceCriteria: 'boots in 1s' })
   })
 
   it('editing a Text cell inline saves via updateRequirement on blur', () => {

@@ -14,10 +14,8 @@ import type {
   ConnectionCustomField, UpdateConnectionCustomFieldInput,
   ReqHeading, CreateHeadingInput,
   ElementRequirementLink, RequirementLink,
-  AcceptanceCriterion, UpdateAcceptanceCriterionInput,
   Layer, LayerState, ElementLayerLink, ConnectionLayerLink
 } from '../../../types'
-import { summarize, type AcSummaryEntry } from './acSummary'
 import type { FilterRule, FilterCombine } from '../components/RequirementsList/filter'
 import { revertToBaseline } from '../components/ArchitectureCanvas/nodes'
 import { type AidKey, type CanvasAids, CANVAS_AIDS_DEFAULTS, CANVAS_AIDS_KEY } from '../components/ArchitectureCanvas/canvasAids'
@@ -81,8 +79,6 @@ interface Store {
   customFields: RequirementCustomField[]
   connectionCustomFields: ConnectionCustomField[]
   projectConnectionCustomFields: ConnectionCustomField[]
-  acItems: AcceptanceCriterion[]
-  acSummary: Record<number, AcSummaryEntry>
   showDeleted: boolean
   deletedRequirements: Requirement[]
   filterRules: FilterRule[]
@@ -142,11 +138,6 @@ interface Store {
   addConnectionCustomField: (connectionId: number) => Promise<void>
   updateConnectionCustomField: (id: number, patch: UpdateConnectionCustomFieldInput) => Promise<void>
   removeConnectionCustomField: (id: number) => Promise<void>
-  loadAcItems: (requirementId: number) => Promise<void>
-  addAcItem: (requirementId: number, text: string) => Promise<void>
-  updateAcItem: (id: number, patch: UpdateAcceptanceCriterionInput, requirementId: number) => Promise<void>
-  removeAcItem: (id: number, requirementId: number) => Promise<void>
-  moveAcItem: (id: number, direction: 'up' | 'down', requirementId: number) => Promise<void>
 
   // actions — architecture
   loadArchitecture: () => Promise<void>
@@ -214,7 +205,7 @@ export const useStore = create<Store>((set, get) => ({
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, detailPanelOpen: false, interfaceArchFilter: 'all', projectRequirements: [],
   customFields: [], connectionCustomFields: [], projectConnectionCustomFields: [],
-  acItems: [], acSummary: {}, showDeleted: false, deletedRequirements: [],
+  showDeleted: false, deletedRequirements: [],
   filterRules: [], filterCombine: 'AND', checkedIds: [],
   traceLinks: [], reqLinks: [],
   layers: [], elementLayers: [], connectionLayers: [],
@@ -234,17 +225,16 @@ export const useStore = create<Store>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   selectModule: async (id) => {
-    set({ selectedModuleId: id, requirements: [], headings: [], collapsedHeadingIds: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], acItems: [], acSummary: {}, filterRules: [], filterCombine: 'AND', checkedIds: [] })
+    set({ selectedModuleId: id, requirements: [], headings: [], collapsedHeadingIds: [], selectedRequirementId: null, showDeleted: false, deletedRequirements: [], customFields: [], filterRules: [], filterCombine: 'AND', checkedIds: [] })
     if (id === null) return
-    const [requirements, headings, moduleAcItems] = await Promise.all([
+    const [requirements, headings] = await Promise.all([
       window.api.requirements.list(id),
-      window.api.headings.list(id),
-      window.api.acceptanceCriteria.listByModule(id)
+      window.api.headings.list(id)
     ])
-    set({ requirements, headings, acSummary: summarize(moduleAcItems) })
+    set({ requirements, headings })
   },
 
-  selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [], acItems: [] }),
+  selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [] }),
 
   openRequirement: async (req) => {
     set({ activeTab: 'requirements' })
@@ -482,31 +472,6 @@ export const useStore = create<Store>((set, get) => ({
       connectionCustomFields: s.connectionCustomFields.filter((f) => f.id !== id),
       projectConnectionCustomFields: s.projectConnectionCustomFields.filter((f) => f.id !== id)
     }))
-  }),
-
-  loadAcItems: async (requirementId) => {
-    const acItems = await window.api.acceptanceCriteria.list(requirementId)
-    set({ acItems })
-  },
-
-  addAcItem: (requirementId, text) => run(async () => {
-    await window.api.acceptanceCriteria.create(requirementId, text)
-    await refreshAc(requirementId)
-  }),
-
-  updateAcItem: (id, patch, requirementId) => run(async () => {
-    await window.api.acceptanceCriteria.update(id, patch)
-    await refreshAc(requirementId)
-  }),
-
-  removeAcItem: (id, requirementId) => run(async () => {
-    await window.api.acceptanceCriteria.remove(id)
-    await refreshAc(requirementId)
-  }),
-
-  moveAcItem: (id, direction, requirementId) => run(async () => {
-    await window.api.acceptanceCriteria.move(id, direction)
-    await refreshAc(requirementId)
   }),
 
   loadArchitecture: async () => {
@@ -848,19 +813,4 @@ async function run(work: () => Promise<void>, resync?: () => Promise<void>): Pro
 async function resyncRequirements(): Promise<void> {
   const { selectedModuleId } = useStore.getState()
   if (selectedModuleId) useStore.setState({ requirements: await window.api.requirements.list(selectedModuleId) })
-}
-
-async function refreshAc(requirementId: number): Promise<void> {
-  // Only this requirement's items changed, so derive its summary entry from the same
-  // list we already fetch and merge it in — no whole-module re-query, and no chance of a
-  // late resolve overwriting another module's summary (we only touch this req's key).
-  const acItems = await window.api.acceptanceCriteria.list(requirementId)
-  const entry = summarize(acItems)[requirementId]
-  useStore.setState((s) => {
-    const acSummary = { ...s.acSummary }
-    if (entry) acSummary[requirementId] = entry
-    else delete acSummary[requirementId]
-    // A late-resolving refetch must not clobber acItems after the user switched requirements.
-    return s.selectedRequirementId === requirementId ? { acItems, acSummary } : { acSummary }
-  })
 }

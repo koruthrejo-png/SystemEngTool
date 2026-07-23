@@ -10,7 +10,7 @@ const mockSetActiveTab = vi.fn()
 
 const req = {
   id: 5, moduleId: 3, reqId: 'SRS-0005', text: 'The system shall regulate temperature.',
-  acceptanceCriteria: null, source: null, rationale: null, position: 0,
+  acceptanceCriteria: null, source: null, rationale: null, verificationStatus: 'Unverified', position: 0,
   status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement', headingId: null,
   deletedAt: null, createdAt: '', updatedAt: ''
 } as Requirement
@@ -35,7 +35,6 @@ beforeEach(() => {
   Object.assign(storeState, {
     requirements: [req], selectedRequirementId: 5, customFields: [],
     headings: [], modules: [], projectRequirements: [], reqLinks: [], users: [],
-    acItems: [], acSummary: {},
     elements: [
       el({ id: 1, blockId: 'BLK-001', name: 'Controller' }),
       el({ id: 2, blockId: 'BLK-002', name: 'Sensor' })
@@ -44,8 +43,6 @@ beforeEach(() => {
     updateRequirement: vi.fn(), loadCustomFields: vi.fn(),
     addCustomField: vi.fn(), updateCustomField: vi.fn(), removeCustomField: vi.fn(),
     addReqLink: vi.fn(), removeReqLink: vi.fn(), openRequirement: vi.fn(),
-    loadAcItems: vi.fn(), addAcItem: vi.fn(), updateAcItem: vi.fn(),
-    removeAcItem: vi.fn(), moveAcItem: vi.fn(),
     loadTraceability: mockLoadTraceability,
     toggleTraceLink: mockToggleTraceLink,
     selectElement: mockSelectElement,
