@@ -38,6 +38,9 @@ export type RequirementPriority = (typeof REQUIREMENT_PRIORITIES)[number]
 export const REQUIREMENT_TYPES = ['Functional', 'Non-Functional', 'Interface', 'Performance', 'Constraint', 'N/A'] as const
 export type RequirementType = (typeof REQUIREMENT_TYPES)[number]
 
+export const VERIFICATION_STATUSES = ['Unverified', 'In Progress', 'Passed', 'Failed'] as const
+export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number]
+
 // Entry Type is free-form: the user types their own value, no preset list. Stored as a plain
 // string (NOT NULL DEFAULT 'Requirement').
 
@@ -71,6 +74,7 @@ export interface Requirement {
   priority: RequirementPriority
   reqType: RequirementType
   entryType: string
+  verificationStatus: VerificationStatus
   headingId: number | null
   position: number
   deletedAt: string | null
@@ -134,6 +138,7 @@ export interface UpdateRequirementInput {
   priority?: RequirementPriority
   reqType?: RequirementType
   entryType?: string
+  verificationStatus?: VerificationStatus
   headingId?: number | null
 }
 

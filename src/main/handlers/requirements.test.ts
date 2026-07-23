@@ -122,6 +122,16 @@ describe('requirements handler', () => {
     expect(updated.reqType).toBe('Interface')
     expect(updated.text).toBe('Keep this text')
   })
+
+  it('defaults verification_status to Unverified and updates it', () => {
+    const req = createRequirement({ moduleId, text: 'R' })
+    expect(req.verificationStatus).toBe('Unverified')
+    const updated = updateRequirement(req.id, { verificationStatus: 'Passed' })
+    expect(updated.verificationStatus).toBe('Passed')
+    // blank/omitted leaves existing
+    const again = updateRequirement(req.id, { text: 'R2' })
+    expect(again.verificationStatus).toBe('Passed')
+  })
 })
 
 describe('requirement attribution', () => {

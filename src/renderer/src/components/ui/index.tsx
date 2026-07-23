@@ -71,7 +71,8 @@ const CHIP_STYLES: Record<string, string> = {
   Low: 'bg-workspace text-ink-faint border border-line',
   Unverified: 'bg-workspace text-ink-muted border border-line',
   Passed: 'bg-action-tint text-action-hover',
-  Failed: 'bg-error/10 text-error'
+  Failed: 'bg-error/10 text-error',
+  'In Progress': 'bg-amber-100 text-amber-800'
 }
 
 export function Chip({ value, className = '' }: { value: string; className?: string }): JSX.Element {
