@@ -4,6 +4,7 @@ import type {
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
   RequirementCustomField, UpdateCustomFieldInput, RequirementHistoryEntry,
+  Baseline, CreateBaselineInput, BaselineDiff,
   ElementType, ConnectionType,
   User, LocalIdentity, UpdateMeInput,
   Architecture, ArchitectureElement, ArchitectureConnection,
@@ -57,6 +58,12 @@ declare global {
       }
       requirementHistory: {
         list(requirementId: number): Promise<RequirementHistoryEntry[]>
+      }
+      baselines: {
+        create(input: CreateBaselineInput): Promise<Baseline>
+        list(projectId: number): Promise<Baseline[]>
+        diff(baselineId: number): Promise<BaselineDiff>
+        delete(id: number): Promise<void>
       }
       users: {
         me(): Promise<LocalIdentity | null>

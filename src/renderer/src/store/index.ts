@@ -11,6 +11,7 @@ import type {
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
   RequirementCustomField, UpdateCustomFieldInput, RequirementHistoryEntry,
+  Baseline, BaselineDiff,
   ConnectionCustomField, UpdateConnectionCustomFieldInput,
   ReqHeading, CreateHeadingInput,
   ElementRequirementLink, RequirementLink,
@@ -78,6 +79,8 @@ interface Store {
   projectRequirements: Requirement[]
   customFields: RequirementCustomField[]
   history: RequirementHistoryEntry[]
+  baselines: Baseline[]
+  baselineDiff: BaselineDiff | null
   connectionCustomFields: ConnectionCustomField[]
   projectConnectionCustomFields: ConnectionCustomField[]
   showDeleted: boolean
@@ -132,6 +135,11 @@ interface Store {
   removeRequirements: (ids: number[]) => Promise<void>
   loadCustomFields: (requirementId: number) => Promise<void>
   loadHistory: (requirementId: number) => Promise<void>
+  loadBaselines: () => Promise<void>
+  createBaseline: (label: string, description?: string) => Promise<void>
+  removeBaseline: (id: number) => Promise<void>
+  loadBaselineDiff: (id: number) => Promise<void>
+  clearBaselineDiff: () => void
   addCustomField: (requirementId: number) => Promise<void>
   updateCustomField: (id: number, patch: UpdateCustomFieldInput) => Promise<void>
   removeCustomField: (id: number) => Promise<void>
@@ -206,7 +214,7 @@ export const useStore = create<Store>((set, get) => ({
   architectures: [], activeArchitectureId: null,
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, detailPanelOpen: false, interfaceArchFilter: 'all', projectRequirements: [],
-  customFields: [], history: [], connectionCustomFields: [], projectConnectionCustomFields: [],
+  customFields: [], history: [], baselines: [], baselineDiff: null, connectionCustomFields: [], projectConnectionCustomFields: [],
   showDeleted: false, deletedRequirements: [],
   filterRules: [], filterCombine: 'AND', checkedIds: [],
   traceLinks: [], reqLinks: [],
@@ -426,6 +434,25 @@ export const useStore = create<Store>((set, get) => ({
     const history = await window.api.requirementHistory.list(requirementId)
     set({ history })
   },
+
+  loadBaselines: async () => {
+    const { project } = get(); if (!project) return
+    set({ baselines: await window.api.baselines.list(project.id) })
+  },
+  createBaseline: (label, description) => run(async () => {
+    const { project } = get(); if (!project) return
+    await window.api.baselines.create({ projectId: project.id, label, description })
+    set({ baselines: await window.api.baselines.list(project.id) })
+  }),
+  removeBaseline: (id) => run(async () => {
+    const { project } = get(); if (!project) return
+    await window.api.baselines.delete(id)
+    set({ baselines: await window.api.baselines.list(project.id) })
+  }),
+  loadBaselineDiff: (id) => run(async () => {
+    set({ baselineDiff: await window.api.baselines.diff(id) })
+  }),
+  clearBaselineDiff: () => set({ baselineDiff: null }),
 
   addCustomField: (requirementId) => run(async () => {
     const field = await window.api.customFields.create(requirementId)

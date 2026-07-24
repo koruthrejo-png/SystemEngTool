@@ -5,6 +5,7 @@ import type {
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
   RequirementCustomField, UpdateCustomFieldInput, RequirementHistoryEntry,
+  Baseline, CreateBaselineInput, BaselineDiff,
   ElementType, ConnectionType,
   User, LocalIdentity, UpdateMeInput,
   Architecture, ArchitectureElement, ArchitectureConnection,
@@ -56,6 +57,12 @@ contextBridge.exposeInMainWorld('api', {
   },
   requirementHistory: {
     list: (requirementId: number): Promise<RequirementHistoryEntry[]> => ipcRenderer.invoke('requirementHistory:list', requirementId)
+  },
+  baselines: {
+    create: (input: CreateBaselineInput): Promise<Baseline> => ipcRenderer.invoke('baselines:create', input),
+    list: (projectId: number): Promise<Baseline[]> => ipcRenderer.invoke('baselines:list', projectId),
+    diff: (baselineId: number): Promise<BaselineDiff> => ipcRenderer.invoke('baselines:diff', baselineId),
+    delete: (id: number): Promise<void> => ipcRenderer.invoke('baselines:delete', id)
   },
   users: {
     // No setter for who you *are* mid-edit: main owns the identity, the renderer only reads it.
