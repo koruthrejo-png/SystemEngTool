@@ -17,6 +17,8 @@ const storeState = {
   }],
   updateRequirement: mockUpdateRequirement,
   customFields: [],
+  history: [],
+  loadHistory: vi.fn(),
   loadCustomFields: vi.fn(),
   addCustomField: vi.fn(),
   updateCustomField: vi.fn(),

@@ -11,7 +11,7 @@ export default function RequirementDetail(): JSX.Element {
   const {
     selectedRequirementId, requirements, updateRequirement,
     customFields, loadCustomFields, addCustomField, updateCustomField, removeCustomField,
-    headings, users
+    loadHistory, headings, users
   } = useStore()
   const req = requirements.find((r) => r.id === selectedRequirementId) ?? null
 
@@ -33,6 +33,7 @@ export default function RequirementDetail(): JSX.Element {
     setAc(req.acceptanceCriteria ?? '')
     focusNewField.current = false
     loadCustomFields(req.id)
+    loadHistory(req.id)
   }, [req?.id])
 
   // Sync localFields when customFields change
@@ -201,7 +202,68 @@ export default function RequirementDetail(): JSX.Element {
 
         <TraceabilitySection req={req} />
         <ArchitectureSection req={req} />
+        <HistorySection req={req} />
       </div>
+    </div>
+  )
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  text: 'Text', acceptance_criteria: 'Acceptance Criteria', source: 'Source',
+  rationale: 'Rationale', status: 'Status', priority: 'Priority', req_type: 'Type',
+  entry_type: 'Entry Type', verification_status: 'Verification', heading_id: 'Section'
+}
+
+function HistorySection({ req: _req }: { req: Requirement }): JSX.Element {
+  const { history, users, headings } = useStore()
+  const [open, setOpen] = useState(false)
+
+  // Rows arrive newest-first; group consecutive rows sharing changedAt (one updateRequirement
+  // call = one edit event). The timestamp is the group key — no edit_id column needed.
+  const events: { at: string; by: number | null; rows: typeof history }[] = []
+  for (const h of history) {
+    const last = events[events.length - 1]
+    if (last && last.at === h.changedAt) last.rows.push(h)
+    else events.push({ at: h.changedAt, by: h.changedBy, rows: [h] })
+  }
+
+  const sectionTitle = (raw: string | null): string => {
+    if (raw == null) return '—'
+    return headings.find((s) => String(s.id) === raw)?.title ?? raw
+  }
+  const display = (field: string, v: string | null): string => {
+    if (field === 'heading_id') return sectionTitle(v)
+    if (v == null || v === '') return '—'
+    return v.length > 80 ? v.slice(0, 80) + '…' : v
+  }
+
+  return (
+    <div>
+      <SectionLabel className="block pt-2">
+        <button type="button" onClick={() => setOpen((o) => !o)} className="text-left">
+          History {open ? '▾' : '▸'}
+        </button>
+      </SectionLabel>
+      {open &&
+        (history.length === 0 ? (
+          <p className="text-sm text-slate-500">No changes recorded yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {events.map((ev, i) => (
+              <li key={i}>
+                <div className="text-xs text-slate-500">
+                  {userName(users, ev.by)} · {new Date(ev.at).toLocaleString()}
+                </div>
+                {ev.rows.map((h) => (
+                  <div key={h.id} className="text-sm">
+                    <strong>{FIELD_LABELS[h.field] ?? h.field}</strong>{' '}
+                    {display(h.field, h.oldValue)} → {display(h.field, h.newValue)}
+                  </div>
+                ))}
+              </li>
+            ))}
+          </ul>
+        ))}
     </div>
   )
 }

@@ -29,6 +29,8 @@ beforeEach(() => {
     modules: [mod(1, null, 'System'), mod(2, 1, 'Software')],
     headings: [], users: [],
     customFields: [],
+    history: [],
+    loadHistory: vi.fn(),
     reqLinks: [{ parentReqId: 1, childReqId: 2 }],
     loadCustomFields: vi.fn().mockResolvedValue(undefined),
     addCustomField: vi.fn(), updateCustomField: vi.fn(), removeCustomField: vi.fn(),

@@ -41,6 +41,7 @@ beforeEach(() => {
     ],
     traceLinks: [{ elementId: 1, requirementId: 5 }],
     updateRequirement: vi.fn(), loadCustomFields: vi.fn(),
+    history: [], loadHistory: vi.fn(),
     addCustomField: vi.fn(), updateCustomField: vi.fn(), removeCustomField: vi.fn(),
     addReqLink: vi.fn(), removeReqLink: vi.fn(), openRequirement: vi.fn(),
     loadTraceability: mockLoadTraceability,
