@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../../store'
-import { SectionLabel, Chip } from '../ui'
+import { SectionLabel, Chip, Button, Input } from '../ui'
 import { computeStats, timeAgo, derivationStats } from './stats'
 import type { ModuleCoverage } from './stats'
 import { flattenTree } from '../ModuleTree/moduleTree'
 import { userName } from '../../attribution'
-import type { Module, Requirement, RequirementLink, User } from '../../../../types'
+import type { Module, Requirement, RequirementLink, User, BaselineEntityDiff, BaselinePairDiff } from '../../../../types'
 
 // Chart-mark colors: hex mirrors of tailwind tokens (SVG attrs can't take classes).
 // Fixed per status entity — see plan Global Constraints.
@@ -120,6 +120,125 @@ export default function Dashboard(): JSX.Element {
             onMatrix={() => setActiveTab('traceability')}
           />
         </div>
+
+        <BaselinesCard />
+      </div>
+      <BaselineDiffModal />
+    </div>
+  )
+}
+
+export function BaselinesCard(): JSX.Element {
+  const { baselines, loadBaselines, createBaseline, removeBaseline, loadBaselineDiff, users } = useStore()
+  const [adding, setAdding] = useState(false)
+  const [label, setLabel] = useState('')
+  const [description, setDescription] = useState('')
+
+  useEffect(() => { loadBaselines() }, [])
+
+  const submit = async (): Promise<void> => {
+    if (!label.trim()) return
+    await createBaseline(label.trim(), description.trim() || undefined)
+    setLabel(''); setDescription(''); setAdding(false)
+  }
+
+  return (
+    <div className="bg-white border border-line rounded p-4">
+      <div className="flex items-center justify-between mb-3">
+        <SectionLabel>Baselines</SectionLabel>
+        <Button variant="ghost" className="!px-2" onClick={() => setAdding((a) => !a)}>+ New baseline</Button>
+      </div>
+
+      {adding && (
+        <div className="space-y-2 mb-3">
+          <Input placeholder="Label (e.g. Rev A, PDR)" value={label} onChange={(e) => setLabel(e.target.value)} />
+          <Input placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <div className="flex gap-2">
+            <Button onClick={submit}>Freeze</Button>
+            <Button variant="ghost" onClick={() => { setAdding(false); setLabel(''); setDescription('') }}>Cancel</Button>
+          </div>
+        </div>
+      )}
+
+      {baselines.length === 0 ? (
+        <p className="text-sm text-ink-faint">No baselines yet.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {baselines.map((b) => (
+            <li key={b.id} className="flex items-center justify-between gap-2 text-sm">
+              <div className="min-w-0">
+                <span className="font-medium text-ink">{b.label}</span>
+                <span className="text-ink-faint"> · {new Date(b.createdAt).toLocaleDateString()} · {userName(users, b.createdBy)}</span>
+                {b.description && <span className="text-ink-faint"> · {b.description}</span>}
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <Button variant="ghost" className="!px-2" onClick={() => loadBaselineDiff(b.id)}>Diff</Button>
+                <Button variant="ghost" className="!px-2 !text-error" onClick={() => removeBaseline(b.id)}>Delete</Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function EntityDiffBlock({ title, diff }: { title: string; diff: BaselineEntityDiff<{ reqId?: string; blockId?: string; connId?: string }> }): JSX.Element {
+  const keyOf = (t: { reqId?: string; blockId?: string; connId?: string }): string => t.reqId ?? t.blockId ?? t.connId ?? ''
+  const any = diff.added.length > 0 || diff.removed.length > 0 || diff.modified.length > 0
+  return (
+    <div className="mb-3">
+      <div className="text-sm font-medium text-ink">
+        {title}: <span className="text-action">{diff.added.length} added</span>,{' '}
+        <span className="text-error">{diff.removed.length} removed</span>,{' '}
+        <span className="text-amber-700">{diff.modified.length} changed</span>
+      </div>
+      {any && (
+        <ul className="mt-1 text-xs text-ink-faint space-y-0.5">
+          {diff.added.map((t, i) => <li key={`a${i}`}>+ {keyOf(t)}</li>)}
+          {diff.removed.map((t, i) => <li key={`r${i}`}>− {keyOf(t)}</li>)}
+          {diff.modified.map((m, i) => (
+            <li key={`m${i}`}>~ {m.key}: {m.changes.map((c) => `${c.field} ${c.before ?? '—'}→${c.after ?? '—'}`).join(', ')}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function PairDiffBlock({ title, diff }: { title: string; diff: BaselinePairDiff }): JSX.Element {
+  const any = diff.added.length > 0 || diff.removed.length > 0
+  return (
+    <div className="mb-3">
+      <div className="text-sm font-medium text-ink">
+        {title}: <span className="text-action">{diff.added.length} added</span>,{' '}
+        <span className="text-error">{diff.removed.length} removed</span>
+      </div>
+      {any && (
+        <ul className="mt-1 text-xs text-ink-faint space-y-0.5">
+          {diff.added.map((p, i) => <li key={`a${i}`}>+ {p.left} ↔ {p.reqId}</li>)}
+          {diff.removed.map((p, i) => <li key={`r${i}`}>− {p.left} ↔ {p.reqId}</li>)}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+export function BaselineDiffModal(): JSX.Element | null {
+  const { baselineDiff, clearBaselineDiff } = useStore()
+  if (!baselineDiff) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/40" onClick={clearBaselineDiff}>
+      <div className="max-h-[80vh] w-[640px] overflow-y-auto rounded-lg bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <SectionLabel>Changes since baseline</SectionLabel>
+          <button aria-label="Close diff" onClick={clearBaselineDiff} className="text-ink-faint hover:text-ink text-base leading-none">×</button>
+        </div>
+        <EntityDiffBlock title="Requirements" diff={baselineDiff.requirements} />
+        <EntityDiffBlock title="Elements" diff={baselineDiff.elements} />
+        <EntityDiffBlock title="Connections" diff={baselineDiff.connections} />
+        <PairDiffBlock title="Element links" diff={baselineDiff.elementLinks} />
+        <PairDiffBlock title="Connection links" diff={baselineDiff.connectionLinks} />
       </div>
     </div>
   )

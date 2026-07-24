@@ -34,7 +34,14 @@ beforeEach(() => {
     users: [],
     loadTraceability: vi.fn().mockResolvedValue(undefined),
     openRequirement: vi.fn().mockResolvedValue(undefined),
-    setActiveTab: vi.fn()
+    setActiveTab: vi.fn(),
+    baselines: [],
+    baselineDiff: null,
+    loadBaselines: vi.fn().mockResolvedValue(undefined),
+    createBaseline: vi.fn().mockResolvedValue(undefined),
+    removeBaseline: vi.fn().mockResolvedValue(undefined),
+    loadBaselineDiff: vi.fn().mockResolvedValue(undefined),
+    clearBaselineDiff: vi.fn()
   })
 })
 
