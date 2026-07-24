@@ -1,5 +1,23 @@
 # Handoff: ReqArch2 — Current State
 
+## Session 2026-07-25 — Baselines / snapshots (backlog item 35, COMPLETE)
+
+Spec `docs/superpowers/specs/2026-07-21-baselines-snapshots-design.md`, plan `docs/superpowers/plans/2026-07-25-baselines-snapshots.md`, ledger `.superpowers/sdd/progress.md` "Feature: Baselines / snapshots". **Executed INLINE.** Base `26d3eac`. All on `main`. **The user's 32→34→35 build order is now fully shipped** — no queued feature is outstanding from that sequence.
+
+**What it does:** freeze a labelled, immutable snapshot of the whole project into a `baselines` table *inside* the `.reqarch`; list past baselines; diff current-vs-baseline (what was added / removed / changed since the freeze); hard-delete. UI is a **Dashboard Baselines card** + a diff modal.
+
+**Two user decisions (2026-07-25) that superseded the 2026-07-21 spec draft** (which drew v1 as requirements-only, 6 fields): (1) snapshot **version 2 includes architecture** — elements, connections, element-links, connection-links; (2) requirement diff compares **all 9 scalar fields** (text, status, priority, reqType, entryType, verificationStatus, source, rationale, acceptanceCriteria).
+
+**Design (option b from the spec):** one `TEXT` column holding the project serialized as JSON — travels inside the one document, no second DB handle, no per-table mirror to maintain. Diff is a **pure function** (`diffSnapshots`) over two parsed snapshots, computed in main. Stable text keys only (`reqId`/`blockId`/`connId`) — never integer PKs. Authors resolved **integer→uuid** inside the blob (server-portable); `baselines.created_by` stamped by `currentUserRowId`. **Immutable:** no `updated_at`; hard delete (no soft-delete/restore surface — a deliberate ponytail call, `deleted_at` only if a deleted-baselines view is ever wanted).
+
+**Files:** `baselines` table (`migrations.ts`); new `src/main/handlers/baselines.ts` (`diffByKey`/`diffPairs`/`diffSnapshots` pure + `serializeProject`/`createBaseline`/`listBaselines`/`diffBaseline`/`deleteBaseline` + register); `index.ts` registration; preload + `api.d.ts` + store slice (`baselines`/`baselineDiff` + 5 actions); `Dashboard/index.tsx` (`BaselinesCard` + `BaselineDiffModal`, both exported). `serializeProject` uses `listRequirementsByProject` + 4 stable-key join queries for the architecture rows/links. `listBaselines` `SELECT` omits the `snapshot` column (payload hygiene).
+
+**Gate:** both typechecks clean, `electron-vite build` clean (3 targets), full suite **482 passed / 1 failed** (the 1 = the PRE-EXISTING `App.test.tsx` "open" button, fails on base). New tests: 1 migration, 6 pure diff + 5 handler (incl. the **freeze-is-stable-copy** key test — freeze, then add/edit/delete live, assert the stored snapshot stays byte-stable AND the diff reflects exactly those three edits — plus uuid-resolution + list-omits-blob), 3 renderer (card list, diff button, modal counts).
+
+**Live-verify (one-shot `playwright _electron`, real `SmokeTest.reqarch` via `window.api.baselines`):** `create`/`list` omit the snapshot blob; freeze then mutate the live project → `diff.requirements.added = ['added after freeze']`, `modified = VF6-0001 status Draft→Approved` (the seed existed at freeze, so it shows as **modified not added** — stable-copy proven live); architecture diff sections serialize without error; Dashboard renders with the card mounted (screenshot, `loadBaselines` ran clean). **Scratch pollution (harmless):** SmokeTest gained `VF6-0001` "baseline live-verify seed" (Approved) + one `LV-Rev` baseline + a soft-deleted "added after freeze" req.
+
+**Carried deferrals (all additive, none blocks):** custom-field diff; restore/revert-to-baseline (destructive, needs conflict handling); export a baseline to a standalone file (the blob is already JSON); baseline-to-baseline diff; soft-delete + a deleted-baselines view.
+
 ## Session 2026-07-24/25 — Requirement change history (backlog item 34, COMPLETE)
 
 Spec `docs/superpowers/specs/2026-07-21-requirement-history-design.md`, plan `docs/superpowers/plans/2026-07-24-requirement-change-history.md`, ledger `.superpowers/sdd/progress.md` "Feature: Requirement change history". **Executed INLINE** (not subagent-driven — full context already held from reading in this session). Base `31df886`. All on `main`. Next per the user's 32→34→35 order: **item 35 (baselines/snapshots)**, which builds on this.
