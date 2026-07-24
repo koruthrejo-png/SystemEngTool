@@ -417,3 +417,84 @@ export interface SearchResults {
 
 export interface ExportResult { path: string; count: number }
 export interface ImportResult { created: number; updated: number; skipped: number; errors: string[] }
+
+export interface Baseline {
+  id: number
+  projectId: number
+  label: string
+  description: string | null
+  createdBy: number | null
+  createdAt: string
+}
+export interface CreateBaselineInput {
+  projectId: number
+  label: string
+  description?: string
+}
+export interface BaselineReqSnapshot {
+  reqId: string
+  moduleName: string
+  text: string
+  status: string
+  priority: string
+  reqType: string
+  entryType: string
+  verificationStatus: string
+  source: string | null
+  rationale: string | null
+  acceptanceCriteria: string | null
+  createdByUuid: string | null
+  updatedByUuid: string | null
+}
+export interface BaselineElementSnapshot {
+  blockId: string
+  name: string
+  typeName: string | null
+  description: string | null
+}
+export interface BaselineConnectionSnapshot {
+  connId: string
+  name: string | null
+  typeName: string | null
+  sourceBlockId: string
+  targetBlockId: string
+  description: string | null
+}
+export interface BaselineLinkSnapshot {
+  left: string
+  reqId: string
+}
+export interface BaselineSnapshot {
+  version: number
+  takenAt: string
+  requirements: BaselineReqSnapshot[]
+  elements: BaselineElementSnapshot[]
+  connections: BaselineConnectionSnapshot[]
+  elementLinks: BaselineLinkSnapshot[]
+  connectionLinks: BaselineLinkSnapshot[]
+}
+export interface BaselineFieldChange {
+  field: string
+  before: string | null
+  after: string | null
+}
+export interface BaselineEntityModified {
+  key: string
+  changes: BaselineFieldChange[]
+}
+export interface BaselineEntityDiff<T> {
+  added: T[]
+  removed: T[]
+  modified: BaselineEntityModified[]
+}
+export interface BaselinePairDiff {
+  added: BaselineLinkSnapshot[]
+  removed: BaselineLinkSnapshot[]
+}
+export interface BaselineDiff {
+  requirements: BaselineEntityDiff<BaselineReqSnapshot>
+  elements: BaselineEntityDiff<BaselineElementSnapshot>
+  connections: BaselineEntityDiff<BaselineConnectionSnapshot>
+  elementLinks: BaselinePairDiff
+  connectionLinks: BaselinePairDiff
+}
