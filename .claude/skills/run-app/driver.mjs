@@ -150,6 +150,13 @@ const COMMANDS = {
     for (const w of wcs) console.log(` [${w.id}] ${w.type}: ${w.url}`);
   },
 
+  // Run an expression in the Electron MAIN process (access to `electron`, dialog, etc.)
+  async maineval(expr) {
+    if (!app) return console.log('ERROR: launch first');
+    try { console.log(JSON.stringify(await app.evaluate((electron, e) => eval(e), expr))); }
+    catch (err) { console.log('ERROR:', err.message); }
+  },
+
   async quit() { if (app) await app.close().catch(()=>{}); app = null; page = null; },
   help() { console.log('commands:', Object.keys(COMMANDS).join(', ')); },
 };
