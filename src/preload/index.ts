@@ -4,7 +4,7 @@ import type {
   ReqHeading, CreateHeadingInput, UpdateHeadingInput,
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
-  RequirementCustomField, UpdateCustomFieldInput,
+  RequirementCustomField, UpdateCustomFieldInput, RequirementHistoryEntry,
   ElementType, ConnectionType,
   User, LocalIdentity, UpdateMeInput,
   Architecture, ArchitectureElement, ArchitectureConnection,
@@ -53,6 +53,9 @@ contextBridge.exposeInMainWorld('api', {
     create: (requirementId: number): Promise<RequirementCustomField> => ipcRenderer.invoke('customFields:create', requirementId),
     update: (id: number, patch: UpdateCustomFieldInput): Promise<RequirementCustomField> => ipcRenderer.invoke('customFields:update', id, patch),
     delete: (id: number): Promise<void> => ipcRenderer.invoke('customFields:delete', id)
+  },
+  requirementHistory: {
+    list: (requirementId: number): Promise<RequirementHistoryEntry[]> => ipcRenderer.invoke('requirementHistory:list', requirementId)
   },
   users: {
     // No setter for who you *are* mid-edit: main owns the identity, the renderer only reads it.

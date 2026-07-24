@@ -3,7 +3,7 @@ import type {
   ReqHeading, CreateHeadingInput, UpdateHeadingInput,
   CreateModuleInput, UpdateModuleInput,
   CreateRequirementInput, UpdateRequirementInput,
-  RequirementCustomField, UpdateCustomFieldInput,
+  RequirementCustomField, UpdateCustomFieldInput, RequirementHistoryEntry,
   ElementType, ConnectionType,
   User, LocalIdentity, UpdateMeInput,
   Architecture, ArchitectureElement, ArchitectureConnection,
@@ -54,6 +54,9 @@ declare global {
         create(requirementId: number): Promise<RequirementCustomField>
         update(id: number, patch: UpdateCustomFieldInput): Promise<RequirementCustomField>
         delete(id: number): Promise<void>
+      }
+      requirementHistory: {
+        list(requirementId: number): Promise<RequirementHistoryEntry[]>
       }
       users: {
         me(): Promise<LocalIdentity | null>

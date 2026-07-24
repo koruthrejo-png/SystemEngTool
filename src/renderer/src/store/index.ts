@@ -10,7 +10,7 @@ import type {
   ArchitectureElement, ArchitectureConnection,
   CreateElementInput, UpdateElementInput,
   CreateConnectionInput, UpdateConnectionInput,
-  RequirementCustomField, UpdateCustomFieldInput,
+  RequirementCustomField, UpdateCustomFieldInput, RequirementHistoryEntry,
   ConnectionCustomField, UpdateConnectionCustomFieldInput,
   ReqHeading, CreateHeadingInput,
   ElementRequirementLink, RequirementLink,
@@ -77,6 +77,7 @@ interface Store {
   interfaceArchFilter: number | 'all'
   projectRequirements: Requirement[]
   customFields: RequirementCustomField[]
+  history: RequirementHistoryEntry[]
   connectionCustomFields: ConnectionCustomField[]
   projectConnectionCustomFields: ConnectionCustomField[]
   showDeleted: boolean
@@ -130,6 +131,7 @@ interface Store {
   updateRequirements: (ids: number[], patch: UpdateRequirementInput) => Promise<void>
   removeRequirements: (ids: number[]) => Promise<void>
   loadCustomFields: (requirementId: number) => Promise<void>
+  loadHistory: (requirementId: number) => Promise<void>
   addCustomField: (requirementId: number) => Promise<void>
   updateCustomField: (id: number, patch: UpdateCustomFieldInput) => Promise<void>
   removeCustomField: (id: number) => Promise<void>
@@ -204,7 +206,7 @@ export const useStore = create<Store>((set, get) => ({
   architectures: [], activeArchitectureId: null,
   elements: [], connections: [], elementTypes: [], connectionTypes: [],
   selectedElementId: null, selectedConnectionId: null, detailPanelOpen: false, interfaceArchFilter: 'all', projectRequirements: [],
-  customFields: [], connectionCustomFields: [], projectConnectionCustomFields: [],
+  customFields: [], history: [], connectionCustomFields: [], projectConnectionCustomFields: [],
   showDeleted: false, deletedRequirements: [],
   filterRules: [], filterCombine: 'AND', checkedIds: [],
   traceLinks: [], reqLinks: [],
@@ -234,7 +236,7 @@ export const useStore = create<Store>((set, get) => ({
     set({ requirements, headings })
   },
 
-  selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [] }),
+  selectRequirement: (id) => set({ selectedRequirementId: id, customFields: [], history: [] }),
 
   openRequirement: async (req) => {
     set({ activeTab: 'requirements' })
@@ -286,6 +288,7 @@ export const useStore = create<Store>((set, get) => ({
     const updated = await window.api.requirements.update(id, input)
     set((s) => ({ requirements: s.requirements.map((r) => (r.id === id ? updated : r)) }))
     await ensureAuthorKnown(updated.updatedBy, get, set)
+    if (get().selectedRequirementId === id) await get().loadHistory(id)
   }),
 
   removeRequirement: (id) => run(async () => {
@@ -393,10 +396,13 @@ export const useStore = create<Store>((set, get) => ({
   // rather than trusting the optimistic local set that never ran.
   updateRequirements: (ids, patch) => run(async () => {
     await Promise.all(ids.map((id) => window.api.requirements.update(id, patch)))
-    const { selectedModuleId } = get()
+    const { selectedModuleId, selectedRequirementId } = get()
     if (!selectedModuleId) return
     const requirements = await window.api.requirements.list(selectedModuleId)
     set({ requirements, checkedIds: [] })
+    if (selectedRequirementId !== null && ids.includes(selectedRequirementId)) {
+      await get().loadHistory(selectedRequirementId)
+    }
   }, resyncRequirements),
 
   removeRequirements: (ids) => run(async () => {
@@ -414,6 +420,11 @@ export const useStore = create<Store>((set, get) => ({
   loadCustomFields: async (requirementId) => {
     const customFields = await window.api.customFields.list(requirementId)
     set({ customFields })
+  },
+
+  loadHistory: async (requirementId) => {
+    const history = await window.api.requirementHistory.list(requirementId)
+    set({ history })
   },
 
   addCustomField: (requirementId) => run(async () => {
