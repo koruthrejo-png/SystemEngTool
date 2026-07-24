@@ -130,4 +130,29 @@ describe('runMigrations', () => {
     const table = db.prepare("SELECT name FROM sqlite_master WHERE name='acceptance_criteria'").get()
     expect(table).toBeUndefined()
   })
+
+  it('creates the requirement_history table with the expected columns', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
+    db = new Database(join(tempDir, 'test.reqarch'))
+    runMigrations(db)
+
+    const cols = (db
+      .prepare("SELECT name FROM pragma_table_info('requirement_history')")
+      .all() as any[]).map((r) => r.name)
+
+    expect(cols).toEqual(
+      expect.arrayContaining(['id', 'requirement_id', 'field', 'old_value', 'new_value', 'changed_by', 'changed_at'])
+    )
+  })
+
+  it('creates the requirement_history index', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
+    db = new Database(join(tempDir, 'test.reqarch'))
+    runMigrations(db)
+
+    const idx = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_req_history_req'")
+      .get()
+    expect(idx).toBeTruthy()
+  })
 })
