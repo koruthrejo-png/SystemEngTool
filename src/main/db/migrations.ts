@@ -206,6 +206,16 @@ export function runMigrations(db: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_req_history_req ON requirement_history(requirement_id);
+
+    CREATE TABLE IF NOT EXISTS baselines (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id  INTEGER NOT NULL REFERENCES projects(id),
+      label       TEXT    NOT NULL,
+      description TEXT,
+      snapshot    TEXT    NOT NULL,
+      created_by  INTEGER REFERENCES users(id),
+      created_at  TEXT    NOT NULL
+    );
   `)
 
   addColumnIfMissing(db, 'projects', 'elem_id_prefix',    "TEXT NOT NULL DEFAULT 'SYS'")

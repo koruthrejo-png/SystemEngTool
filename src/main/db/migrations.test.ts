@@ -155,4 +155,18 @@ describe('runMigrations', () => {
       .get()
     expect(idx).toBeTruthy()
   })
+
+  it('creates the baselines table with the expected columns', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
+    db = new Database(join(tempDir, 'test.reqarch'))
+    runMigrations(db)
+
+    const cols = (db
+      .prepare("SELECT name FROM pragma_table_info('baselines')")
+      .all() as any[]).map((r) => r.name)
+
+    expect(cols).toEqual(
+      expect.arrayContaining(['id', 'project_id', 'label', 'description', 'snapshot', 'created_by', 'created_at'])
+    )
+  })
 })
