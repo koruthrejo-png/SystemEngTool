@@ -139,6 +139,16 @@ export interface UpdateCustomFieldInput {
   value?: string
 }
 
+export interface RequirementHistoryEntry {
+  id: number
+  requirementId: number
+  field: string
+  oldValue: string | null
+  newValue: string | null
+  changedBy: number | null
+  changedAt: string
+}
+
 export interface ConnectionCustomField {
   id: number
   connectionId: number

@@ -6,7 +6,7 @@ import { openDatabase, closeDatabase, getDatabase } from '../db/connection'
 import { initIdentity, setMe, currentUserRowId } from '../identity'
 import { createProject } from './projects'
 import { createModule } from './modules'
-import { listRequirements, createRequirement, updateRequirement, deleteRequirement, restoreRequirement } from './requirements'
+import { listRequirements, createRequirement, updateRequirement, deleteRequirement, restoreRequirement, listRequirementHistory } from './requirements'
 
 describe('requirements handler', () => {
   let tempDir: string
@@ -210,5 +210,78 @@ describe('requirement attribution', () => {
     const legacy = listRequirements(moduleId).find((r) => r.reqId === 'SRS-9999')!
     expect(legacy.createdBy).toBeNull()
     expect(legacy.updatedBy).toBeNull()
+  })
+})
+
+describe('requirement history', () => {
+  let tempDir: string
+  let identityDir: string
+  let moduleId: number
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
+    identityDir = mkdtempSync(join(tmpdir(), 'reqarch-identity-'))
+    initIdentity(identityDir)
+    setMe({ displayName: 'Grace' })
+    openDatabase(join(tempDir, 'test.reqarch'))
+    const project = createProject('Test')
+    moduleId = createModule({ projectId: project.id, parentId: null, kind: 'module', name: 'SRS', idPrefix: 'SRS', idPadding: 4 }).id
+  })
+
+  afterEach(() => {
+    closeDatabase()
+    initIdentity('')
+    rmSync(tempDir, { recursive: true, force: true })
+    rmSync(identityDir, { recursive: true, force: true })
+  })
+
+  it('records one row per changed field, attributed from process identity', () => {
+    const r = createRequirement({ moduleId, text: 'X' })
+    updateRequirement(r.id, { status: 'Approved', priority: 'High' })
+    const rows = listRequirementHistory(r.id)
+    const byField = Object.fromEntries(rows.map((h) => [h.field, h]))
+    expect(rows).toHaveLength(2)
+    expect(byField.status.oldValue).toBe('Draft')
+    expect(byField.status.newValue).toBe('Approved')
+    expect(byField.priority.oldValue).toBe('Medium')
+    expect(byField.priority.newValue).toBe('High')
+    const author = currentUserRowId(getDatabase())
+    expect(byField.status.changedBy).toBe(author)
+    const updatedAt = listRequirements(moduleId).find((x) => x.id === r.id)!.updatedAt
+    expect(byField.status.changedAt).toBe(updatedAt)
+  })
+
+  it('writes zero rows for a no-op update (never fabricate)', () => {
+    const r = createRequirement({ moduleId, text: 'X' }) // status defaults to 'Draft'
+    updateRequirement(r.id, { status: 'Draft' })
+    expect(listRequirementHistory(r.id)).toHaveLength(0)
+  })
+
+  it('ignores a client-asserted author', () => {
+    const r = createRequirement({ moduleId, text: 'X' })
+    updateRequirement(r.id, { text: 'Y', changedBy: 999 } as any)
+    const author = currentUserRowId(getDatabase())
+    expect(listRequirementHistory(r.id)[0].changedBy).toBe(author)
+    expect(author).not.toBe(999)
+  })
+
+  it('serializes nullable and tracked non-core fields', () => {
+    const r = createRequirement({ moduleId, text: 'X', source: 'RFC' })
+    updateRequirement(r.id, { source: '' }) // cleared -> null
+    const cleared = listRequirementHistory(r.id).find((h) => h.field === 'source')!
+    expect(cleared.oldValue).toBe('RFC')
+    expect(cleared.newValue).toBeNull()
+    updateRequirement(r.id, { acceptanceCriteria: 'must boot in 5s' })
+    const ac = listRequirementHistory(r.id).find((h) => h.field === 'acceptance_criteria')!
+    expect(ac.newValue).toBe('must boot in 5s')
+  })
+
+  it('lists newest-first', () => {
+    const r = createRequirement({ moduleId, text: 'X' })
+    updateRequirement(r.id, { status: 'Approved' })
+    updateRequirement(r.id, { priority: 'High' })
+    const fields = listRequirementHistory(r.id).map((h) => h.field)
+    expect(fields[0]).toBe('priority')
+    expect(fields).toContain('status')
   })
 })

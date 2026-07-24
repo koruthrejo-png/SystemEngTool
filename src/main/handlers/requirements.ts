@@ -1,9 +1,19 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../db/connection'
 import { currentUserRowId } from '../identity'
-import type { Requirement, CreateRequirementInput, UpdateRequirementInput } from '../../types'
+import type { Requirement, CreateRequirementInput, UpdateRequirementInput, RequirementHistoryEntry } from '../../types'
 
 function now(): string { return new Date().toISOString() }
+
+function strOrNull(v: unknown): string | null { return v == null ? null : String(v) }
+
+function rowToHistory(row: any): RequirementHistoryEntry {
+  return {
+    id: row.id, requirementId: row.requirement_id, field: row.field,
+    oldValue: row.old_value ?? null, newValue: row.new_value ?? null,
+    changedBy: row.changed_by ?? null, changedAt: row.changed_at
+  }
+}
 
 export function rowToRequirement(row: any): Requirement {
   return {
@@ -85,24 +95,56 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
   const db = getDatabase()
   const existing = db.prepare('SELECT * FROM requirements WHERE id = ?').get(id) as any
   if (!existing) throw new Error(`Requirement ${id} not found`)
-  // `created_by` is deliberately absent from the SET list — who wrote it first never changes.
-  db.prepare(`
-    UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, entry_type = ?, verification_status = ?, heading_id = ?, updated_at = ?, updated_by = ? WHERE id = ?
-  `).run(
-    // nullable text fields coerce '' → null; NOT NULL enum fields have no empty state, so plain ??
-    input.text ?? existing.text,
-    input.acceptanceCriteria !== undefined ? (input.acceptanceCriteria || null) : existing.acceptance_criteria,
-    input.source !== undefined ? (input.source || null) : existing.source,
-    input.rationale !== undefined ? (input.rationale || null) : existing.rationale,
-    input.status ?? existing.status,
-    input.priority ?? existing.priority,
-    input.reqType ?? existing.req_type,
-    input.entryType ?? existing.entry_type,
-    input.verificationStatus ?? existing.verification_status,
-    input.headingId !== undefined ? input.headingId : existing.heading_id,
-    now(), currentUserRowId(db), id
-  )
+  const ts = now()
+  const author = currentUserRowId(db)
+
+  // Resolve each tracked field exactly as the UPDATE does, so the recorded diff matches what
+  // actually persists. Keys are the requirement column names. nullable text fields coerce
+  // '' → null; NOT NULL enum fields have no empty state, so plain ??.
+  const next: Record<string, unknown> = {
+    text:                input.text ?? existing.text,
+    acceptance_criteria: input.acceptanceCriteria !== undefined ? (input.acceptanceCriteria || null) : existing.acceptance_criteria,
+    source:              input.source !== undefined ? (input.source || null) : existing.source,
+    rationale:           input.rationale !== undefined ? (input.rationale || null) : existing.rationale,
+    status:              input.status ?? existing.status,
+    priority:            input.priority ?? existing.priority,
+    req_type:            input.reqType ?? existing.req_type,
+    entry_type:          input.entryType ?? existing.entry_type,
+    verification_status: input.verificationStatus ?? existing.verification_status,
+    heading_id:          input.headingId !== undefined ? input.headingId : existing.heading_id
+  }
+
+  // Wrap the history inserts + the UPDATE in one transaction so a failure can't leave orphan
+  // history or history without its update. The diff is computed in main from `existing` and
+  // `currentUserRowId` — never from `input` — so neither "what changed" nor the author is
+  // client-assertable (item-13 rule).
+  db.transaction(() => {
+    const insH = db.prepare(
+      'INSERT INTO requirement_history (requirement_id, field, old_value, new_value, changed_by, changed_at) VALUES (?,?,?,?,?,?)'
+    )
+    for (const [col, newVal] of Object.entries(next)) {
+      const oldVal = existing[col] ?? null
+      if ((newVal ?? null) !== oldVal) {
+        insH.run(id, col, strOrNull(oldVal), strOrNull(newVal), author, ts)
+      }
+    }
+    // `created_by` is deliberately absent from the SET list — who wrote it first never changes.
+    db.prepare(`
+      UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, entry_type = ?, verification_status = ?, heading_id = ?, updated_at = ?, updated_by = ? WHERE id = ?
+    `).run(
+      next.text, next.acceptance_criteria, next.source, next.rationale, next.status,
+      next.priority, next.req_type, next.entry_type, next.verification_status, next.heading_id,
+      ts, author, id
+    )
+  })()
+
   return rowToRequirement(db.prepare('SELECT * FROM requirements WHERE id = ?').get(id))
+}
+
+export function listRequirementHistory(requirementId: number): RequirementHistoryEntry[] {
+  return (getDatabase()
+    .prepare('SELECT * FROM requirement_history WHERE requirement_id = ? ORDER BY changed_at DESC, id DESC')
+    .all(requirementId) as any[]).map(rowToHistory)
 }
 
 export function deleteRequirement(id: number): void {
@@ -133,4 +175,5 @@ export function registerRequirementHandlers(): void {
   ipcMain.handle('requirements:restore', (_e, id: number) => restoreRequirement(id))
   ipcMain.handle('requirements:listDeleted', (_e, moduleId: number) => listDeletedRequirements(moduleId))
   ipcMain.handle('requirements:listByProject', (_e, projectId: number) => listRequirementsByProject(projectId))
+  ipcMain.handle('requirementHistory:list', (_e, requirementId: number) => listRequirementHistory(requirementId))
 }
