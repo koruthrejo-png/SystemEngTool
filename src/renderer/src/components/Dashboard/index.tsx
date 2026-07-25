@@ -129,12 +129,12 @@ export default function Dashboard(): JSX.Element {
 }
 
 export function BaselinesCard(): JSX.Element {
-  const { baselines, loadBaselines, createBaseline, removeBaseline, loadBaselineDiff, users } = useStore()
+  const { project, baselines, loadBaselines, createBaseline, removeBaseline, loadBaselineDiff, users } = useStore()
   const [adding, setAdding] = useState(false)
   const [label, setLabel] = useState('')
   const [description, setDescription] = useState('')
 
-  useEffect(() => { loadBaselines() }, [])
+  useEffect(() => { loadBaselines() }, [project?.id])
 
   const submit = async (): Promise<void> => {
     if (!label.trim()) return

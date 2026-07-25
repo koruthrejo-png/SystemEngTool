@@ -91,7 +91,8 @@ export function serializeProject(projectId: number): BaselineSnapshot {
     LEFT JOIN connection_types ct ON c.connection_type_id = ct.id
     JOIN architecture_elements se ON c.source_id = se.id
     JOIN architecture_elements te ON c.target_id = te.id
-    WHERE c.project_id = ? AND c.deleted_at IS NULL ORDER BY c.conn_id
+    WHERE c.project_id = ? AND c.deleted_at IS NULL AND se.deleted_at IS NULL AND te.deleted_at IS NULL
+    ORDER BY c.conn_id
   `).all(projectId) as BaselineConnectionSnapshot[]
   const elementLinks = db.prepare(`
     SELECT e.block_id AS left, r.req_id AS reqId
