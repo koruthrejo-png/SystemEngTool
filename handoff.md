@@ -1,5 +1,22 @@
 # Handoff: ReqArch2 — Current State
 
+## ⏸️ IN PROGRESS — Item 12 (nav notification/settings/help/profile icons) — DESIGN AGREED, spec not yet written
+
+Brainstorming done, design approved by the user 2026-07-25. **No code yet.** Next step: write the spec to `docs/superpowers/specs/2026-07-25-nav-header-icons-design.md`, then plan, then build. User wants **all four** affordances (profile avatar menu + Settings already exist in the header; notifications + help are the genuine gaps).
+
+**Agreed design:**
+- **Header icon cluster** (right of header, before the existing avatar): 🔔 bell · ? help · ⚙ gear · avatar. Uniform style; reuse the existing `HeaderMenu`/`MenuItem` primitives (already in `App.tsx`).
+- **Notifications bell** — badge = count of DISTINCT requirements needing attention (hidden when 0). Dropdown, three groups from a pure `attentionItems(projectRequirements, traceLinks)`: **Trace gaps** (High priority, not linked to any architecture element — reuse the Dashboard `unallocated` + `priority==='High'` logic in `stats.ts`), **In review** (`status==='Review'`), **Verification failed** (`verificationStatus==='Failed'`). Row = reqId + truncated text; click → `openRequirement` + switch to Requirements tab. Empty state "You're all caught up."
+- **Help menu** — two items: **Keyboard shortcuts** (small modal listing the app's REAL shortcuts — verify in planning: ⌘K global search, Delete/Backspace on canvas, Esc/Enter in dialogs) and **About ReqArch** (name + version via `app.getVersion()` — likely a tiny new IPC).
+- **Settings gear** — ⚙ opens the existing `Settings` modal directly (`setShowSettings(true)`).
+- **Profile polish** — remove the now-redundant "Settings" item from the avatar menu (gear covers it); keep identity (name/email) + add a "People" shortcut into Settings.
+
+**Key implementation fact (found during brainstorm):** `loadProject` (`store/index.ts:224`) does NOT load `projectRequirements`/`traceLinks` — only `loadTraceability` (`store/index.ts:619`) does, and it's currently called only on the Dashboard/Traceability tabs (`App.tsx` effect keyed on `activeTab`). The always-visible bell needs that data, so **`loadTraceability` must run on project open** (add to the `App.tsx` `loadProject`/`loadMe` effect, or make the bell trigger it on `project?.id`). It is idempotent — safe to also leave the Dashboard's call.
+
+**Testing plan:** pure `attentionItems` unit-tested (each group + distinct-count badge, dedup when a req is in two groups); renderer tests for the bell (badge, groups, empty state, click→`openRequirement`) and the help/about modals.
+
+Scope = one cohesive header feature → one spec/plan. Remaining §6 backlog after this: 11 (admin area), 14 (export PDF from architecture), medium 36–43 (unspecced).
+
 ## Whole-branch review — items 34 + 35 (opus, 2026-07-25): READY TO MERGE
 
 Range `31df886..6042172`. **Zero Critical, zero Important.** Reviewer independently verified every security-sensitive invariant against the tests: main-stamped identity (both `changed_by` + `created_by`, client-forgery cases tested), the transactioned diff-matches-what-persists coercion in `updateRequirement`, never-fabricate (no-op = 0 rows, no backfill), immutable snapshot (the stable-copy test is a genuine immutability assertion, not mock plumbing), stable-key diffing, blob-omitting list payloads, soft-delete exclusion across all four serialize queries. **5 Minors.** Applied 2 (commit after `6042172`): (1) `serializeProject` connection query now also filters `se/te.deleted_at IS NULL` — a self-consistent snapshot even if some future delete path fails to cascade (today `deleteElement` DOES cascade-soft-delete its connections, so the inconsistency was not actually reachable); (2) `BaselinesCard` `useEffect` keyed on `project?.id` (matches the Dashboard `loadTraceability` convention) so switching project on a mounted Dashboard reloads the list. Declined 3 (all deliberate/vanishing): history event grouping on the ms timestamp (human edits never collide in one ms); `loadHistory`/`loadBaselines` plain-async not `run()` (matches the `loadCustomFields` convention); renderer tests assert plumbing not diff logic (the real diff/serialize is covered by the main-process pure + handler tests). **Both features READY TO MERGE (on `main`).**
