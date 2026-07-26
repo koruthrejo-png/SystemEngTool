@@ -1,4 +1,5 @@
 import type { Requirement, ArchitectureElement, ElementRequirementLink, Module, RequirementLink } from '../../../../types'
+import { traceGaps } from '../attention'
 
 export interface ModuleCoverage {
   moduleId: number
@@ -75,7 +76,7 @@ export function computeStats(
         }
       })
       .filter((m) => m.total > 0),
-    criticalGaps: unallocated.filter((r) => r.priority === 'High')
+    criticalGaps: traceGaps(requirements, links)
   }
 }
 
