@@ -19,6 +19,7 @@ import { registerLayerHandlers } from './handlers/layers'
 import { registerUserHandlers } from './handlers/users'
 import { registerIoHandlers } from './handlers/io'
 import { registerBaselineHandlers } from './handlers/baselines'
+import { registerAppHandlers } from './handlers/app'
 import { initIdentity } from './identity'
 
 function createWindow(): void {
@@ -61,6 +62,7 @@ app.whenReady().then(() => {
   registerLayerHandlers()
   registerIoHandlers()
   registerBaselineHandlers()
+  registerAppHandlers()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

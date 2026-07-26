@@ -25,6 +25,9 @@ declare global {
         open(): Promise<Project | null>
         getCurrent(): Promise<Project | null>
       }
+      app: {
+        getVersion(): Promise<string>
+      }
       modules: {
         list(projectId: number): Promise<Module[]>
         create(input: CreateModuleInput): Promise<Module>

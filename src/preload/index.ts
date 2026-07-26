@@ -24,6 +24,9 @@ contextBridge.exposeInMainWorld('api', {
     open: (): Promise<Project | null> => ipcRenderer.invoke('project:open'),
     getCurrent: (): Promise<Project | null> => ipcRenderer.invoke('project:getCurrent')
   },
+  app: {
+    getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')
+  },
   modules: {
     list: (projectId: number): Promise<Module[]> => ipcRenderer.invoke('modules:list', projectId),
     create: (input: CreateModuleInput): Promise<Module> => ipcRenderer.invoke('modules:create', input),
