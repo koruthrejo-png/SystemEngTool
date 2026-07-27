@@ -15,15 +15,18 @@ import InterfaceRegister from './components/InterfaceRegister'
 import InterfaceNav from './components/InterfaceRegister/InterfaceNav'
 import Settings from './components/Settings'
 import HeaderMenu, { MenuItem } from './components/HeaderMenu'
+import NotificationsBell from './components/NotificationsBell'
 
 export default function App(): JSX.Element {
-  const { project, me, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, selectedElementId, selectedConnectionId, detailPanelOpen, selectedRequirementId, lastError, clearError } = useStore()
+  const { project, me, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, loadTraceability, selectedElementId, selectedConnectionId, detailPanelOpen, selectedRequirementId, lastError, clearError } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { loadProject(); loadMe() }, [])
+
+  useEffect(() => { if (project) loadTraceability() }, [project?.id])
 
   useEffect(() => {
     if (activeTab === 'architecture' && project) loadArchitectures()
@@ -88,6 +91,7 @@ export default function App(): JSX.Element {
           <div className="w-56"><GlobalSearch /></div>
           <Button onClick={() => setShowNewDialog(true)}>+ New Project</Button>
           <div className="w-px h-6 bg-white/20" />
+          <NotificationsBell />
           <HeaderMenu
             align="right"
             trigger={

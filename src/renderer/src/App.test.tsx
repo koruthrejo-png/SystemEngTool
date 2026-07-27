@@ -47,7 +47,8 @@ const baseStore = {
   loadCustomFields: vi.fn(),
   addCustomField: vi.fn(),
   updateCustomField: vi.fn(),
-  removeCustomField: vi.fn()
+  removeCustomField: vi.fn(),
+  projectRequirements: [], traceLinks: [], loadTraceability: vi.fn(), openRequirement: vi.fn()
 }
 
 describe('App', () => {
