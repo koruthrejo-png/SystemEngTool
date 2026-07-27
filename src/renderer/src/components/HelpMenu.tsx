@@ -6,7 +6,8 @@ const SHORTCUTS: [string, string][] = [
   ['⌘K / Ctrl+K', 'Focus global search'],
   ['⌘Z / ⌘⇧Z', 'Undo / redo (architecture canvas)'],
   ['⌘D / Ctrl+D', 'Duplicate the selected object (canvas)'],
-  ['Delete / Backspace', 'Delete the selected object or connection (canvas)'],
+  ['Delete', 'Delete the selected object or connection (canvas)'],
+  ['Backspace', 'Delete the selected connection (canvas)'],
   ['Esc', 'Deselect / close the open panel or dialog'],
   ['Enter', 'Commit the current inline edit or dialog']
 ]
