@@ -1,21 +1,24 @@
 # Handoff: ReqArch2 — Current State
 
-## ⏸️ IN PROGRESS — Item 12 (nav notification/settings/help/profile icons) — DESIGN AGREED, spec not yet written
+## Session 2026-07-27 — Nav header icons (backlog item 12, COMPLETE)
 
-Brainstorming done, design approved by the user 2026-07-25. **No code yet.** Next step: write the spec to `docs/superpowers/specs/2026-07-25-nav-header-icons-design.md`, then plan, then build. User wants **all four** affordances (profile avatar menu + Settings already exist in the header; notifications + help are the genuine gaps).
+Spec `docs/superpowers/specs/2026-07-25-nav-header-icons-design.md`, plan `docs/superpowers/plans/2026-07-27-nav-header-icons.md`, ledger `.superpowers/sdd/progress.md` "Feature: Nav header icons". **Subagent-driven** (5 tasks, each task-reviewed clean — haiku for the two mechanical/full-code tasks, sonnet for the rest; reviewers sonnet; final review opus). Base `ab4c07c`. All on `main`. Commits `c0ae17a` (T1) · `f6f803a` (T2) · `038b683` (T3) · `76cf00d` (T4) · `6af43b5` (T5) · `b661918` (final-review copy fix). **Final whole-branch review (opus): READY TO MERGE — zero Critical, zero Important, all 7 invariants verified.**
 
-**Agreed design:**
-- **Header icon cluster** (right of header, before the existing avatar): 🔔 bell · ? help · ⚙ gear · avatar. Uniform style; reuse the existing `HeaderMenu`/`MenuItem` primitives (already in `App.tsx`).
-- **Notifications bell** — badge = count of DISTINCT requirements needing attention (hidden when 0). Dropdown, three groups from a pure `attentionItems(projectRequirements, traceLinks)`: **Trace gaps** (High priority, not linked to any architecture element — reuse the Dashboard `unallocated` + `priority==='High'` logic in `stats.ts`), **In review** (`status==='Review'`), **Verification failed** (`verificationStatus==='Failed'`). Row = reqId + truncated text; click → `openRequirement` + switch to Requirements tab. Empty state "You're all caught up."
-- **Help menu** — two items: **Keyboard shortcuts** (small modal listing the app's REAL shortcuts — verify in planning: ⌘K global search, Delete/Backspace on canvas, Esc/Enter in dialogs) and **About ReqArch** (name + version via `app.getVersion()` — likely a tiny new IPC).
-- **Settings gear** — ⚙ opens the existing `Settings` modal directly (`setShowSettings(true)`).
-- **Profile polish** — remove the now-redundant "Settings" item from the avatar menu (gear covers it); keep identity (name/email) + add a "People" shortcut into Settings.
+**What shipped:** a header icon cluster right of the utility bar — 🔔 bell · ? help · ⚙ gear · avatar (two dividers frame the cluster).
+- **Notifications bell** — badge = DISTINCT requirements needing attention (hidden at 0). Dropdown, three groups from the pure `attentionItems(projectRequirements, traceLinks)` (`src/renderer/src/components/attention.ts`): **Trace gaps** (High + unlinked), **In review** (`status==='Review'`), **Verification failed** (`verificationStatus==='Failed'`); empty groups omitted; empty-all state "You're all caught up." Row = reqId + truncated text; click → `openRequirement(r)` (which already sets the tab + selects the req). `traceGaps(requirements, links)` is the shared predicate — `Dashboard/stats.ts:79` `criticalGaps` now reuses it, so bell and Dashboard can't drift.
+- **Help menu** — Keyboard shortcuts modal (only the app's REAL shortcuts, each verified against source) + About ReqArch (version via the new `app:getVersion` read-only IPC — `src/main/handlers/app.ts`, preload `api.app.getVersion()`).
+- **Settings gear** — opens the existing Settings modal directly.
+- **Profile polish** — avatar-menu "Settings" renamed to **People** (same onClick — Settings modal already has a People section, single-pane fallback); identity block kept.
 
-**Key implementation fact (found during brainstorm):** `loadProject` (`store/index.ts:224`) does NOT load `projectRequirements`/`traceLinks` — only `loadTraceability` (`store/index.ts:619`) does, and it's currently called only on the Dashboard/Traceability tabs (`App.tsx` effect keyed on `activeTab`). The always-visible bell needs that data, so **`loadTraceability` must run on project open** (add to the `App.tsx` `loadProject`/`loadMe` effect, or make the bell trigger it on `project?.id`). It is idempotent — safe to also leave the Dashboard's call.
+**Key implementation fact (was the load-bearing gotcha):** `loadProject` (`store/index.ts:224`) does NOT load `projectRequirements`/`traceLinks` — `loadTraceability` (`store/index.ts:619`) does. The always-visible bell needs that data, so a new `App.tsx` effect (`if (project) loadTraceability()` keyed on `project?.id`) runs it on project open. Idempotent — Dashboard's own call left in place. Verified no fetch loop (`loadTraceability` never sets `project`).
 
-**Testing plan:** pure `attentionItems` unit-tested (each group + distinct-count badge, dedup when a req is in two groups); renderer tests for the bell (badge, groups, empty state, click→`openRequirement`) and the help/about modals.
+**Gate:** both typechecks clean, `electron-vite build` clean (3 targets), full suite **492 passed / 1 failed** (the 1 = the PRE-EXISTING `App.test.tsx` "open" button, fails on base). New tests: pure `attention.test.ts` (groups + distinct-count + dedup-when-in-two-groups + empty), `NotificationsBell.test.tsx` (badge hidden/count, groups, navigation, empty state), `HelpMenu.test.tsx` (shortcuts modal, About version from mocked IPC).
 
-Scope = one cohesive header feature → one spec/plan. Remaining §6 backlog after this: 11 (admin area), 14 (export PDF from architecture), medium 36–43 (unspecced).
+**⚠️ NOT yet live-verified in the running app.** Static review + unit tests cover behavior; no Playwright `_electron` pass driven yet (bell badge/groups/navigation on a real `.reqarch`, gear→Settings, About shows real version). That hands-on/driver pass is the one open item before declaring item 12 fully closed.
+
+**Carried Minors (final review, none block):** `attention.ts` recomputes `linkedIds` independently of `stats.ts` (one Set build, negligible); `NotificationsBell` `(items[key] as Requirement[])` TS-narrowing cast; `HelpMenu.test.tsx` `selector:'*'` is dead-weight; header modal titles render as `<span>` not a heading role (a11y nit shared by ALL existing header modals — Settings/Dashboard/App — not new here; fold into any batched a11y follow-up).
+
+Remaining §6 backlog after item 12: **11 (admin area), 14 (export PDF from architecture), medium 36–43 (unspecced).**
 
 ## Whole-branch review — items 34 + 35 (opus, 2026-07-25): READY TO MERGE
 

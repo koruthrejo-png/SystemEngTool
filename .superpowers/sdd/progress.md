@@ -552,3 +552,15 @@ Freeze a labelled immutable JSON snapshot of the whole project into a `baselines
 
 ## Whole-branch review — items 34 + 35 (opus, 31df886..6042172, 2026-07-25)
 READY TO MERGE — zero Critical, zero Important. Verified: main-stamped identity (both changed_by + created_by, client-forgery tested), transactioned diff-matches-persisted coercion, never-fabricate (no-op=0 rows, no backfill), immutable snapshot (stable-copy test is a real immutability assertion), stable-key diffing, blob-omitting list payloads, soft-delete exclusion in all serialize queries. 5 Minors. Applied 2 (commit after 6042172): (1) serializeProject connection query now filters se/te.deleted_at (self-consistent snapshot even if a future delete path doesn't cascade — current deleteElement DOES cascade-soft-delete connections, so was not reachable); (2) BaselinesCard useEffect keyed on project?.id (matches Dashboard loadTraceability convention) so a project switch on a mounted Dashboard reloads the list. Declined 3 (all deliberate/vanishing): history event grouping on ms timestamp (human edits never collide); loadHistory/loadBaselines plain-async not run() (matches loadCustomFields convention); renderer tests assert plumbing not logic (real diff/serialize covered by main-process pure+handler tests).
+
+## Feature: Nav header icons (item 12, 2026-07-27) — base ab4c07c
+Plan: docs/superpowers/plans/2026-07-27-nav-header-icons.md
+Spec: docs/superpowers/specs/2026-07-25-nav-header-icons-design.md
+Header icon cluster (🔔 notifications, ? help, ⚙ settings) beside avatar. Pure attentionItems (3 groups: trace gaps/in review/verification failed; deduped badge). Help = keyboard shortcuts modal + About (app:getVersion IPC). Gear opens Settings. Avatar drops redundant Settings item, gains People. Executing SUBAGENT-DRIVEN on main.
+- Task 1: complete (commit c0ae17a, review clean — spec ✅, 0 Critical/Important, 1 Minor: double linkedIds compute, negligible, skipped)
+- Task 2: complete (commit f6f803a, review clean — spec ✅, 0 issues)
+- Task 3: complete (commit 038b683, review clean — spec ✅, 0 Critical/Important, 1 Minor: redundant type cast, skipped; suite 490/1 pre-existing; Dashboard loadTraceability call intact)
+- Task 4: complete (commit 76cf00d, review clean — spec ✅, 0 Critical/Important, 2 Minors: test selector '*' dead-weight, modal title not heading-role a11y — both brief-mandated cosmetic, shared by all header modals; suite 492/1 pre-existing)
+- Task 5: complete (commit 6af43b5, review clean — spec ✅, 0 issues). FULL GATE: typecheck clean, electron-vite build clean (3 targets), suite 492/1 pre-existing App.test.tsx open-button.
+- Final whole-branch review (opus, ab4c07c..6af43b5): READY TO MERGE — zero Critical/Important, all 7 invariants verified. 4 Minors (all pre-triaged/cosmetic). Applied 1: HelpMenu Delete/Backspace copy accuracy (commit below). Declined 3: attention linkedIds recompute (negligible), NotificationsBell type cast (harmless), test selector '*' + modal-title a11y (shared by all header modals, not new).
+- FEATURE COMPLETE (item 12). Commits: c0ae17a f6f803a 038b683 76cf00d 6af43b5 + help-copy fix. On main.
