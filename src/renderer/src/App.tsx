@@ -94,6 +94,15 @@ export default function App(): JSX.Element {
           <div className="w-px h-6 bg-white/20" />
           <NotificationsBell />
           <HelpMenu />
+          <button
+            type="button"
+            aria-label="Settings"
+            onClick={() => setShowSettings(true)}
+            className="flex items-center justify-center w-6 h-6 text-white/70 hover:text-white text-base leading-none"
+          >
+            ⚙
+          </button>
+          <div className="w-px h-6 bg-white/20" />
           <HeaderMenu
             align="right"
             trigger={
@@ -111,7 +120,7 @@ export default function App(): JSX.Element {
                   <div className="text-sm font-medium text-ink truncate">{me?.displayName ?? 'You'}</div>
                   {me?.email && <div className="text-xs text-ink-faint truncate">{me.email}</div>}
                 </div>
-                <MenuItem onClick={() => { close(); setShowSettings(true) }}>Settings</MenuItem>
+                <MenuItem onClick={() => { close(); setShowSettings(true) }}>People</MenuItem>
               </>
             )}
           </HeaderMenu>
