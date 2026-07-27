@@ -16,6 +16,7 @@ import InterfaceNav from './components/InterfaceRegister/InterfaceNav'
 import Settings from './components/Settings'
 import HeaderMenu, { MenuItem } from './components/HeaderMenu'
 import NotificationsBell from './components/NotificationsBell'
+import HelpMenu from './components/HelpMenu'
 
 export default function App(): JSX.Element {
   const { project, me, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, loadTraceability, selectedElementId, selectedConnectionId, detailPanelOpen, selectedRequirementId, lastError, clearError } = useStore()
@@ -92,6 +93,7 @@ export default function App(): JSX.Element {
           <Button onClick={() => setShowNewDialog(true)}>+ New Project</Button>
           <div className="w-px h-6 bg-white/20" />
           <NotificationsBell />
+          <HelpMenu />
           <HeaderMenu
             align="right"
             trigger={
