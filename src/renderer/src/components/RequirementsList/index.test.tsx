@@ -13,13 +13,13 @@ const req1 = {
   id: 1, moduleId: 1, reqId: 'SRS-0001', text: 'The system shall respond within 2s',
   acceptanceCriteria: null, source: null, rationale: null, verificationStatus: 'Unverified',
   status: 'Approved', priority: 'High', reqType: 'Functional', entryType: 'Requirement', headingId: null,
-  position: 0, deletedAt: null, createdAt: '', updatedAt: ''
+  position: 0, deletedAt: null, createdAt: '', updatedAt: '', verificationMethod: null
 }
 const req2 = {
   id: 2, moduleId: 1, reqId: 'SRS-0002', text: 'The system shall log all faults',
   acceptanceCriteria: null, source: null, rationale: null, verificationStatus: 'Unverified',
   status: 'Draft', priority: 'Low', reqType: 'Non-Functional', entryType: 'Requirement', headingId: null,
-  position: 1, deletedAt: null, createdAt: '', updatedAt: ''
+  position: 1, deletedAt: null, createdAt: '', updatedAt: '', verificationMethod: null
 }
 
 beforeEach(() => {
@@ -83,6 +83,18 @@ describe('RequirementsList', () => {
     expect(within(row).getByText('Approved')).toBeInTheDocument()
     expect(within(row).getByText('High')).toBeInTheDocument()
     expect(within(row).getByText('Functional')).toBeInTheDocument()
+  })
+
+  it('renders the verification method column (— when unset)', () => {
+    Object.assign(storeState, {
+      requirements: [
+        { ...req1, id: 1, reqId: 'R-1', verificationMethod: 'Test' },
+        { ...req2, id: 2, reqId: 'R-2', verificationMethod: null }
+      ]
+    })
+    render(<RequirementsList />)
+    expect(screen.getByText('Test')).toBeInTheDocument()
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
   })
 
   it('filters rows by a status rule', () => {
@@ -204,7 +216,7 @@ describe('RequirementsList', () => {
     expect(screen.getByLabelText('Resize ID column')).toBeInTheDocument()
     expect(screen.getByLabelText('Resize Text column')).toBeInTheDocument()
     expect(screen.getByLabelText('Resize Priority column')).toBeInTheDocument()
-    expect(screen.queryAllByLabelText(/Resize .* column/)).toHaveLength(9)
+    expect(screen.queryAllByLabelText(/Resize .* column/)).toHaveLength(10)
   })
 
   it('dragging a handle resizes the column and persists the widths', () => {

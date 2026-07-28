@@ -11,7 +11,7 @@ import HeaderMenu from '../HeaderMenu'
 // The checkbox (left) and actions (right) columns are structural: fixed position/width,
 // never reordered or resized. Only these data columns in between are drag-reorderable and
 // resizable, keyed so the header and every row body cell follow the same live order.
-type DataColKey = 'reqId' | 'entryType' | 'text' | 'ac' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority'
+type DataColKey = 'reqId' | 'entryType' | 'text' | 'ac' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority' | 'verificationMethod'
 interface DataCol {
   key: DataColKey
   label: string
@@ -86,7 +86,8 @@ const DEFAULT_DATA_COLUMNS: DataCol[] = [
   { key: 'rationale', label: 'Rationale', width: 180 },
   { key: 'reqType', label: 'Type', width: 100 },
   { key: 'status', label: 'Status', width: 92 },
-  { key: 'priority', label: 'Priority', width: 80 }
+  { key: 'priority', label: 'Priority', width: 80 },
+  { key: 'verificationMethod', label: 'Verification Method', width: 140 }
 ]
 
 const DEFAULT_KEYS = DEFAULT_DATA_COLUMNS.map((c) => c.key).sort().join(',')
@@ -271,6 +272,8 @@ export default function RequirementsList(): JSX.Element {
         return <div className="pt-0.5"><Chip value={req.status} /></div>
       case 'priority':
         return <div className="pt-0.5"><Chip value={req.priority} /></div>
+      case 'verificationMethod':
+        return <span className="text-xs text-ink-muted pt-0.5 truncate">{req.verificationMethod ?? '—'}</span>
     }
   }
 
