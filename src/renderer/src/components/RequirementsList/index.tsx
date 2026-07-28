@@ -117,7 +117,7 @@ export default function RequirementsList(): JSX.Element {
     showDeleted, setShowDeleted,
     filterRules, setFilterRules, filterCombine, setFilterCombine,
     selectedRequirementId, selectRequirement,
-    addRequirement, addRequirementBelow, updateRequirement, removeRequirement, restoreRequirement,
+    addRequirement, addRequirementBelow, duplicateRequirement, updateRequirement, removeRequirement, restoreRequirement,
     checkedIds, toggleChecked, setChecked,
     updateRequirements, removeRequirements,
     headings, collapsedHeadingIds, toggleHeadingCollapsed,
@@ -650,6 +650,32 @@ export default function RequirementsList(): JSX.Element {
               className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
             >
               Add entry below
+            </button>
+            <button
+              role="menuitem"
+              onClick={() => { duplicateRequirement(ctxMenu.reqId); setCtxMenu(null) }}
+              className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+            >
+              Duplicate
+            </button>
+            <button
+              role="menuitem"
+              onClick={() => {
+                const r = requirements.find((x) => x.id === ctxMenu.reqId)
+                if (r) navigator.clipboard.writeText(r.reqId)
+                setCtxMenu(null)
+              }}
+              className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+            >
+              Copy ID
+            </button>
+            <div className="my-1 border-t border-line" />
+            <button
+              role="menuitem"
+              onClick={() => { removeRequirement(ctxMenu.reqId); setCtxMenu(null) }}
+              className="w-full text-left px-3 py-1.5 text-error hover:bg-error/10"
+            >
+              Delete
             </button>
           </div>
         </>

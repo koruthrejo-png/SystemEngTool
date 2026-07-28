@@ -410,4 +410,88 @@ describe('RequirementsList', () => {
     await userEvent.click(sourceToggle)
     expect(screen.getByLabelText('Resize Source column')).toBeInTheDocument()
   })
+
+  // Context menu tests (item 43)
+  const baseReq = {
+    id: 1, moduleId: 1, reqId: 'R-1', text: 'Test requirement',
+    acceptanceCriteria: null, source: null, rationale: null, verificationStatus: 'Unverified',
+    status: 'Draft', priority: 'Low', reqType: 'Functional', entryType: 'Requirement', headingId: null,
+    position: 0, deletedAt: null, createdAt: '', updatedAt: '', verificationMethod: null
+  }
+
+  function renderList(reqs: typeof baseReq[] = [], overrides: any = {}): void {
+    Object.assign(storeState, {
+      selectedModuleId: 1,
+      modules: [{ id: 1, projectId: 1, parentId: null, name: 'Test', idPrefix: 'R', idPadding: 1, nextCounter: 2, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }],
+      requirements: reqs,
+      deletedRequirements: [],
+      showDeleted: false,
+      filterRules: [], filterCombine: 'AND',
+      selectedRequirementId: null,
+      selectRequirement: vi.fn(),
+      addRequirement: vi.fn().mockResolvedValue(undefined),
+      addRequirementBelow: vi.fn().mockResolvedValue(undefined),
+      duplicateRequirement: vi.fn().mockResolvedValue(undefined),
+      updateRequirement: vi.fn().mockResolvedValue(undefined),
+      removeRequirement: vi.fn().mockResolvedValue(undefined),
+      restoreRequirement: vi.fn().mockResolvedValue(undefined),
+      setShowDeleted: vi.fn().mockResolvedValue(undefined),
+      setFilterRules: vi.fn(),
+      setFilterCombine: vi.fn(),
+      checkedIds: [],
+      toggleChecked: vi.fn(),
+      setChecked: vi.fn(),
+      updateRequirements: vi.fn().mockResolvedValue(undefined),
+      removeRequirements: vi.fn().mockResolvedValue(undefined),
+      headings: [],
+      collapsedHeadingIds: [],
+      toggleHeadingCollapsed: vi.fn(),
+      addHeading: vi.fn().mockResolvedValue(undefined),
+      renameHeading: vi.fn().mockResolvedValue(undefined),
+      moveHeading: vi.fn().mockResolvedValue(undefined),
+      reparentHeading: vi.fn().mockResolvedValue(undefined),
+      removeHeading: vi.fn().mockResolvedValue(undefined),
+      ...overrides
+    })
+    render(<RequirementsList />)
+  }
+
+  function openCtxMenu(): void {
+    const idCell = screen.getByText('R-1')
+    fireEvent.contextMenu(idCell)
+  }
+
+  it('context menu shows Duplicate, Copy ID and Delete', () => {
+    renderList([{ ...baseReq, id: 1, reqId: 'R-1' }])
+    openCtxMenu()
+    expect(screen.getByRole('menuitem', { name: 'Duplicate' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Copy ID' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
+  })
+
+  it('Duplicate calls duplicateRequirement with the row id and closes the menu', () => {
+    const duplicateRequirement = vi.fn()
+    renderList([{ ...baseReq, id: 1, reqId: 'R-1' }], { duplicateRequirement })
+    openCtxMenu()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Duplicate' }))
+    expect(duplicateRequirement).toHaveBeenCalledWith(1)
+    expect(screen.queryByRole('menuitem', { name: 'Duplicate' })).not.toBeInTheDocument()
+  })
+
+  it('Copy ID writes the reqId string to the clipboard', () => {
+    const writeText = vi.fn()
+    Object.assign(navigator, { clipboard: { writeText } })
+    renderList([{ ...baseReq, id: 1, reqId: 'R-1' }])
+    openCtxMenu()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Copy ID' }))
+    expect(writeText).toHaveBeenCalledWith('R-1')
+  })
+
+  it('Delete calls removeRequirement with the row id', () => {
+    const removeRequirement = vi.fn()
+    renderList([{ ...baseReq, id: 1, reqId: 'R-1' }], { removeRequirement })
+    openCtxMenu()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }))
+    expect(removeRequirement).toHaveBeenCalledWith(1)
+  })
 })
