@@ -112,6 +112,7 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
     req_type:            input.reqType ?? existing.req_type,
     entry_type:          input.entryType ?? existing.entry_type,
     verification_status: input.verificationStatus ?? existing.verification_status,
+    verification_method: input.verificationMethod !== undefined ? input.verificationMethod : existing.verification_method,
     heading_id:          input.headingId !== undefined ? input.headingId : existing.heading_id
   }
 
@@ -131,10 +132,10 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
     }
     // `created_by` is deliberately absent from the SET list — who wrote it first never changes.
     db.prepare(`
-      UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, entry_type = ?, verification_status = ?, heading_id = ?, updated_at = ?, updated_by = ? WHERE id = ?
+      UPDATE requirements SET text = ?, acceptance_criteria = ?, source = ?, rationale = ?, status = ?, priority = ?, req_type = ?, entry_type = ?, verification_status = ?, verification_method = ?, heading_id = ?, updated_at = ?, updated_by = ? WHERE id = ?
     `).run(
       next.text, next.acceptance_criteria, next.source, next.rationale, next.status,
-      next.priority, next.req_type, next.entry_type, next.verification_status, next.heading_id,
+      next.priority, next.req_type, next.entry_type, next.verification_status, next.verification_method, next.heading_id,
       ts, author, id
     )
   })()

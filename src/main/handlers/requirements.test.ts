@@ -312,4 +312,32 @@ describe('requirement history', () => {
     expect(fields[0]).toBe('priority')
     expect(fields).toContain('status')
   })
+
+  it('updateRequirement persists verificationMethod and records history', () => {
+    const r = createRequirement({ moduleId, text: 'x' })
+    updateRequirement(r.id, { verificationMethod: 'Test' })
+    expect(getDatabase().prepare('SELECT verification_method FROM requirements WHERE id=?').get(r.id))
+      .toEqual({ verification_method: 'Test' })
+    const hist = getDatabase()
+      .prepare("SELECT field, old_value, new_value FROM requirement_history WHERE requirement_id=? AND field='verification_method'")
+      .all(r.id)
+    expect(hist).toEqual([{ field: 'verification_method', old_value: null, new_value: 'Test' }])
+  })
+
+  it('a no-op verificationMethod update writes zero history rows', () => {
+    const r = createRequirement({ moduleId, text: 'x' })
+    updateRequirement(r.id, { verificationMethod: 'Test' })
+    const before = getDatabase().prepare("SELECT COUNT(*) c FROM requirement_history WHERE requirement_id=?").get(r.id) as any
+    updateRequirement(r.id, { verificationMethod: 'Test' })   // same value
+    const after = getDatabase().prepare("SELECT COUNT(*) c FROM requirement_history WHERE requirement_id=?").get(r.id) as any
+    expect(after.c).toBe(before.c)
+  })
+
+  it('omitting verificationMethod leaves the existing value', () => {
+    const r = createRequirement({ moduleId, text: 'x' })
+    updateRequirement(r.id, { verificationMethod: 'Analysis' })
+    updateRequirement(r.id, { text: 'y' })                    // method absent
+    expect((getDatabase().prepare('SELECT verification_method FROM requirements WHERE id=?').get(r.id) as any).verification_method)
+      .toBe('Analysis')
+  })
 })
