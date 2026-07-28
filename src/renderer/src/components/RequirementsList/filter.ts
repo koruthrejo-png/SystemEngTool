@@ -1,11 +1,11 @@
 import type { Requirement } from '../../../../types'
-import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES, VERIFICATION_STATUSES } from '../../../../types'
+import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES, VERIFICATION_STATUSES, VERIFICATION_METHODS } from '../../../../types'
 
 export type FilterOperator =
   | 'contains' | 'notContains' | 'equals' | 'startsWith' | 'isEmpty' | 'isNotEmpty'
 
 export type FilterAttrKey =
-  | 'reqId' | 'entryType' | 'text' | 'acceptanceCriteria' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority' | 'verificationStatus'
+  | 'reqId' | 'entryType' | 'text' | 'acceptanceCriteria' | 'source' | 'rationale' | 'reqType' | 'status' | 'priority' | 'verificationStatus' | 'verificationMethod'
 
 export interface FilterRule {
   id: string
@@ -44,7 +44,8 @@ export const FILTERABLE_ATTRS: readonly FilterableAttr[] = [
   { key: 'reqType', label: 'Type', kind: 'enum', options: REQUIREMENT_TYPES, get: (r) => r.reqType ?? '' },
   { key: 'status', label: 'Status', kind: 'enum', options: REQUIREMENT_STATUSES, get: (r) => r.status ?? '' },
   { key: 'priority', label: 'Priority', kind: 'enum', options: REQUIREMENT_PRIORITIES, get: (r) => r.priority ?? '' },
-  { key: 'verificationStatus', label: 'Verification', kind: 'enum', options: VERIFICATION_STATUSES, get: (r) => r.verificationStatus ?? '' }
+  { key: 'verificationStatus', label: 'Verification', kind: 'enum', options: VERIFICATION_STATUSES, get: (r) => r.verificationStatus ?? '' },
+  { key: 'verificationMethod', label: 'Verification Method', kind: 'enum', options: VERIFICATION_METHODS, get: (r) => r.verificationMethod ?? '' }
 ]
 
 // Non-null: FilterAttrKey is constrained to keys that all appear above.
