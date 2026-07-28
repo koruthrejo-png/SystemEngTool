@@ -101,7 +101,9 @@ export function updateRequirement(id: number, input: UpdateRequirementInput): Re
 
   // Resolve each tracked field exactly as the UPDATE does, so the recorded diff matches what
   // actually persists. Keys are the requirement column names. nullable text fields coerce
-  // '' → null; NOT NULL enum fields have no empty state, so plain ??.
+  // '' → null; NOT NULL enum fields have no empty state, so plain ??. verification_method is a
+  // NULLABLE enum (the one exception): it uses `!== undefined ? … : existing` so omitting it
+  // leaves the current value while an explicit value (incl. a future null) can still be written.
   const next: Record<string, unknown> = {
     text:                input.text ?? existing.text,
     acceptance_criteria: input.acceptanceCriteria !== undefined ? (input.acceptanceCriteria || null) : existing.acceptance_criteria,

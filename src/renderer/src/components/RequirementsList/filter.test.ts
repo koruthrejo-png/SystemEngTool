@@ -100,7 +100,7 @@ describe('applyFilters', () => {
       req({ id: 1, verificationMethod: 'Test' }),
       req({ id: 2, verificationMethod: 'Analysis' }),
       req({ id: 3, verificationMethod: null })
-    ] as Requirement[]
+    ]
     const out = applyFilters(rows, [rule({ attr: 'verificationMethod', op: 'equals', value: 'Test' })], 'AND')
     expect(out.map((r) => r.id)).toEqual([1])
   })
