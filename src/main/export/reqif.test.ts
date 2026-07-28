@@ -5,7 +5,7 @@ import type { ExportRow } from './model'
 const row = (over: Partial<ExportRow> = {}): ExportRow => ({
   reqId: 'SRS-1', module: 'Sys', section: '', text: 'shall',
   acceptanceCriteria: '', source: '', rationale: '', entryType: 'Requirement', reqType: 'Functional',
-  status: 'Draft', priority: 'Medium', verificationStatus: 'Unverified', derivedFrom: [], custom: {}, ...over
+  status: 'Draft', priority: 'Medium', verificationStatus: 'Unverified', verificationMethod: '', derivedFrom: [], custom: {}, ...over
 })
 const meta = { projectName: 'Demo', timestamp: '2026-07-22T00:00:00.000Z', identifier: 'urn:x' }
 

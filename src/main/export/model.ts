@@ -15,6 +15,7 @@ export interface ExportRow {
   status: RequirementStatus
   priority: RequirementPriority
   verificationStatus: VerificationStatus
+  verificationMethod: string          // '' when unset (nullable field)
   derivedFrom: string[]
   custom: Record<string, string>
 }
@@ -31,6 +32,7 @@ export interface ParsedRow {
   status: string
   priority: string
   verificationStatus: string
+  verificationMethod: string
   derivedFrom: string[]
   custom: Record<string, string>
 }

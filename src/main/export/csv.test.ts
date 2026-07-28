@@ -5,7 +5,7 @@ import type { ExportRow } from './model'
 const row = (over: Partial<ExportRow> = {}): ExportRow => ({
   reqId: 'SRS-1', module: 'Sys', section: '', text: 'The system shall work',
   acceptanceCriteria: '', source: '', rationale: '', entryType: 'Requirement', reqType: 'Functional',
-  status: 'Draft', priority: 'Medium', verificationStatus: 'Unverified', derivedFrom: [], custom: {}, ...over
+  status: 'Draft', priority: 'Medium', verificationStatus: 'Unverified', verificationMethod: '', derivedFrom: [], custom: {}, ...over
 })
 
 describe('rowsToCsv', () => {
@@ -57,5 +57,16 @@ describe('round-trip', () => {
     const parsed = parseCsv(csv)
     expect(parsed[0].verificationStatus).toBe('Passed')
     expect(parsed[0].acceptanceCriteria).toBe('AC line 1\nAC line 2')
+  })
+
+  it('round-trips verification_method through CSV', () => {
+    const csv = rowsToCsv([row({ verificationMethod: 'Test' })], [])
+    expect(csv.split('\n')[0]).toContain('verification_method')
+    expect(parseCsv(csv)[0].verificationMethod).toBe('Test')
+  })
+
+  it('empty verification_method round-trips as blank', () => {
+    const csv = rowsToCsv([row({ verificationMethod: '' })], [])
+    expect(parseCsv(csv)[0].verificationMethod).toBe('')
   })
 })

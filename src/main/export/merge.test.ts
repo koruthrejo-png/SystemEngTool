@@ -4,7 +4,7 @@ import type { ParsedRow } from './model'
 
 const p = (over: Partial<ParsedRow> = {}): ParsedRow => ({
   reqId: '', section: '', text: 'shall', acceptanceCriteria: '', source: '', rationale: '', entryType: '',
-  reqType: '', status: '', priority: '', verificationStatus: '', derivedFrom: [], custom: {}, ...over
+  reqType: '', status: '', priority: '', verificationStatus: '', verificationMethod: '', derivedFrom: [], custom: {}, ...over
 })
 
 describe('planImport', () => {
@@ -36,6 +36,16 @@ describe('planImport', () => {
     const plan = planImport(rows as any, new Map())
     expect(plan.skipped).toBe(1)
     expect(plan.errors[0]).toContain('verification_status')
+  })
+  it('rejects an invalid verification_method and skips the row', () => {
+    const plan = planImport([p({ reqId: '', text: 'x', verificationMethod: 'Bogus' })], new Map())
+    expect(plan.skipped).toBe(1)
+    expect(plan.errors[0]).toMatch(/verification_method/)
+  })
+  it('accepts a blank verification_method (leave existing)', () => {
+    const plan = planImport([p({ reqId: '', text: 'x', verificationMethod: '' })], new Map())
+    expect(plan.actions).toHaveLength(1)
+    expect(plan.skipped).toBe(0)
   })
 })
 

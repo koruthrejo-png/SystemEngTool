@@ -11,7 +11,7 @@ import type { ExportRow, ParsedRow } from '../export/model'
 import { rowsToCsv, parseCsv } from '../export/csv'
 import { rowsToReqif } from '../export/reqif'
 import { planImport, resolveDerivedFrom } from '../export/merge'
-import type { Requirement, ExportResult, ImportResult, RequirementStatus, RequirementPriority, RequirementType, VerificationStatus } from '../../types'
+import type { Requirement, ExportResult, ImportResult, RequirementStatus, RequirementPriority, RequirementType, VerificationStatus, VerificationMethod } from '../../types'
 
 function winFrom(e: Electron.IpcMainInvokeEvent): BrowserWindow {
   return BrowserWindow.fromWebContents(e.sender) ?? BrowserWindow.getAllWindows()[0]
@@ -72,6 +72,7 @@ function assembleRows(projectId: number, moduleId: number | null): { rows: Expor
     status: r.status,
     priority: r.priority,
     verificationStatus: r.verificationStatus,
+    verificationMethod: r.verificationMethod ?? '',
     derivedFrom: derivedFrom.get(r.id) ?? [],
     custom: cfByReq.get(r.id) ?? {}
   }))
@@ -111,6 +112,7 @@ function toUpdateInput(row: ParsedRow, headingId: number | null): Parameters<typ
     priority: (row.priority || undefined) as RequirementPriority | undefined,
     reqType: (row.reqType || undefined) as RequirementType | undefined,
     verificationStatus: (row.verificationStatus || undefined) as VerificationStatus | undefined,
+    verificationMethod: (row.verificationMethod || undefined) as VerificationMethod | undefined,
     headingId
   }
 }

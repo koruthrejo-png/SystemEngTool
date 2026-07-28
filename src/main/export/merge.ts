@@ -1,5 +1,5 @@
 import type { ParsedRow } from './model'
-import { REQUIREMENT_TYPES, REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, VERIFICATION_STATUSES } from '../../types'
+import { REQUIREMENT_TYPES, REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, VERIFICATION_STATUSES, VERIFICATION_METHODS } from '../../types'
 
 export interface ImportAction { kind: 'create' | 'update'; targetId: number | null; row: ParsedRow }
 export interface ImportPlan { actions: ImportAction[]; errors: string[]; skipped: number }
@@ -8,7 +8,8 @@ const ENUM_SETS: { field: keyof ParsedRow; label: string; values: readonly strin
   { field: 'reqType', label: 'type', values: REQUIREMENT_TYPES },
   { field: 'status', label: 'status', values: REQUIREMENT_STATUSES },
   { field: 'priority', label: 'priority', values: REQUIREMENT_PRIORITIES },
-  { field: 'verificationStatus', label: 'verification_status', values: VERIFICATION_STATUSES }
+  { field: 'verificationStatus', label: 'verification_status', values: VERIFICATION_STATUSES },
+  { field: 'verificationMethod', label: 'verification_method', values: VERIFICATION_METHODS }
 ]
 
 export function planImport(rows: ParsedRow[], existingByReqId: Map<string, number>): ImportPlan {
