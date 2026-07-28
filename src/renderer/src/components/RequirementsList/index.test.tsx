@@ -494,4 +494,37 @@ describe('RequirementsList', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }))
     expect(removeRequirement).toHaveBeenCalledWith(1)
   })
+
+  it('Move to section opens a section picker listing headings and (none)', () => {
+    renderList([{ ...baseReq, id: 1, reqId: 'R-1' }], { headings: [{ id: 5, moduleId: 7, parentId: null, title: 'Intro', position: 0, deletedAt: null, createdAt: '', updatedAt: '' }] })
+    fireEvent.contextMenu(screen.getByText('R-1'))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Move to section/ }))
+    expect(screen.getByRole('menuitem', { name: /Intro/ })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: '(none)' })).toBeInTheDocument()
+  })
+
+  it('picking a section calls updateRequirement with that headingId and closes', () => {
+    const updateRequirement = vi.fn()
+    renderList([{ ...baseReq, id: 1, reqId: 'R-1' }], {
+      updateRequirement,
+      headings: [{ id: 5, moduleId: 7, parentId: null, title: 'Intro', position: 0, deletedAt: null, createdAt: '', updatedAt: '' }]
+    })
+    fireEvent.contextMenu(screen.getByText('R-1'))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Move to section/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Intro/ }))
+    expect(updateRequirement).toHaveBeenCalledWith(1, { headingId: 5 })
+    expect(screen.queryByRole('menuitem', { name: /Intro/ })).not.toBeInTheDocument()
+  })
+
+  it('picking (none) clears the section (headingId null)', () => {
+    const updateRequirement = vi.fn()
+    renderList([{ ...baseReq, id: 1, reqId: 'R-1' }], {
+      updateRequirement,
+      headings: [{ id: 5, moduleId: 7, parentId: null, title: 'Intro', position: 0, deletedAt: null, createdAt: '', updatedAt: '' }]
+    })
+    fireEvent.contextMenu(screen.getByText('R-1'))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Move to section/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '(none)' }))
+    expect(updateRequirement).toHaveBeenCalledWith(1, { headingId: null })
+  })
 })

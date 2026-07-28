@@ -134,6 +134,7 @@ export default function RequirementsList(): JSX.Element {
   const [highlightedId, setHighlightedId] = useState<number | null>(null)
   // right-click context menu, anchored at the cursor for one requirement
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; reqId: number } | null>(null)
+  const [ctxSubmenu, setCtxSubmenu] = useState<'section' | null>(null)
   // left-click on a column header, anchored at the cursor, to hide that column
   const [colMenu, setColMenu] = useState<{ x: number; y: number; key: DataColKey } | null>(null)
 
@@ -566,6 +567,7 @@ export default function RequirementsList(): JSX.Element {
                       if (showDeleted) return
                       e.preventDefault()
                       setHighlightedId(req.id)
+                      setCtxSubmenu(null)
                       setCtxMenu({ x: e.clientX, y: e.clientY, reqId: req.id })
                     }}
                     draggable={!showDeleted}
@@ -644,39 +646,79 @@ export default function RequirementsList(): JSX.Element {
             style={{ top: ctxMenu.y, left: ctxMenu.x }}
             className="fixed z-50 min-w-[190px] bg-white border border-line rounded shadow-lg py-1 text-sm"
           >
-            <button
-              role="menuitem"
-              onClick={() => { addRequirementBelow(ctxMenu.reqId); setCtxMenu(null) }}
-              className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
-            >
-              Add entry below
-            </button>
-            <button
-              role="menuitem"
-              onClick={() => { duplicateRequirement(ctxMenu.reqId); setCtxMenu(null) }}
-              className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
-            >
-              Duplicate
-            </button>
-            <button
-              role="menuitem"
-              onClick={() => {
-                const r = requirements.find((x) => x.id === ctxMenu.reqId)
-                if (r) navigator.clipboard.writeText(r.reqId)
-                setCtxMenu(null)
-              }}
-              className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
-            >
-              Copy ID
-            </button>
-            <div className="my-1 border-t border-line" />
-            <button
-              role="menuitem"
-              onClick={() => { removeRequirement(ctxMenu.reqId); setCtxMenu(null) }}
-              className="w-full text-left px-3 py-1.5 text-error hover:bg-error/10"
-            >
-              Delete
-            </button>
+            {ctxSubmenu === 'section' ? (
+              <div className="max-h-72 overflow-auto">
+                <button
+                  role="menuitem"
+                  onClick={() => setCtxSubmenu(null)}
+                  className="w-full text-left px-3 py-1.5 text-ink-faint hover:bg-action-tint/40"
+                >
+                  ‹ Back
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => { updateRequirement(ctxMenu.reqId, { headingId: null }); setCtxMenu(null) }}
+                  className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+                >
+                  (none)
+                </button>
+                {buildOutline(headings, []).map((row) =>
+                  row.kind === 'heading' ? (
+                    <button
+                      key={row.heading.id}
+                      role="menuitem"
+                      onClick={() => { updateRequirement(ctxMenu.reqId, { headingId: row.heading.id }); setCtxMenu(null) }}
+                      className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+                    >
+                      <span className="font-mono text-xs text-ink-faint mr-2">{row.number}</span>{row.heading.title}
+                    </button>
+                  ) : null
+                )}
+              </div>
+            ) : (
+              <>
+                <button
+                  role="menuitem"
+                  onClick={() => { addRequirementBelow(ctxMenu.reqId); setCtxMenu(null) }}
+                  className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+                >
+                  Add entry below
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => { duplicateRequirement(ctxMenu.reqId); setCtxMenu(null) }}
+                  className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+                >
+                  Duplicate
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    const r = requirements.find((x) => x.id === ctxMenu.reqId)
+                    if (r) navigator.clipboard.writeText(r.reqId)
+                    setCtxMenu(null)
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+                >
+                  Copy ID
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => setCtxSubmenu('section')}
+                  className="w-full text-left px-3 py-1.5 text-ink hover:bg-action-tint/40"
+                >
+                  Move to section ›
+                </button>
+                <div className="my-1 border-t border-line" />
+                <button
+                  role="menuitem"
+                  onClick={() => { removeRequirement(ctxMenu.reqId); setCtxMenu(null) }}
+                  className="w-full text-left px-3 py-1.5 text-error hover:bg-error/10"
+                >
+                  Delete
+                </button>
+              </>
+            )}
           </div>
         </>
       )}
