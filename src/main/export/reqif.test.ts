@@ -25,12 +25,22 @@ describe('rowsToReqif', () => {
     expect(xml).toContain('a &lt; b &amp; c')
     expect(xml).not.toContain('a < b & c')
   })
-  it('declares the four enumeration datatypes', () => {
+  it('declares the five enumeration datatypes', () => {
     const xml = rowsToReqif([row()], [], meta)
-    expect(xml.match(/<DATATYPE-DEFINITION-ENUMERATION /g)?.length).toBe(4)
+    expect(xml.match(/<DATATYPE-DEFINITION-ENUMERATION /g)?.length).toBe(5)
   })
   it('emits one SPEC-RELATION per derivation link', () => {
     const xml = rowsToReqif([row({ reqId: 'SRS-1', derivedFrom: ['SRS-2'] }), row({ reqId: 'SRS-2' })], [], meta)
     expect(xml.match(/<SPEC-RELATION /g)?.length).toBe(1)
+  })
+  it('emits a verificationMethod enum datatype and value when set', () => {
+    const xml = rowsToReqif([row({ verificationMethod: 'Test' })], [], meta)
+    expect(xml).toContain('DT-ENUM-verificationMethod')
+    expect(xml).toContain('AD-ENUM-verificationMethod')
+    expect(xml).toContain('ENUMVAL-verificationMethod-0')
+  })
+  it('omits the verificationMethod value for a row with no method', () => {
+    const xml = rowsToReqif([row({ verificationMethod: '' })], [], meta)
+    expect(xml).not.toContain('ENUMVAL-verificationMethod--1')
   })
 })
