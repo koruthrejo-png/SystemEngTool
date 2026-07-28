@@ -1,5 +1,19 @@
 # Handoff: ReqArch2 — Current State
 
+## Session 2026-07-28 — Row context menu actions (backlog item 43, COMPLETE — READY TO MERGE)
+
+Spec `docs/superpowers/specs/2026-07-28-row-context-menu-actions-design.md`, plan `docs/superpowers/plans/2026-07-28-row-context-menu-actions.md`, ledger `.superpowers/sdd/progress.md` "Feature: Row context menu actions (item 43)". **Subagent-driven** (3 TDD tasks; implementers haiku for T1/T2, sonnet for the T3 submenu; reviewers sonnet; final review opus). Base `db7f99f`. All on `main`. Commits `89df269`(T1)·`be6d6bd`(T2)·`d25f132`(T3). **Final whole-branch review (opus): READY TO MERGE — zero Critical, zero Important.**
+
+**What shipped:** the requirements-table right-click context menu (was only "Add entry below") gains **Duplicate**, **Move to section** (in-popover submenu), **Copy ID**, and **Delete** (soft, red, below a divider). Pure renderer + one new store action; **no new IPC**.
+- **Duplicate** — new `duplicateRequirement(id)` store action (`store/index.ts`): `create` carries the scalar fields (text/ac/source/rationale/headingId/afterId) then a follow-up `update` copies the enums (status/priority/reqType/entryType/verificationStatus/verificationMethod) — because `CreateRequirementInput` has no enum fields (same create-then-update path CSV import uses). Fresh backend reqId, inserts below source, new row selected. Custom fields NOT copied (deferred).
+- **Copy ID** — `navigator.clipboard.writeText(reqId)` (the string reqId).
+- **Move to section** — `ctxSubmenu` state toggles the popover to a section picker (`buildOutline(headings, [])` numbered titles + "(none)"); sets `heading_id` via `updateRequirement`. Reset on menu open (no stale picker on reopen). In-popover toggle, not a hover flyout.
+- **Delete** — existing `removeRequirement` (soft, restorable; store already prunes `checkedIds`).
+
+**Gate:** both typechecks clean, `electron-vite build` clean (3 targets), full suite **515 passed / 1 failed** (the 1 = PRE-EXISTING `App.test.tsx` "open" button, fails on base). 8 new tests. NOT live-verified in the running app yet (unit + review only) — the app runs on Electron 43 so the Playwright `_electron` driver is available if a hands-on pass is wanted (right-click a row → Duplicate/Copy ID/Delete/Move-to-section).
+
+**Carried Minors (final review, none block):** (1) duplicate null-coercion branches untested; (2) Copy ID/Delete tests don't assert menu-close (source has it); (3) `.map(cond?:null)` vs `.filter().map()`; **M-A** spec said "scroll into view" but impl only selects — matches sibling `addRequirementBelow`, plan downgraded it; **M-B** no "Copied" toast (plan downgraded it). All optional follow-ups.
+
 ## Session 2026-07-28 — Verification Method field (backlog item 39, COMPLETE — READY TO MERGE)
 
 Spec `docs/superpowers/specs/2026-07-28-verification-method-field-design.md`, plan `docs/superpowers/plans/2026-07-28-verification-method-field.md`, ledger `.superpowers/sdd/progress.md` "Feature: Verification method field (item 39)". **Subagent-driven** (7 TDD tasks; implementers haiku for the mechanical single-file tasks, sonnet for the 5-file CSV task + ReqIF task; reviewers sonnet; final review opus). Base `153ab0e`. All on `main`. Commits `cecf48d`(T1)·`d91e48c`(T2)·`0147f2d`(T3)·`5812f2b`(T4)·`89f53b7`(T5)·`4bc62b3`(T6)·`84ff713`(T7)·`b0b6b43`(final-review minors). **Final whole-branch review (opus): READY TO MERGE — zero Critical, zero Important.**
