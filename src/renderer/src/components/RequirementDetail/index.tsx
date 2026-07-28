@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../store'
 import { Button, Input, Select, Textarea, SectionLabel } from '../ui'
-import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES, VERIFICATION_STATUSES } from '../../../../types'
-import type { RequirementStatus, RequirementPriority, RequirementType, Requirement, VerificationStatus, ArchitectureElement } from '../../../../types'
+import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES, VERIFICATION_STATUSES, VERIFICATION_METHODS } from '../../../../types'
+import type { RequirementStatus, RequirementPriority, RequirementType, Requirement, VerificationStatus, VerificationMethod, ArchitectureElement } from '../../../../types'
 import { buildOutline } from '../RequirementsList/outline'
 import { flattenTree } from '../ModuleTree/moduleTree'
 import { userName } from '../../attribution'
@@ -134,6 +134,20 @@ export default function RequirementDetail(): JSX.Element {
             ))}
           </Select>
         </Field>
+        <Field label="Verification Method">
+          <Select
+            aria-label="Verification Method"
+            value={req.verificationMethod ?? ''}
+            onChange={(e) =>
+              updateRequirement(req.id, { verificationMethod: (e.target.value || undefined) as VerificationMethod | undefined })
+            }
+          >
+            <option value="">— none —</option>
+            {VERIFICATION_METHODS.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </Select>
+        </Field>
         <Field label="Section">
           <Select
             aria-label="Section"
@@ -211,7 +225,7 @@ export default function RequirementDetail(): JSX.Element {
 const FIELD_LABELS: Record<string, string> = {
   text: 'Text', acceptance_criteria: 'Acceptance Criteria', source: 'Source',
   rationale: 'Rationale', status: 'Status', priority: 'Priority', req_type: 'Type',
-  entry_type: 'Entry Type', verification_status: 'Verification', heading_id: 'Section'
+  entry_type: 'Entry Type', verification_status: 'Verification', verification_method: 'Verification Method', heading_id: 'Section'
 }
 
 function HistorySection({ req: _req }: { req: Requirement }): JSX.Element {

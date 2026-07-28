@@ -13,6 +13,7 @@ const storeState = {
     acceptanceCriteria: 'Measured under load',
     source: 'Customer spec', rationale: 'Performance SLA', verificationStatus: 'Unverified',
     status: 'Draft', priority: 'Medium', reqType: 'Functional', entryType: 'Requirement', headingId: null,
+    verificationMethod: null,
     position: 0, deletedAt: null, createdAt: '', updatedAt: ''
   }],
   updateRequirement: mockUpdateRequirement,
@@ -94,6 +95,14 @@ describe('RequirementDetail', () => {
     render(<RequirementDetail />)
     fireEvent.change(screen.getByLabelText('Verification'), { target: { value: 'Passed' } })
     expect(mockUpdateRequirement).toHaveBeenCalledWith(1, { verificationStatus: 'Passed' })
+  })
+
+  it('shows a Verification Method select with a blank option and saves the choice', () => {
+    render(<RequirementDetail />)
+    const select = screen.getByLabelText('Verification Method') as HTMLSelectElement
+    expect([...select.options].map((o) => o.value)).toEqual(['', 'Test', 'Analysis', 'Inspection', 'Demonstration'])
+    fireEvent.change(select, { target: { value: 'Test' } })
+    expect(mockUpdateRequirement).toHaveBeenCalledWith(1, { verificationMethod: 'Test' })
   })
 
   it('shows the section select with numbered heading options and (none)', () => {
