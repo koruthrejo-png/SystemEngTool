@@ -22,6 +22,7 @@ export function rowToRequirement(row: any): Requirement {
     source: row.source ?? null, rationale: row.rationale ?? null,
     status: row.status, priority: row.priority, reqType: row.req_type, entryType: row.entry_type,
     verificationStatus: row.verification_status,
+    verificationMethod: row.verification_method ?? null,
     headingId: row.heading_id ?? null,
     position: row.position, deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at, updatedAt: row.updated_at,

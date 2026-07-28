@@ -169,4 +169,24 @@ describe('runMigrations', () => {
       expect.arrayContaining(['id', 'project_id', 'label', 'description', 'snapshot', 'created_by', 'created_at'])
     )
   })
+
+  it('adds a nullable verification_method column to requirements', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
+    db = new Database(join(tempDir, 'test.reqarch'))
+    runMigrations(db)
+    const cols = db.prepare(`PRAGMA table_info(requirements)`).all() as any[]
+    const col = cols.find((c) => c.name === 'verification_method')
+    expect(col).toBeTruthy()
+    expect(col.notnull).toBe(0)        // nullable
+    expect(col.dflt_value).toBeNull()  // no default
+  })
+
+  it('re-running migrations leaves verification_method intact (idempotent)', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'reqarch-'))
+    db = new Database(join(tempDir, 'test.reqarch'))
+    runMigrations(db)
+    runMigrations(db)
+    const cols = db.prepare(`PRAGMA table_info(requirements)`).all() as any[]
+    expect(cols.filter((c) => c.name === 'verification_method')).toHaveLength(1)
+  })
 })

@@ -6,7 +6,7 @@ function req(over: Partial<Requirement>): Requirement {
   return {
     id: 1, moduleId: 1, reqId: 'R-1', text: 'x', acceptanceCriteria: null,
     source: null, rationale: null, position: 0, status: 'Draft', priority: 'Medium',
-    reqType: 'Functional', entryType: 'Requirement', verificationStatus: 'Unverified',
+    reqType: 'Functional', entryType: 'Requirement', verificationStatus: 'Unverified', verificationMethod: null,
     headingId: null, deletedAt: null, createdAt: '', updatedAt: '', createdBy: null, updatedBy: null,
     ...over
   }

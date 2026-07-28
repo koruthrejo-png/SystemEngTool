@@ -6,7 +6,7 @@ import { openDatabase, closeDatabase, getDatabase } from '../db/connection'
 import { initIdentity, setMe, currentUserRowId } from '../identity'
 import { createProject } from './projects'
 import { createModule } from './modules'
-import { listRequirements, createRequirement, updateRequirement, deleteRequirement, restoreRequirement, listRequirementHistory } from './requirements'
+import { listRequirements, createRequirement, updateRequirement, deleteRequirement, restoreRequirement, listRequirementHistory, rowToRequirement } from './requirements'
 
 describe('requirements handler', () => {
   let tempDir: string
@@ -131,6 +131,34 @@ describe('requirements handler', () => {
     // blank/omitted leaves existing
     const again = updateRequirement(req.id, { text: 'R2' })
     expect(again.verificationStatus).toBe('Passed')
+  })
+
+  it('rowToRequirement surfaces verificationMethod (null for legacy rows)', () => {
+    const ts = '2026-01-01T00:00:00.000Z'
+    const minimalRow = {
+      id: 1,
+      module_id: 1,
+      req_id: 'TEST-001',
+      text: 'Test',
+      acceptance_criteria: null,
+      source: null,
+      rationale: null,
+      status: 'Draft',
+      priority: 'Medium',
+      req_type: 'Functional',
+      entry_type: 'Requirement',
+      verification_status: 'Unverified',
+      verification_method: null,
+      heading_id: null,
+      position: 0,
+      deleted_at: null,
+      created_at: ts,
+      updated_at: ts,
+      created_by: null,
+      updated_by: null
+    }
+    expect(rowToRequirement({ ...minimalRow, verification_method: null }).verificationMethod).toBeNull()
+    expect(rowToRequirement({ ...minimalRow, verification_method: 'Test' }).verificationMethod).toBe('Test')
   })
 })
 

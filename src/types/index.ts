@@ -41,6 +41,9 @@ export type RequirementType = (typeof REQUIREMENT_TYPES)[number]
 export const VERIFICATION_STATUSES = ['Unverified', 'In Progress', 'Passed', 'Failed'] as const
 export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number]
 
+export const VERIFICATION_METHODS = ['Test', 'Analysis', 'Inspection', 'Demonstration'] as const
+export type VerificationMethod = (typeof VERIFICATION_METHODS)[number]
+
 // Entry Type is free-form: the user types their own value, no preset list. Stored as a plain
 // string (NOT NULL DEFAULT 'Requirement').
 
@@ -57,6 +60,7 @@ export interface Requirement {
   reqType: RequirementType
   entryType: string
   verificationStatus: VerificationStatus
+  verificationMethod: VerificationMethod | null
   headingId: number | null
   position: number
   deletedAt: string | null
@@ -121,6 +125,7 @@ export interface UpdateRequirementInput {
   reqType?: RequirementType
   entryType?: string
   verificationStatus?: VerificationStatus
+  verificationMethod?: VerificationMethod
   headingId?: number | null
 }
 
