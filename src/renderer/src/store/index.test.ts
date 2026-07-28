@@ -214,6 +214,34 @@ describe('store', () => {
     expect(useStore.getState().modules).toEqual([]) // state comes from the re-fetch, not a local filter
   })
 
+  it('duplicateRequirement clones scalar + enum fields below the source, selects the new row', async () => {
+    const src = {
+      id: 1, moduleId: 7, reqId: 'R-1', text: 'orig', acceptanceCriteria: 'ac', source: 'src', rationale: 'why',
+      status: 'Approved' as const, priority: 'High' as const, reqType: 'Functional' as const, entryType: 'Requirement' as const,
+      verificationStatus: 'Passed' as const, verificationMethod: 'Test', headingId: 3, position: 0,
+      deletedAt: null, createdAt: '', updatedAt: '', createdBy: 1, updatedBy: 1
+    }
+    const created = { ...src, id: 2, reqId: 'R-2', text: 'orig' }
+    const createMock = vi.fn().mockResolvedValue(created)
+    const updateMock = vi.fn().mockResolvedValue({ ...created })
+    const listMock = vi.fn().mockResolvedValue([src, created])
+    ;(window.api.requirements.create as any) = createMock
+    ;(window.api.requirements.update as any) = updateMock
+    ;(window.api.requirements.list as any) = listMock
+
+    useStore.setState({ requirements: [src as any] })
+    await useStore.getState().duplicateRequirement(1)
+
+    expect(createMock).toHaveBeenCalledWith({
+      moduleId: 7, text: 'orig', acceptanceCriteria: 'ac', source: 'src', rationale: 'why', headingId: 3, afterId: 1
+    })
+    expect(updateMock).toHaveBeenCalledWith(2, {
+      status: 'Approved', priority: 'High', reqType: 'Functional', entryType: 'Requirement',
+      verificationStatus: 'Passed', verificationMethod: 'Test'
+    })
+    expect(useStore.getState().selectedRequirementId).toBe(2)
+  })
+
   it('loadTraceability also loads requirement links', async () => {
     await useStore.getState().loadProject()
     await useStore.getState().loadTraceability()

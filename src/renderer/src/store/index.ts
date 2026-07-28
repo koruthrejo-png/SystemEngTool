@@ -117,6 +117,7 @@ interface Store {
   moveModule: (id: number, newParentId: number | null) => Promise<void>
   addRequirement: (input: CreateRequirementInput) => Promise<void>
   addRequirementBelow: (afterId: number) => Promise<void>
+  duplicateRequirement: (id: number) => Promise<void>
   updateRequirement: (id: number, input: UpdateRequirementInput) => Promise<void>
   removeRequirement: (id: number) => Promise<void>
   restoreRequirement: (id: number) => Promise<void>
@@ -290,6 +291,34 @@ export const useStore = create<Store>((set, get) => ({
     const req = await window.api.requirements.create({ moduleId: target.moduleId, text: '', headingId: target.headingId, afterId })
     set({ requirements: await window.api.requirements.list(target.moduleId), selectedRequirementId: req.id })
     await ensureAuthorKnown(req.updatedBy, get, set)
+  }),
+
+  // Clone a requirement directly below itself: create carries the scalar fields it accepts,
+  // then a follow-up update copies the enum fields (CreateRequirementInput has no enum fields —
+  // same create-then-update path the CSV import uses). Custom fields are intentionally not copied.
+  // reqId is minted fresh by the backend; renumbering is server-side, so reload the module list.
+  duplicateRequirement: (id) => run(async () => {
+    const src = get().requirements.find((r) => r.id === id)
+    if (!src) return
+    const created = await window.api.requirements.create({
+      moduleId: src.moduleId,
+      text: src.text,
+      acceptanceCriteria: src.acceptanceCriteria ?? undefined,
+      source: src.source ?? undefined,
+      rationale: src.rationale ?? undefined,
+      headingId: src.headingId,
+      afterId: id
+    })
+    const updated = await window.api.requirements.update(created.id, {
+      status: src.status,
+      priority: src.priority,
+      reqType: src.reqType,
+      entryType: src.entryType,
+      verificationStatus: src.verificationStatus,
+      verificationMethod: src.verificationMethod ?? undefined
+    })
+    set({ requirements: await window.api.requirements.list(src.moduleId), selectedRequirementId: updated.id })
+    await ensureAuthorKnown(updated.updatedBy, get, set)
   }),
 
   updateRequirement: (id, input) => run(async () => {
