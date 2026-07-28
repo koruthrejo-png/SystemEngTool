@@ -1,5 +1,15 @@
 # Handoff: ReqArch2 — Current State
 
+## TL;DR (as of 2026-07-28, end of session)
+
+- **On `main`, pushed to `origin`** (`koruthrejo-png/SystemEngTool`) through commit `f2e4164`. Working tree clean.
+- **Electron upgraded 31.7.7 → 43.2.0 this session** — macOS 26 revoked 31.7.7's notarization (XProtect SIGKILLs it). Do NOT downgrade. After any Electron bump, `npx electron-rebuild -f -w better-sqlite3`; the `better-sqlite3-node` test alias stays node-ABI. See [[project-electron-macos26]].
+- **Backlog (§6 in `docs/superpowers/specs/2026-07-02-ui-overhaul-design.md`):** DONE this session — item 12 (nav header icons, live-verified), **item 39** (verification method field), **item 43** (row context menu). Both 39 + 43 opus-reviewed READY TO MERGE + live-verified + pushed.
+- **Specced, not yet built (items 37–43, dated specs in `docs/superpowers/specs/2026-07-28-*`):** remaining = **42** interface CSV export · **37** quality linter · **38** saved filter views · **41** canvas PNG/SVG export · **40** canvas auto-layout (adds `@dagrejs/dagre`). Suggested next: **42**. **Item 36** (comments) deferred — needs the multi-user server.
+- **Test baseline: 515 passed / 1 failed.** The 1 = PRE-EXISTING `App.test.tsx` "open" button test (fails on base, unrelated, still needs updating — safe to ignore in every gate).
+- **Live-verify works again** via `.claude/skills/run-app/driver.mjs` / a one-shot Playwright `_electron` script on Electron 43. Technique: write `{lastProjectPath: "…/SmokeTest.reqarch"}` into `userData/settings.json` (userData = `~/Library/Application Support/reqarch2`), reload; drive `window.api` for data + DOM for UI; stub native save/open dialogs in main via `app.evaluate(({dialog}) => { dialog.showSaveDialog = … })` for CSV/ReqIF file paths.
+- **Scratch pollution in SmokeTest (harmless):** THM-0001 = Approved/High + verificationMethod + history rows; Thermal has a soft-deleted THM-0002; plus older baseline/history seeds from prior sessions.
+
 ## Session 2026-07-28 — Row context menu actions (backlog item 43, COMPLETE — READY TO MERGE)
 
 Spec `docs/superpowers/specs/2026-07-28-row-context-menu-actions-design.md`, plan `docs/superpowers/plans/2026-07-28-row-context-menu-actions.md`, ledger `.superpowers/sdd/progress.md` "Feature: Row context menu actions (item 43)". **Subagent-driven** (3 TDD tasks; implementers haiku for T1/T2, sonnet for the T3 submenu; reviewers sonnet; final review opus). Base `db7f99f`. All on `main`. Commits `89df269`(T1)·`be6d6bd`(T2)·`d25f132`(T3). **Final whole-branch review (opus): READY TO MERGE — zero Critical, zero Important.**
