@@ -1,6 +1,6 @@
 # Handoff: ReqArch2 — Current State
 
-## Session 2026-07-27 — Nav header icons (backlog item 12, COMPLETE)
+## Session 2026-07-27 — Nav header icons (backlog item 12, COMPLETE + LIVE-VERIFIED 2026-07-28)
 
 Spec `docs/superpowers/specs/2026-07-25-nav-header-icons-design.md`, plan `docs/superpowers/plans/2026-07-27-nav-header-icons.md`, ledger `.superpowers/sdd/progress.md` "Feature: Nav header icons". **Subagent-driven** (5 tasks, each task-reviewed clean — haiku for the two mechanical/full-code tasks, sonnet for the rest; reviewers sonnet; final review opus). Base `ab4c07c`. All on `main`. Commits `c0ae17a` (T1) · `f6f803a` (T2) · `038b683` (T3) · `76cf00d` (T4) · `6af43b5` (T5) · `b661918` (final-review copy fix). **Final whole-branch review (opus): READY TO MERGE — zero Critical, zero Important, all 7 invariants verified.**
 
@@ -14,7 +14,9 @@ Spec `docs/superpowers/specs/2026-07-25-nav-header-icons-design.md`, plan `docs/
 
 **Gate:** both typechecks clean, `electron-vite build` clean (3 targets), full suite **492 passed / 1 failed** (the 1 = the PRE-EXISTING `App.test.tsx` "open" button, fails on base). New tests: pure `attention.test.ts` (groups + distinct-count + dedup-when-in-two-groups + empty), `NotificationsBell.test.tsx` (badge hidden/count, groups, navigation, empty state), `HelpMenu.test.tsx` (shortcuts modal, About version from mocked IPC).
 
-**⚠️ NOT yet live-verified in the running app.** Static review + unit tests cover behavior; no Playwright `_electron` pass driven yet (bell badge/groups/navigation on a real `.reqarch`, gear→Settings, About shows real version). That hands-on/driver pass is the one open item before declaring item 12 fully closed.
+**✅ LIVE-VERIFIED 2026-07-28 (Playwright `_electron`, real `SmokeTest.reqarch`, item 12 now fully closed):** bell badge = **5**, dropdown renders **Trace gaps** (THM-0001 + DEM-0001/0002/0004/0006) + **In review** groups with reqId + truncated text; clicking THM-0001 navigated to its drawer; **? → Keyboard shortcuts** modal shows the correct copy (incl. Backspace = connections only); **? → About ReqArch** shows **Version 1.0.0** read live via the `app:getVersion` IPC; **⚙ → Settings** modal opens (YOU / PEOPLE / PREFERENCES). No DB mutation from the pass (clicks/reads only). Screenshots in scratchpad.
+
+**⚠️ TOOLCHAIN CHANGE forced by macOS 26 (this session):** Apple **revoked Electron 31.7.7's notarization**; macOS 26.5.2 XProtect SIGKILLs it on launch (silently, exit 137) and even moves the bundle to the Bin — so the app was un-launchable and Playwright `_electron` could not attach. Fix: **upgraded `electron` `^31.0.2` → `^43.2.0`** (latest stable, not revoked) + `electron-rebuild -f -w better-sqlite3` for the new ABI. App boots clean, both typechecks clean, suite **492/1** unchanged (same pre-existing `App.test.tsx` "open" fail). `better-sqlite3-node` test alias untouched (stays node-ABI; version-parity test still green). **The Playwright driver now requires a non-revoked Electron — don't downgrade back to 31.x.** No renderer/main API breakage from the 12-major jump.
 
 **Carried Minors (final review, none block):** `attention.ts` recomputes `linkedIds` independently of `stats.ts` (one Set build, negligible); `NotificationsBell` `(items[key] as Requirement[])` TS-narrowing cast; `HelpMenu.test.tsx` `selector:'*'` is dead-weight; header modal titles render as `<span>` not a heading role (a11y nit shared by ALL existing header modals — Settings/Dashboard/App — not new here; fold into any batched a11y follow-up).
 
