@@ -190,16 +190,16 @@ Recorded so they can be planned as future feature work.
 34. **Requirement versioning / change history** — DONE 2026-07-25. Per-requirement, per-field change log (`requirement_history` table); diff computed in MAIN inside `updateRequirement`, attributed from process identity, read-only timeline in the drawer. Tracks all 10 `updateRequirement` fields (spec's 7 + acceptance_criteria/entry_type/verification_status, since the AC-child-table removal routed those through the same UPDATE). Retention: keep everything. Plan: `docs/superpowers/plans/2026-07-24-requirement-change-history.md`. Spec: `docs/superpowers/specs/2026-07-21-requirement-history-design.md`.
 35. **Baselines / snapshots** — DONE 2026-07-25. Freeze a labelled, immutable JSON snapshot of the whole project (requirements + architecture) into a `baselines` table inside the `.reqarch`; list; diff current-vs-baseline (added/removed/modified by stable keys reqId/blockId/connId); hard delete. Authors resolved integer→uuid in the blob (server-portable). Pure `diffSnapshots`; Dashboard Baselines card + diff modal. v1 covers requirements (all 9 scalar fields) + elements + connections + element/connection links; deferred: custom-field diff, restore-to-baseline, export, baseline-to-baseline diff, soft-delete. Plan: `docs/superpowers/plans/2026-07-25-baselines-snapshots.md`. Spec: `docs/superpowers/specs/2026-07-21-baselines-snapshots-design.md`.
 
-**Medium — backlog only, not yet specced:**
+**Medium — items 37–43 SPECCED 2026-07-28 (plans/implementation still to do); 36 deferred:**
 
-36. **Comments / review threads on requirements** — discussion attached to a req; pairs with the SSO team-collaboration server goal.
-37. **Requirement quality linter** — flag weak language ("should", "etc.", "user-friendly"), missing acceptance criteria, no verification method. Cheap heuristics, high perceived intelligence.
-38. **Saved filter views** — the filter builder (item 3 rework) is session-only; let users name + persist a filter set ("Open safety reqs").
-39. **Verification / test-method field** — SE reqs carry a verification method (Test / Analysis / Inspection / Demonstration). Mirrors the existing enum-field machinery (status/priority/type).
-40. **Canvas auto-layout** — one button to tidy the diagram (dagre/elk). Recurring pain in node editors.
-41. **Export canvas as PNG/SVG** — smaller than the item-14 PDF, likely more used.
-42. **Interface/connection table export** — the Interface Register is already on screen; export it (folds into item 32's export machinery).
-43. **Right-click row menu — more actions** — the context menu shipped extensible with only "Add requirement below"; add duplicate, delete, move-to-section, copy-ID, etc.
+36. **Comments / review threads on requirements** — discussion attached to a req; pairs with the SSO team-collaboration server goal. **DEFERRED (2026-07-28):** leans on the multi-user server, which isn't built (identity is local single-user today). Revisit once the server exists — see [[project_reqarch_server]].
+37. **Requirement quality linter** — flag weak language ("should", "etc.", "user-friendly"), missing acceptance criteria, no verification method. Cheap heuristics, high perceived intelligence. **Spec:** `docs/superpowers/specs/2026-07-28-requirement-quality-linter-design.md`.
+38. **Saved filter views** — the filter builder (item 3 rework) is session-only; let users name + persist a filter set ("Open safety reqs"). **Spec:** `docs/superpowers/specs/2026-07-28-saved-filter-views-design.md`.
+39. **Verification / test-method field** — SE reqs carry a verification method (Test / Analysis / Inspection / Demonstration). Mirrors the existing enum-field machinery (status/priority/type). **Spec:** `docs/superpowers/specs/2026-07-28-verification-method-field-design.md`.
+40. **Canvas auto-layout** — one button to tidy the diagram (dagre). Recurring pain in node editors. **Spec:** `docs/superpowers/specs/2026-07-28-canvas-auto-layout-design.md`.
+41. **Export canvas as PNG/SVG** — smaller than the item-14 PDF, likely more used. **Spec:** `docs/superpowers/specs/2026-07-28-export-canvas-image-design.md`.
+42. **Interface/connection table export** — the Interface Register is already on screen; export it (folds into item 32's export machinery). **Spec:** `docs/superpowers/specs/2026-07-28-interface-table-export-design.md`.
+43. **Right-click row menu — more actions** — the context menu shipped extensible with only "Add requirement below"; add duplicate, delete, move-to-section, copy-ID, etc. **Spec:** `docs/superpowers/specs/2026-07-28-row-context-menu-actions-design.md`.
 
 ### Ratified deviations from the mockups (accepted at final review, 2026-07-03)
 
