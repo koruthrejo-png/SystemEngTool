@@ -6,7 +6,12 @@ import {
 } from './requirements'
 import { listHeadings } from './headings'
 import { addRequirementLink, listRequirementLinksByProject } from './requirementLinks'
+import { listConnections } from './connections'
+import { listElements } from './elements'
+import { listConnectionTypes } from './connectionTypes'
+import { listConnectionCustomFieldsByProject } from './connectionCustomFields'
 import { buildSectionPath, findHeadingByPath } from '../export/model'
+import { buildInterfaceExportRows, interfaceRowsToCsv } from '../export/interfacesCsv'
 import type { ExportRow, ParsedRow } from '../export/model'
 import { rowsToCsv, parseCsv } from '../export/csv'
 import { rowsToReqif } from '../export/reqif'
@@ -97,6 +102,25 @@ async function exportFile(
         identifier: `urn:reqarch:${projectId}:${Date.now()}`
       })
   writeFileSync(filePath, content, 'utf-8')
+  return { path: filePath, count: rows.length }
+}
+
+async function exportInterfacesCsvFile(
+  e: Electron.IpcMainInvokeEvent, projectId: number
+): Promise<ExportResult | null> {
+  const { rows, customKeys } = buildInterfaceExportRows(
+    listConnections(projectId),
+    listElements(projectId),
+    listConnectionTypes(projectId),
+    listConnectionCustomFieldsByProject(projectId)
+  )
+  const project = getDatabase().prepare('SELECT name FROM projects WHERE id = ?').get(projectId) as any
+  const { filePath } = await dialog.showSaveDialog(winFrom(e), {
+    defaultPath: `${project?.name ?? 'interfaces'} - Interfaces.csv`,
+    filters: [{ name: 'CSV', extensions: ['csv'] }]
+  })
+  if (!filePath) return null
+  writeFileSync(filePath, interfaceRowsToCsv(rows, customKeys), 'utf-8')
   return { path: filePath, count: rows.length }
 }
 
@@ -200,4 +224,6 @@ export function registerIoHandlers(): void {
   ipcMain.handle('io:exportReqif', (e, projectId: number, moduleId: number | null) =>
     exportFile(e, projectId, moduleId, 'reqif', rowsToCsv /* ignored for reqif */))
   ipcMain.handle('io:importCsv', (e, moduleId: number) => importCsvFile(e, moduleId))
+  ipcMain.handle('io:exportInterfacesCsv', (e, projectId: number) =>
+    exportInterfacesCsvFile(e, projectId))
 }

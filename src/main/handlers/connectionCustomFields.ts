@@ -16,6 +16,17 @@ function rowToField(row: any): ConnectionCustomField {
   }
 }
 
+export function listConnectionCustomFieldsByProject(projectId: number): ConnectionCustomField[] {
+  return (getDatabase()
+    .prepare(`
+      SELECT ccf.* FROM connection_custom_fields ccf
+      JOIN architecture_connections ac ON ac.id = ccf.connection_id
+      WHERE ac.project_id = ? AND ac.deleted_at IS NULL
+      ORDER BY ccf.connection_id, ccf.position, ccf.id
+    `)
+    .all(projectId) as any[]).map(rowToField)
+}
+
 export function registerConnectionCustomFieldHandlers(): void {
   ipcMain.handle('connectionCustomFields:list', (_e, connectionId: number) => {
     return (getDatabase()
@@ -23,16 +34,8 @@ export function registerConnectionCustomFieldHandlers(): void {
       .all(connectionId) as any[]).map(rowToField)
   })
 
-  ipcMain.handle('connectionCustomFields:listByProject', (_e, projectId: number) => {
-    return (getDatabase()
-      .prepare(`
-        SELECT ccf.* FROM connection_custom_fields ccf
-        JOIN architecture_connections ac ON ac.id = ccf.connection_id
-        WHERE ac.project_id = ? AND ac.deleted_at IS NULL
-        ORDER BY ccf.connection_id, ccf.position, ccf.id
-      `)
-      .all(projectId) as any[]).map(rowToField)
-  })
+  ipcMain.handle('connectionCustomFields:listByProject', (_e, projectId: number) =>
+    listConnectionCustomFieldsByProject(projectId))
 
   ipcMain.handle('connectionCustomFields:create', (_e, connectionId: number) => {
     const db = getDatabase()
