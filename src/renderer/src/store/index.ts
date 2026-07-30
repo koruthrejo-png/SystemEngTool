@@ -182,6 +182,7 @@ interface Store {
   // actions — export/import
   exportCsv: (moduleId: number | null) => Promise<void>
   exportReqif: (moduleId: number | null) => Promise<void>
+  exportInterfacesCsv: () => Promise<void>
   importCsv: (moduleId: number) => Promise<void>
 }
 
@@ -355,6 +356,10 @@ export const useStore = create<Store>((set, get) => ({
   exportReqif: (moduleId) => run(async () => {
     const { project } = get(); if (!project) return
     await window.api.io.exportReqif(project.id, moduleId)
+  }),
+  exportInterfacesCsv: () => run(async () => {
+    const { project } = get(); if (!project) return
+    await window.api.io.exportInterfacesCsv(project.id)
   }),
   importCsv: (moduleId) => run(async () => {
     const res = await window.api.io.importCsv(moduleId)

@@ -145,6 +145,7 @@ declare global {
       io: {
         exportCsv(projectId: number, moduleId: number | null): Promise<ExportResult | null>
         exportReqif(projectId: number, moduleId: number | null): Promise<ExportResult | null>
+        exportInterfacesCsv(projectId: number): Promise<ExportResult | null>
         importCsv(moduleId: number): Promise<ImportResult | null>
       }
     }

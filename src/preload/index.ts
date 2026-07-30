@@ -146,6 +146,7 @@ contextBridge.exposeInMainWorld('api', {
   io: {
     exportCsv: (projectId: number, moduleId: number | null): Promise<ExportResult | null> => ipcRenderer.invoke('io:exportCsv', projectId, moduleId),
     exportReqif: (projectId: number, moduleId: number | null): Promise<ExportResult | null> => ipcRenderer.invoke('io:exportReqif', projectId, moduleId),
+    exportInterfacesCsv: (projectId: number): Promise<ExportResult | null> => ipcRenderer.invoke('io:exportInterfacesCsv', projectId),
     importCsv: (moduleId: number): Promise<ImportResult | null> => ipcRenderer.invoke('io:importCsv', moduleId)
   }
 })
