@@ -8,7 +8,7 @@ const BUILTIN_LABELS: Record<string, string> = { name: 'Name', type: 'Type', des
 export default function InterfaceRegister(): JSX.Element {
   const {
     project, connections, elements, connectionTypes, projectConnectionCustomFields, architectures,
-    interfaceArchFilter, loadInterfaces, addConnection, selectConnection
+    interfaceArchFilter, loadInterfaces, addConnection, selectConnection, exportInterfacesCsv
   } = useStore() as any
 
   const [showColumns, setShowColumns] = useState(false)
@@ -55,6 +55,7 @@ export default function InterfaceRegister(): JSX.Element {
       <div className="flex items-center gap-3 px-5 py-3 border-b border-line shrink-0">
         <span className="text-sm text-ink-muted">{visibleRows.length} interfaces</span>
         <div className="ml-auto flex items-center gap-2 relative">
+          <Button variant="secondary" onClick={() => exportInterfacesCsv()}>Export CSV</Button>
           <Button variant="secondary" onClick={() => setShowColumns((v) => !v)}>Columns</Button>
           <Button onClick={() => setShowNew((v) => !v)}>+ New Interface</Button>
           {showColumns && (

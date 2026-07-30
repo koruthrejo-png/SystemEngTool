@@ -1,5 +1,6 @@
 import { it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import InterfaceRegister from './index'
 import { useStore } from '../../store'
 
@@ -19,7 +20,8 @@ beforeEach(() => {
     connections, elements, connectionTypes: [], projectConnectionCustomFields: [], architectures: [],
     loadInterfaces: vi.fn(), addConnection: vi.fn(), setActiveTab: vi.fn(),
     selectRequirement: vi.fn(), selectedConnectionId: null,
-    selectConnection: vi.fn(), project: { id: 1, name: 'P' }
+    selectConnection: vi.fn(), project: { id: 1, name: 'P' },
+    exportInterfacesCsv: vi.fn()
   })
 })
 
@@ -28,4 +30,10 @@ it('renders one interface row with mandatory ID + object ID columns', () => {
   expect(screen.getByText('ICN-0001')).toBeInTheDocument()
   expect(screen.getByText('SYS-001')).toBeInTheDocument()
   expect(screen.getByText('SYS-002')).toBeInTheDocument()
+})
+
+it('Export CSV button calls exportInterfacesCsv', async () => {
+  render(<InterfaceRegister />)
+  await userEvent.click(screen.getByText('Export CSV'))
+  expect((useStore() as any).exportInterfacesCsv).toHaveBeenCalledTimes(1)
 })
