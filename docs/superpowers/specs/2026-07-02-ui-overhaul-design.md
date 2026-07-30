@@ -198,7 +198,7 @@ Recorded so they can be planned as future feature work.
 39. **Verification / test-method field** — SE reqs carry a verification method (Test / Analysis / Inspection / Demonstration). Mirrors the existing enum-field machinery (status/priority/type). **Spec:** `docs/superpowers/specs/2026-07-28-verification-method-field-design.md`.
 40. **Canvas auto-layout** — one button to tidy the diagram (dagre). Recurring pain in node editors. **Spec:** `docs/superpowers/specs/2026-07-28-canvas-auto-layout-design.md`.
 41. **Export canvas as PNG/SVG** — smaller than the item-14 PDF, likely more used. **Spec:** `docs/superpowers/specs/2026-07-28-export-canvas-image-design.md`.
-42. **Interface/connection table export** — the Interface Register is already on screen; export it (folds into item 32's export machinery). **Spec:** `docs/superpowers/specs/2026-07-28-interface-table-export-design.md`.
+42. ✅ **DONE 2026-07-30** — **Interface/connection table export** — the Interface Register is already on screen; export it (folds into item 32's export machinery). **Spec:** `docs/superpowers/specs/2026-07-28-interface-table-export-design.md`. Built commits `2ddbccd`..`1b71f0e`.
 43. **Right-click row menu — more actions** — the context menu shipped extensible with only "Add requirement below"; add duplicate, delete, move-to-section, copy-ID, etc. **Spec:** `docs/superpowers/specs/2026-07-28-row-context-menu-actions-design.md`.
 
 ### Ratified deviations from the mockups (accepted at final review, 2026-07-03)

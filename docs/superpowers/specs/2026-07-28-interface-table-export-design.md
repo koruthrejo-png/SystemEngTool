@@ -1,7 +1,7 @@
 # Design: Interface / Connection Table Export (backlog item 42)
 
 **Date:** 2026-07-28
-**Status:** Draft — awaiting review
+**Status:** BUILT 2026-07-30 (commits `2ddbccd`..`1b71f0e` on `main`; live-verified). Plan: `docs/superpowers/plans/2026-07-30-interface-table-export.md`.
 **Backlog:** item 42 (medium)
 
 ## Purpose
