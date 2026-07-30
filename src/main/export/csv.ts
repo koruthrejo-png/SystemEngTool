@@ -10,18 +10,22 @@ function esc(v: string): string {
   return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
 }
 
+/** Serialize a matrix (first row = header) to RFC-4180 CSV. Rows joined by \n. */
+export function toCsv(matrix: string[][]): string {
+  return matrix.map((row) => row.map(esc).join(',')).join('\n')
+}
+
 export function rowsToCsv(rows: ExportRow[], customKeys: string[]): string {
   const header = [...CORE_COLUMNS, ...customKeys.map((k) => `cf:${k}`)]
-  const lines = [header.map(esc).join(',')]
+  const matrix = [header]
   for (const r of rows) {
-    const cells = [
+    matrix.push([
       r.reqId, r.module, r.section, r.text, r.acceptanceCriteria,
       r.source, r.rationale, r.entryType, r.reqType, r.status, r.priority, r.verificationStatus, r.verificationMethod, r.derivedFrom.join(';'),
       ...customKeys.map((k) => r.custom[k] ?? '')
-    ]
-    lines.push(cells.map(esc).join(','))
+    ])
   }
-  return lines.join('\n')
+  return toCsv(matrix)
 }
 
 // RFC 4180 parser: handles quoted fields with embedded commas/quotes/newlines and CRLF.
