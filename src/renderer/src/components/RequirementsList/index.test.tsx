@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RequirementsList from './index'
@@ -25,6 +25,10 @@ const req2 = {
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  // portal target for the File ▾ / More Filters nav tools (lives in App's top nav at runtime)
+  const slot = document.createElement('div')
+  slot.id = 'req-nav-tools'
+  document.body.appendChild(slot)
   Object.assign(storeState, {
     selectedModuleId: 1,
     modules: [{ id: 1, projectId: 1, parentId: null, name: 'SRS', idPrefix: 'SRS', idPadding: 4, nextCounter: 3, position: 0, deletedAt: null, createdAt: '', updatedAt: '' }],
@@ -57,6 +61,10 @@ beforeEach(() => {
   })
 })
 
+afterEach(() => {
+  document.getElementById('req-nav-tools')?.remove()
+})
+
 describe('RequirementsList', () => {
   it('renders requirement ID and text', () => {
     render(<RequirementsList />)
@@ -72,9 +80,9 @@ describe('RequirementsList', () => {
     expect(storeState.selectRequirement).toHaveBeenCalledWith(1)
   })
 
-  it('shows + New Entry button', () => {
+  it('shows + New Requirement button', () => {
     render(<RequirementsList />)
-    expect(screen.getByText('+ New Entry')).toBeInTheDocument()
+    expect(screen.getByText('+ New Requirement')).toBeInTheDocument()
   })
 
   it('renders status and priority chips and type text in the row', () => {
@@ -112,7 +120,7 @@ describe('RequirementsList', () => {
 
   it('+ Add filter appends a default rule via the store setter', async () => {
     render(<RequirementsList />)
-    await userEvent.click(screen.getByRole('button', { name: /^Filter/ }))
+    await userEvent.click(screen.getByRole('button', { name: /More Filters/ }))
     await userEvent.click(screen.getByText('+ Add filter'))
     expect(storeState.setFilterRules).toHaveBeenCalledWith([
       expect.objectContaining({ attr: 'text', op: 'contains', value: '' })
@@ -121,6 +129,7 @@ describe('RequirementsList', () => {
 
   it('show-deleted checkbox calls setShowDeleted', async () => {
     render(<RequirementsList />)
+    await userEvent.click(screen.getByText('File'))
     await userEvent.click(screen.getByLabelText(/show deleted/i))
     expect(storeState.setShowDeleted).toHaveBeenCalledWith(true)
   })
@@ -270,6 +279,7 @@ describe('RequirementsList', () => {
 
   it('adds a top-level heading from the toolbar', async () => {
     render(<RequirementsList />)
+    await userEvent.click(screen.getByText('File'))
     await userEvent.click(screen.getByText('+ Heading'))
     expect(storeState.addHeading).toHaveBeenCalledWith({ moduleId: 1 })
   })
@@ -403,8 +413,8 @@ describe('RequirementsList', () => {
     await userEvent.click(screen.getByText('Source'))
     await userEvent.click(screen.getByText('Hide column'))
     expect(screen.queryByLabelText('Resize Source column')).toBeNull()
-    // toolbar Columns menu → re-check Source
-    await userEvent.click(screen.getByText('Columns'))
+    // toolbar File ▾ menu → Columns section → re-check Source
+    await userEvent.click(screen.getByText('File'))
     const sourceToggle = screen.getByRole('checkbox', { name: 'Source' })
     expect(sourceToggle).not.toBeChecked()
     await userEvent.click(sourceToggle)

@@ -87,6 +87,8 @@ export default function App(): JSX.Element {
               </>
             )}
           </HeaderMenu>
+          {/* Requirements view teleports its File ▾ / More Filters here (see RequirementsList) */}
+          <div id="req-nav-tools" className="flex items-center gap-3" />
         </div>
         <div className="ml-auto flex items-center gap-3">
           <div className="w-56"><GlobalSearch /></div>

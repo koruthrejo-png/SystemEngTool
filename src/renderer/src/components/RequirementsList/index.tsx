@@ -1,4 +1,5 @@
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { useStore } from '../../store'
 import { isTyping } from '../ArchitectureCanvas/deleteKey'
 import { Button, Chip, SectionLabel, Select } from '../ui'
@@ -125,6 +126,10 @@ export default function RequirementsList(): JSX.Element {
     exportCsv, exportReqif, importCsv
   } = useStore()
   const [columns, setColumns] = useState<DataCol[]>(loadColumns)
+  const [filterOpen, setFilterOpen] = useState(false)
+  // File ▾ / More Filters render into the top-nav slot (#req-nav-tools in App.tsx) via a portal
+  const [navSlot, setNavSlot] = useState<HTMLElement | null>(null)
+  useEffect(() => { setNavSlot(document.getElementById('req-nav-tools')) }, [])
   const [dragCol, setDragCol] = useState<DataColKey | null>(null)
   const [dragOverCol, setDragOverCol] = useState<DataColKey | null>(null)
   const [dragReqId, setDragReqId] = useState<number | null>(null)
@@ -302,82 +307,117 @@ export default function RequirementsList(): JSX.Element {
       {/* Toolbar */}
       <div className="h-12 px-4 border-b border-line flex items-center justify-between shrink-0 bg-white">
         <span className="text-lg font-semibold tracking-tight text-ink">{module?.name ?? 'Requirements'}</span>
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-1.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showDeleted}
-              onChange={(e) => setShowDeleted(e.target.checked)}
-              className="w-3.5 h-3.5 rounded accent-error"
-            />
-            <span className="text-xs text-ink-faint">Show deleted</span>
-          </label>
+        <div className="flex items-center gap-3">
           <span className="text-xs text-ink-faint">
             {displayed.length} item{displayed.length !== 1 ? 's' : ''}
           </span>
+          {!showDeleted && <Button onClick={handleAdd}>+ New Requirement</Button>}
+        </div>
+      </div>
+
+      {/* File ▾ / More Filters teleport into the top nav next to the project name */}
+      {navSlot && selectedModuleId != null && createPortal(
+        <>
           <HeaderMenu
-            align="right"
+            align="left"
             trigger={
-              <span className="flex items-center gap-1 text-xs text-ink-faint hover:text-ink">
-                Columns <span className="text-[10px]">▾</span>
+              <span className="flex items-center gap-1 text-xs text-white/70 hover:text-white">
+                File <span className="text-[10px]">▾</span>
               </span>
             }
           >
-            {() => (
+            {(close) => (
               <div className="py-1">
-                {columns.map((col) => (
-                  <label
-                    key={col.key}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-ink hover:bg-workspace cursor-pointer whitespace-nowrap"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={!col.hidden}
-                      onChange={(e) => setColumnHidden(col.key, !e.target.checked)}
-                      className="w-3.5 h-3.5 rounded accent-action"
-                    />
-                    {col.label}
-                  </label>
-                ))}
+                {!showDeleted && (
+                  <>
+                    <button
+                      className="block w-full text-left px-3 py-1.5 text-sm text-ink hover:bg-workspace whitespace-nowrap"
+                      onClick={() => { importCsv(selectedModuleId!); close() }}
+                    >
+                      Import CSV
+                    </button>
+                    <div className="h-px bg-line my-1" />
+                    {/* Export → side flyout submenu (CSS hover, no state) */}
+                    <div className="relative group/export">
+                      <button className="flex w-full items-center justify-between px-3 py-1.5 text-sm text-ink hover:bg-workspace whitespace-nowrap">
+                        <span>Export</span>
+                        <span className="text-[10px] text-ink-faint pl-4">▸</span>
+                      </button>
+                      <div className="absolute left-full top-0 -mt-1 min-w-[13rem] bg-white border border-line rounded shadow-lg z-50 py-1 hidden group-hover/export:block">
+                        {([
+                          ['Current module (CSV)', () => exportCsv(selectedModuleId)],
+                          ['Whole project (CSV)', () => exportCsv(null)],
+                          ['Current module (ReqIF)', () => exportReqif(selectedModuleId)],
+                          ['Whole project (ReqIF)', () => exportReqif(null)]
+                        ] as const).map(([label, fn]) => (
+                          <button
+                            key={label}
+                            className="block w-full text-left px-3 py-1.5 text-sm text-ink hover:bg-workspace whitespace-nowrap"
+                            onClick={() => { fn(); close() }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="h-px bg-line my-1" />
+                    <button
+                      className="block w-full text-left px-3 py-1.5 text-sm text-ink hover:bg-workspace whitespace-nowrap"
+                      onClick={() => { addHeading({ moduleId: selectedModuleId! }); close() }}
+                    >
+                      + Heading
+                    </button>
+                  </>
+                )}
+                <div className="h-px bg-line my-1" />
+                {/* Display (column visibility) → side flyout submenu (CSS hover, no state) */}
+                <div className="relative group/display">
+                  <button className="flex w-full items-center justify-between px-3 py-1.5 text-sm text-ink hover:bg-workspace whitespace-nowrap">
+                    <span>Display</span>
+                    <span className="text-[10px] text-ink-faint pl-4">▸</span>
+                  </button>
+                  <div className="absolute left-full top-0 -mt-1 min-w-[12rem] bg-white border border-line rounded shadow-lg z-50 py-1 hidden group-hover/display:block">
+                    <SectionLabel className="block px-3 pt-1 pb-0.5">Columns</SectionLabel>
+                    {columns.map((col) => (
+                      <label
+                        key={col.key}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-ink hover:bg-workspace cursor-pointer whitespace-nowrap"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!col.hidden}
+                          onChange={(e) => setColumnHidden(col.key, !e.target.checked)}
+                          className="w-3.5 h-3.5 rounded accent-action"
+                        />
+                        {col.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="h-px bg-line my-1" />
+                <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-ink hover:bg-workspace cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={showDeleted}
+                    onChange={(e) => setShowDeleted(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded accent-error"
+                  />
+                  Show deleted
+                </label>
               </div>
             )}
           </HeaderMenu>
-          {!showDeleted && (
-            <>
-              <HeaderMenu
-                align="right"
-                trigger={
-                  <span className="flex items-center gap-1 text-xs text-ink-faint hover:text-ink px-2">
-                    Export <span className="text-[10px]">▾</span>
-                  </span>
-                }
-              >
-                {(close) => (
-                  <div className="py-1 text-sm text-ink whitespace-nowrap">
-                    {([
-                      ['Current module (CSV)', () => exportCsv(selectedModuleId)],
-                      ['Whole project (CSV)', () => exportCsv(null)],
-                      ['Current module (ReqIF)', () => exportReqif(selectedModuleId)],
-                      ['Whole project (ReqIF)', () => exportReqif(null)]
-                    ] as const).map(([label, fn]) => (
-                      <button
-                        key={label}
-                        className="block w-full text-left px-3 py-1.5 hover:bg-workspace"
-                        onClick={() => { fn(); close() }}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </HeaderMenu>
-              <Button variant="secondary" onClick={() => importCsv(selectedModuleId!)}>Import CSV</Button>
-              <Button variant="secondary" onClick={() => addHeading({ moduleId: selectedModuleId! })}>+ Heading</Button>
-              <Button onClick={handleAdd}>+ New Entry</Button>
-            </>
-          )}
-        </div>
-      </div>
+          <div className="h-5 w-px bg-white/25" />
+          <button
+            type="button"
+            onClick={() => setFilterOpen((o) => !o)}
+            className="flex items-center gap-1 text-xs text-white/70 hover:text-white"
+          >
+            More Filters{filterRules.length > 0 ? ` (${filterRules.length})` : ''}
+          </button>
+        </>,
+        navSlot
+      )}
 
       {/* Filter builder */}
       <FilterPanel
@@ -385,6 +425,8 @@ export default function RequirementsList(): JSX.Element {
         combine={filterCombine}
         onRulesChange={setFilterRules}
         onCombineChange={setFilterCombine}
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
       />
 
       {/* Bulk actions */}
