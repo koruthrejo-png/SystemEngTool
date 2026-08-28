@@ -48,7 +48,15 @@ const baseStore = {
   addCustomField: vi.fn(),
   updateCustomField: vi.fn(),
   removeCustomField: vi.fn(),
-  projectRequirements: [], traceLinks: [], loadTraceability: vi.fn(), openRequirement: vi.fn()
+  projectRequirements: [], traceLinks: [], loadTraceability: vi.fn(), openRequirement: vi.fn(),
+  // App is now wrapped in AuthGate, which reads the same (mocked) store: seed a loaded
+  // session so these tests exercise the shell, not the sign-in form.
+  session: { id: 'test-user', email: 't@example.com', displayName: 'Test' },
+  sessionLoaded: true,
+  signUpPending: false,
+  loadSession: vi.fn().mockResolvedValue(undefined),
+  signIn: vi.fn(), signUp: vi.fn(), signOut: vi.fn(), resetPassword: vi.fn(),
+  clearSignUpPending: vi.fn(), clearError: vi.fn()
 }
 
 describe('App', () => {

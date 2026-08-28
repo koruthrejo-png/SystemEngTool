@@ -17,9 +17,10 @@ import Settings from './components/Settings'
 import HeaderMenu, { MenuItem } from './components/HeaderMenu'
 import NotificationsBell from './components/NotificationsBell'
 import HelpMenu from './components/HelpMenu'
+import AuthGate from './components/Auth/AuthGate'
 
-export default function App(): JSX.Element {
-  const { project, me, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, loadTraceability, selectedElementId, selectedConnectionId, detailPanelOpen, selectedRequirementId, lastError, clearError } = useStore()
+function AppShell(): JSX.Element {
+  const { project, me, activeTab, setActiveTab, loadProject, loadMe, loadArchitectures, loadInterfaces, loadTraceability, selectedElementId, selectedConnectionId, detailPanelOpen, selectedRequirementId, lastError, clearError, signOut } = useStore()
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
@@ -123,6 +124,7 @@ export default function App(): JSX.Element {
                   {me?.email && <div className="text-xs text-ink-faint truncate">{me.email}</div>}
                 </div>
                 <MenuItem onClick={() => { close(); setShowSettings(true) }}>People</MenuItem>
+                <MenuItem onClick={() => { close(); signOut() }}>Sign out</MenuItem>
               </>
             )}
           </HeaderMenu>
@@ -225,5 +227,13 @@ export default function App(): JSX.Element {
         </div>
       )}
     </div>
+  )
+}
+
+export default function App(): JSX.Element {
+  return (
+    <AuthGate>
+      <AppShell />
+    </AuthGate>
   )
 }
