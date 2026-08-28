@@ -6,7 +6,7 @@ import type {
   RequirementCustomField, UpdateCustomFieldInput, RequirementHistoryEntry,
   Baseline, CreateBaselineInput, BaselineDiff,
   ElementType, ConnectionType,
-  User, LocalIdentity, UpdateMeInput,
+  User, LocalIdentity, UpdateMeInput, AuthUser,
   Architecture, ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, UpdateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
@@ -27,6 +27,13 @@ declare global {
       }
       app: {
         getVersion(): Promise<string>
+      }
+      auth: {
+        signUp(input: { email: string; password: string; displayName: string }): Promise<{ status: 'confirm-email' }>
+        signIn(input: { email: string; password: string }): Promise<AuthUser>
+        signOut(): Promise<void>
+        getSession(): Promise<AuthUser | null>
+        resetPassword(email: string): Promise<void>
       }
       modules: {
         list(projectId: number): Promise<Module[]>

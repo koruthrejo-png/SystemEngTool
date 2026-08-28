@@ -20,6 +20,8 @@ import { registerUserHandlers } from './handlers/users'
 import { registerIoHandlers } from './handlers/io'
 import { registerBaselineHandlers } from './handlers/baselines'
 import { registerAppHandlers } from './handlers/app'
+import { registerAuthHandlers } from './handlers/auth'
+import { initAuth, refreshInBackground } from './auth'
 import { initIdentity } from './identity'
 
 function createWindow(): void {
@@ -43,6 +45,9 @@ app.whenReady().then(() => {
   // Before any handler: an uninitialised identity stamps NULL, so a missing call here
   // would silently attribute every edit to nobody.
   initIdentity(app.getPath('userData'))
+  // The session cache lives beside identity.json and is read synchronously at gate time,
+  // so it must be ready before any renderer call.
+  initAuth(app.getPath('userData'))
   registerUserHandlers()
   registerProjectHandlers()
   registerModuleHandlers()
@@ -63,7 +68,11 @@ app.whenReady().then(() => {
   registerIoHandlers()
   registerBaselineHandlers()
   registerAppHandlers()
+  registerAuthHandlers()
   createWindow()
+  // Fire-and-forget: renew the token if we are online. Deliberately NOT awaited — the app
+  // must open at the same speed on a plane as on a desk.
+  void refreshInBackground()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

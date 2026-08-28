@@ -7,7 +7,7 @@ import type {
   RequirementCustomField, UpdateCustomFieldInput, RequirementHistoryEntry,
   Baseline, CreateBaselineInput, BaselineDiff,
   ElementType, ConnectionType,
-  User, LocalIdentity, UpdateMeInput,
+  User, LocalIdentity, UpdateMeInput, AuthUser,
   Architecture, ArchitectureElement, ArchitectureConnection,
   CreateElementTypeInput, UpdateElementTypeInput, CreateConnectionTypeInput,
   CreateElementInput, UpdateElementInput,
@@ -26,6 +26,13 @@ contextBridge.exposeInMainWorld('api', {
   },
   app: {
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')
+  },
+  auth: {
+    signUp: (input: { email: string; password: string; displayName: string }): Promise<{ status: 'confirm-email' }> => ipcRenderer.invoke('auth:signUp', input),
+    signIn: (input: { email: string; password: string }): Promise<AuthUser> => ipcRenderer.invoke('auth:signIn', input),
+    signOut: (): Promise<void> => ipcRenderer.invoke('auth:signOut'),
+    getSession: (): Promise<AuthUser | null> => ipcRenderer.invoke('auth:getSession'),
+    resetPassword: (email: string): Promise<void> => ipcRenderer.invoke('auth:resetPassword', email)
   },
   modules: {
     list: (projectId: number): Promise<Module[]> => ipcRenderer.invoke('modules:list', projectId),
