@@ -5,7 +5,7 @@ import type {
   CreateRequirementInput, UpdateRequirementInput,
   ElementType, ConnectionType,
   UpdateElementTypeInput,
-  User, LocalIdentity, UpdateMeInput,
+  User, LocalIdentity, UpdateMeInput, AuthUser,
   Architecture,
   ArchitectureElement, ArchitectureConnection,
   CreateElementInput, UpdateElementInput,
@@ -48,6 +48,20 @@ interface Store {
   setColourByType: (v: boolean) => void
   canvasAids: CanvasAids
   setCanvasAid: (key: AidKey, on: boolean) => void
+  /** The verified account. null = signed out; the app shell is gated on this. */
+  session: AuthUser | null
+  /** False until the first loadSession() resolves, so the gate does not flash the sign-in
+   *  form over a session that was already on disk. */
+  sessionLoaded: boolean
+  /** Set after a successful sign-up: the account exists but is unusable until the emailed
+   *  link is clicked, so the gate shows "check your email" rather than signing you in. */
+  signUpPending: boolean
+  loadSession: () => Promise<void>
+  signIn: (input: { email: string; password: string }) => Promise<void>
+  signUp: (input: { email: string; password: string; displayName: string }) => Promise<void>
+  signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
+  clearSignUpPending: () => void
   /** You, per machine. Not a preference — main owns it, because main stamps it. */
   me: LocalIdentity | null
   loadMe: () => Promise<void>
@@ -200,6 +214,34 @@ export const useStore = create<Store>((set, get) => ({
     localStorage.setItem(CANVAS_AIDS_KEY, JSON.stringify(next))
     set({ canvasAids: next })
   },
+  session: null,
+  sessionLoaded: false,
+  signUpPending: false,
+  loadSession: async () => {
+    // Launch path: main reads the encrypted cache off disk, no network. Always flip
+    // sessionLoaded, including on failure, or the gate hangs on a spinner forever.
+    try {
+      set({ session: await window.api.auth.getSession() })
+    } finally {
+      set({ sessionLoaded: true })
+    }
+  },
+  signIn: (input) => run(async () => {
+    set({ session: await window.api.auth.signIn(input), signUpPending: false })
+    // The verified name landed in identity.json; re-read it so the avatar updates.
+    set({ me: await window.api.users.me() })
+  }),
+  signUp: (input) => run(async () => {
+    await window.api.auth.signUp(input)
+    // Sign-up is not sign-in: confirmation is required first.
+    set({ signUpPending: true })
+  }),
+  signOut: () => run(async () => {
+    await window.api.auth.signOut()
+    set({ session: null, me: await window.api.users.me() })
+  }),
+  resetPassword: (email) => run(async () => { await window.api.auth.resetPassword(email) }),
+  clearSignUpPending: () => set({ signUpPending: false }),
   me: null,
   users: [],
   loadMe: async () => {
