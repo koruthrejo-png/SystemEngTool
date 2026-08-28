@@ -66,4 +66,36 @@ describe('identity + users roster', () => {
     expect(getMe()).toBeNull()
     expect(currentUserRowId(getDatabase())).toBeNull()
   })
+
+  it('stores the Supabase id as externalId without touching the uuid', () => {
+    const before = getMe()!
+    const after = setMe({ displayName: 'Verified Name', email: 'v@example.com', externalId: 'sb-user-123' })
+    expect(after.externalId).toBe('sb-user-123')
+    expect(after.uuid).toBe(before.uuid)
+    const onDisk = JSON.parse(readFileSync(join(identityDir, 'identity.json'), 'utf8'))
+    expect(onDisk.externalId).toBe('sb-user-123')
+  })
+
+  it('signing out clears externalId but keeps uuid, name and email', () => {
+    const before = setMe({ displayName: 'Verified Name', email: 'v@example.com', externalId: 'sb-user-123' })
+    const after = setMe({ externalId: null })
+    expect(after.externalId).toBeNull()
+    expect(after.uuid).toBe(before.uuid)
+    expect(after.displayName).toBe('Verified Name')
+    expect(after.email).toBe('v@example.com')
+  })
+
+  it('upserts external_id into the roster row', () => {
+    setMe({ displayName: 'Verified Name', email: 'v@example.com', externalId: 'sb-user-123' })
+    currentUserRowId(getDatabase())
+    expect(listUsers()[0].externalId).toBe('sb-user-123')
+  })
+
+  it('keeps a roster external_id once set, even after signing out locally', () => {
+    setMe({ externalId: 'sb-user-123' })
+    currentUserRowId(getDatabase())
+    setMe({ externalId: null })
+    currentUserRowId(getDatabase())
+    expect(listUsers()[0].externalId).toBe('sb-user-123')
+  })
 })

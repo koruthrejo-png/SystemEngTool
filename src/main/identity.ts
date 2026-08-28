@@ -41,11 +41,14 @@ export function getMe(): LocalIdentity | null {
     // A file missing its uuid is unusable as an identity — mint a fresh one rather than
     // carry a half-record that can never be reconciled server-side.
     if (parsed.uuid && parsed.displayName) {
-      cached = { uuid: parsed.uuid, displayName: parsed.displayName, email: parsed.email ?? null }
+      cached = {
+        uuid: parsed.uuid, displayName: parsed.displayName,
+        email: parsed.email ?? null, externalId: parsed.externalId ?? null
+      }
       return cached
     }
   } catch { /* absent or unreadable — fall through and mint */ }
-  cached = { uuid: randomUUID(), displayName: defaultName(), email: null }
+  cached = { uuid: randomUUID(), displayName: defaultName(), email: null, externalId: null }
   writeFileSync(identityFile(), JSON.stringify(cached, null, 2))
   return cached
 }
@@ -62,7 +65,8 @@ export function setMe(input: UpdateMeInput): LocalIdentity {
   const next: LocalIdentity = {
     uuid: me.uuid,
     displayName: input.displayName?.trim() || me.displayName,
-    email: input.email !== undefined ? (input.email?.trim() || null) : me.email
+    email: input.email !== undefined ? (input.email?.trim() || null) : me.email,
+    externalId: input.externalId !== undefined ? (input.externalId || null) : me.externalId
   }
   writeFileSync(identityFile(), JSON.stringify(next, null, 2))
   cached = next
@@ -82,10 +86,17 @@ export function currentUserRowId(db: Database.Database): number | null {
   if (hit !== undefined) return hit
   const ts = now()
   db.prepare(`
-    INSERT INTO users (uuid, display_name, email, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(uuid) DO UPDATE SET display_name = excluded.display_name, email = excluded.email, updated_at = excluded.updated_at
-  `).run(me.uuid, me.displayName, me.email, ts, ts)
+    INSERT INTO users (uuid, display_name, email, external_id, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(uuid) DO UPDATE SET
+      display_name = excluded.display_name,
+      email = excluded.email,
+      -- Sticky: signing out on this machine clears the local externalId, but the file's
+      -- record that this uuid IS that Supabase account is what a future server reconciles
+      -- on. Losing it would fork one human into two rows.
+      external_id = COALESCE(excluded.external_id, users.external_id),
+      updated_at = excluded.updated_at
+  `).run(me.uuid, me.displayName, me.email, me.externalId, ts, ts)
   const row = db.prepare('SELECT id FROM users WHERE uuid = ?').get(me.uuid) as { id: number }
   rowIds.set(db, row.id)
   return row.id

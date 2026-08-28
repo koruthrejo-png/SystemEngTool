@@ -185,11 +185,15 @@ export interface LocalIdentity {
   uuid: string
   displayName: string
   email: string | null
+  /** The Supabase auth user id once signed in, null when signed out. It never replaces
+   *  uuid: uuid is the cross-file identity key, this is what a server reconciles on. */
+  externalId: string | null
 }
 
 export interface UpdateMeInput {
   displayName?: string
   email?: string | null
+  externalId?: string | null
 }
 
 export interface ElementType {
