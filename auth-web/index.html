@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ReqArch — Account</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         font: 15px/1.5 -apple-system, Segoe UI, Roboto, sans-serif; background: #f6f7f9; color: #16202c; }
+  @media (prefers-color-scheme: dark) { body { background: #10161f; color: #e6edf5; } }
+  main { width: min(420px, 90vw); padding: 32px; border-radius: 12px; background: rgba(127,127,127,.08); }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  input, button { width: 100%; box-sizing: border-box; padding: 10px 12px; margin-top: 8px;
+                  border-radius: 8px; border: 1px solid rgba(127,127,127,.4); font: inherit; }
+  button { background: #1f3a5f; color: #fff; border: 0; cursor: pointer; }
+  .msg { margin-top: 12px; font-size: 14px; }
+  .err { color: #c0392b; }
+  .ok { color: #1e8449; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">ReqArch</h1>
+  <div id="body"><p class="msg">Loading…</p></div>
+</main>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+const SUPABASE_URL = 'https://nrhtzksmsatoznytgjxq.supabase.co'
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_vkAzWwR7yTsxYDBpW6gVyQ_277yMIvF'
+
+const title = document.getElementById('title')
+const body = document.getElementById('body')
+// Supabase appends its result to the URL fragment, e.g. #access_token=…&type=recovery
+const params = new URLSearchParams(location.hash.slice(1))
+const type = params.get('type')
+
+if (params.get('error_description')) {
+  title.textContent = 'Link problem'
+  body.innerHTML = `<p class="msg err">${params.get('error_description')}</p>
+                    <p class="msg">Request a new email from ReqArch and try again.</p>`
+} else if (type === 'recovery') {
+  title.textContent = 'Set a new password'
+  body.innerHTML = `<input id="pw" type="password" placeholder="New password" autocomplete="new-password" />
+                    <button id="go">Update password</button><p class="msg" id="out"></p>`
+  // detectSessionInUrl picks the recovery token out of the fragment for us.
+  const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: false }
+  })
+  const out = document.getElementById('out')
+  document.getElementById('go').onclick = async () => {
+    const password = document.getElementById('pw').value
+    if (password.length < 8) { out.className = 'msg err'; out.textContent = 'Use at least 8 characters.'; return }
+    const { error } = await supabase.auth.updateUser({ password })
+    out.className = error ? 'msg err' : 'msg ok'
+    out.textContent = error ? error.message : 'Password updated. Return to ReqArch and sign in.'
+  }
+} else if (type === 'signup' || type === 'magiclink' || type === 'email_change') {
+  title.textContent = 'Email confirmed'
+  body.innerHTML = '<p class="msg ok">Your ReqArch account is active. Return to the app and sign in.</p>'
+} else {
+  title.textContent = 'ReqArch'
+  body.innerHTML = '<p class="msg">This page handles account confirmation and password resets for the ReqArch desktop app. Open it from the link in your email.</p>'
+}
+</script>
+</body>
+</html>

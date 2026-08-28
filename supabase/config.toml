@@ -1,0 +1,7 @@
+# Links this repo to the Supabase project so the already-connected GitHub integration has
+# something to deploy. v1 adds nothing to `public` — Supabase manages the `auth` schema
+# itself — so this exists to make the pipeline live, not to define data.
+project_id = "nrhtzksmsatoznytgjxq"
+
+[db]
+major_version = 15
