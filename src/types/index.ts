@@ -196,6 +196,14 @@ export interface UpdateMeInput {
   externalId?: string | null
 }
 
+/** A verified account, as it crosses IPC. Tokens are deliberately absent — no access or
+ *  refresh token ever leaves the main process. */
+export interface AuthUser {
+  id: string
+  email: string
+  displayName: string
+}
+
 export interface ElementType {
   id: number
   projectId: number
