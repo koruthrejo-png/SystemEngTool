@@ -18,8 +18,14 @@ export interface LintFinding {
   message: string
 }
 
-/** Imperative keywords that make a statement a commitment. */
-const KEYWORD = /\b(?:shall|must|will)\b/i
+/**
+ * Imperative keywords that make a statement a commitment. Both the presence check and the
+ * count-them-up check are built from one source, so adding a keyword cannot leave `compound`
+ * counting the old set (`keywordCoverage` in lint.test.ts fails if these ever diverge).
+ */
+const KEYWORD_SOURCE = String.raw`\b(?:shall|must|will)\b`
+const KEYWORD = new RegExp(KEYWORD_SOURCE, 'i')
+const KEYWORD_ALL = new RegExp(KEYWORD_SOURCE, 'gi')
 
 /** Words that undermine testability — a "should" is not a commitment. */
 const WEAK = /\b(?:should|may|might|could|would|can|possibly|optionally|if possible|where appropriate)\b/i
@@ -54,7 +60,7 @@ export const LINT_RULES: readonly LintRule[] = [
     // keywords (rather than also flagging " and " after a keyword, which the spec's prose
     // offered) is what keeps "The system shall log X and Y" — a single clause — quiet.
     check: (r) =>
-      (r.text.match(/\b(?:shall|must|will)\b/gi) ?? []).length >= 2
+      (r.text.match(KEYWORD_ALL) ?? []).length >= 2
         ? 'Possible compound requirement — consider splitting.'
         : null
   },
@@ -86,8 +92,17 @@ export const LINT_RULES: readonly LintRule[] = [
   }
 ]
 
-/** Every rule that fires, in `LINT_RULES` order. Pure and total: same input, same output, never throws. */
+/**
+ * Every rule that fires, in `LINT_RULES` order. Pure and total: same input, same output, never throws.
+ *
+ * Blank text short-circuits to no findings. "+ New Requirement" creates a row with `text: ''`
+ * (RequirementsList/index.tsx), so without this guard every freshly added row would wear a
+ * warning dot before the author typed a character — nagging about an unfinished row, not a
+ * low-quality one. The guard lives here rather than in the callers because both surfaces
+ * (drawer section, table dot) route through this function.
+ */
 export function lintRequirement(r: Requirement): LintFinding[] {
+  if (!r.text.trim()) return []
   const findings: LintFinding[] = []
   for (const rule of LINT_RULES) {
     const message = rule.check(r)

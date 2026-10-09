@@ -112,15 +112,37 @@ describe('too-short', () => {
 })
 
 describe('totality', () => {
-  it('blank text and blank AC produce findings without throwing', () => {
+  it('blank text short-circuits to no findings — an unfinished row is not a bad one', () => {
+    // "+ New Requirement" creates `text: ''`; a fresh row must not arrive pre-flagged.
+    expect(lintRequirement(req({ text: '', acceptanceCriteria: '' }))).toEqual([])
+    expect(lintRequirement(req({ text: '   \n\t ', acceptanceCriteria: null }))).toEqual([])
+  })
+
+  it('blank text and blank AC do not throw', () => {
     expect(() => lintRequirement(req({ text: '', acceptanceCriteria: '' }))).not.toThrow()
-    expect(ids(req({ text: '', acceptanceCriteria: '' }))).toEqual(
+    expect(() => lintCount(req({ text: '', acceptanceCriteria: null }))).not.toThrow()
+  })
+
+  it('one character of real text is enough to start linting', () => {
+    expect(ids(req({ text: 'x', acceptanceCriteria: null }))).toEqual(
       expect.arrayContaining(['no-shall', 'no-ac', 'too-short'])
     )
   })
 
   it('every rule is reachable — no rule has an id typo or a dead branch', () => {
     expect(new Set(LINT_RULES.map((r) => r.id)).size).toBe(LINT_RULES.length)
+  })
+
+  // Guards the one-source-two-regexes arrangement in lint.ts: `no-shall` asks "is a keyword
+  // present", `compound` asks "how many". Built from separate literals they could drift, and
+  // adding a keyword to only one is a silent half-feature. Every keyword must satisfy both.
+  it('keywordCoverage: no-shall and compound recognise the same keyword set', () => {
+    for (const kw of ['shall', 'must', 'will']) {
+      expect(ids(req({ text: `The system ${kw} record the brake pressure.` })))
+        .not.toContain('no-shall')
+      expect(ids(req({ text: `The system ${kw} record pressure and ${kw} raise an alarm.` })))
+        .toContain('compound')
+    }
   })
 })
 

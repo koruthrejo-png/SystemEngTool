@@ -255,7 +255,7 @@ export default function RequirementsList(): JSX.Element {
               /* ponytail: dot rides in the ID cell, so hiding the ID column hides it too — accepted over a new grid column, which would mean touching gridTemplateColumns in 3 places plus a COLUMNS_STORAGE_KEY bump. */
               <span role="img" className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title={title} aria-label={title} />
             )}
-            <span className="text-xs font-mono text-ink-faint truncate">{req.reqId}</span>
+            <span className="text-xs font-mono text-ink-faint truncate min-w-0">{req.reqId}</span>
           </span>
         )
       }

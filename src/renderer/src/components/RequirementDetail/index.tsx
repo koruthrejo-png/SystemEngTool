@@ -218,7 +218,9 @@ export default function RequirementDetail(): JSX.Element {
         <TraceabilitySection req={req} />
         <ArchitectureSection req={req} />
         <HistorySection req={req} />
-        <QualitySection req={req} />
+        {/* Lint the live edit state, not the persisted row: Text and AC only reach `req` on
+            blur, so passing `req` would leave findings a blur behind the author's typing. */}
+        <QualitySection req={{ ...req, text, acceptanceCriteria: ac }} />
       </div>
     </div>
   )
