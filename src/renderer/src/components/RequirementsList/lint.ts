@@ -95,14 +95,27 @@ export const LINT_RULES: readonly LintRule[] = [
 /**
  * Every rule that fires, in `LINT_RULES` order. Pure and total: same input, same output, never throws.
  *
- * Blank text short-circuits to no findings. "+ New Requirement" creates a row with `text: ''`
- * (RequirementsList/index.tsx), so without this guard every freshly added row would wear a
- * warning dot before the author typed a character — nagging about an unfinished row, not a
- * low-quality one. The guard lives here rather than in the callers because both surfaces
- * (drawer section, table dot) route through this function.
+ * Two kinds of row produce no findings at all:
+ *
+ * - **Blank text.** "+ New Requirement" creates a row with `text: ''`
+ *   (RequirementsList/index.tsx), so without this guard every freshly added row would wear a
+ *   warning dot before the author typed a character — nagging about an unfinished row, not a
+ *   low-quality one.
+ * - **Rows that are not requirements.** `entryType` is free-form (see src/types/index.ts), and
+ *   demanding "shall" of a row the author labelled `Note` or `Heading` is pure noise. The test
+ *   is a case-insensitive *substring*, not equality, so every real spelling — `Requirement`,
+ *   `Functional Requirement`, `Derived requirement` — keeps its linting; exact equality would
+ *   silently disable the whole feature on a row for a spelling difference.
+ *   ponytail: an entry type that means "requirement" without containing the word (`SYS-REQ`)
+ *   goes unlinted. Accepted over a configurable type list, which the spec defers; the fix if it
+ *   ever bites is a Settings entry, not a longer regex here.
+ *
+ * Both guards live here rather than in the callers because both surfaces (drawer section,
+ * table dot) route through this function.
  */
 export function lintRequirement(r: Requirement): LintFinding[] {
   if (!r.text.trim()) return []
+  if (!r.entryType.toLowerCase().includes('requirement')) return []
   const findings: LintFinding[] = []
   for (const rule of LINT_RULES) {
     const message = rule.check(r)

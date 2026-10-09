@@ -123,6 +123,23 @@ describe('totality', () => {
     expect(() => lintCount(req({ text: '', acceptanceCriteria: null }))).not.toThrow()
   })
 
+  it('non-requirement entry types are not linted', () => {
+    // A row the author labelled Note/Heading/Information is not a requirement; demanding
+    // "shall" of it is noise.
+    for (const entryType of ['Note', 'Heading', 'Information', '']) {
+      expect(lintRequirement(req({ entryType, text: 'It should go', acceptanceCriteria: null })))
+        .toEqual([])
+    }
+  })
+
+  it('entryType matching is a case-insensitive substring, not equality', () => {
+    // entryType is free-form, so a spelling difference must not silently disable linting.
+    for (const entryType of ['Requirement', 'Functional Requirement', 'Derived requirement', 'REQUIREMENT']) {
+      expect(ids(req({ entryType, text: 'It should go', acceptanceCriteria: null })))
+        .toContain('weak-word')
+    }
+  })
+
   it('one character of real text is enough to start linting', () => {
     expect(ids(req({ text: 'x', acceptanceCriteria: null }))).toEqual(
       expect.arrayContaining(['no-shall', 'no-ac', 'too-short'])
