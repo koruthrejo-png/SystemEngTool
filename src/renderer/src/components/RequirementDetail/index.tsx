@@ -4,6 +4,7 @@ import { Button, Input, Select, Textarea, SectionLabel } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES, REQUIREMENT_TYPES, VERIFICATION_STATUSES, VERIFICATION_METHODS } from '../../../../types'
 import type { RequirementStatus, RequirementPriority, RequirementType, Requirement, VerificationStatus, VerificationMethod, ArchitectureElement } from '../../../../types'
 import { buildOutline } from '../RequirementsList/outline'
+import { lintRequirement } from '../RequirementsList/lint'
 import { flattenTree } from '../ModuleTree/moduleTree'
 import { userName } from '../../attribution'
 
@@ -217,6 +218,7 @@ export default function RequirementDetail(): JSX.Element {
         <TraceabilitySection req={req} />
         <ArchitectureSection req={req} />
         <HistorySection req={req} />
+        <QualitySection req={req} />
       </div>
     </div>
   )
@@ -274,6 +276,37 @@ function HistorySection({ req: _req }: { req: Requirement }): JSX.Element {
                     {display(h.field, h.oldValue)} → {display(h.field, h.newValue)}
                   </div>
                 ))}
+              </li>
+            ))}
+          </ul>
+        ))}
+    </div>
+  )
+}
+
+function QualitySection({ req }: { req: Requirement }): JSX.Element {
+  const [open, setOpen] = useState(false)
+  // ponytail: unmemoized — 7 regex rules per render; memoize only if a profile says so
+  const findings = lintRequirement(req)
+
+  return (
+    <div>
+      <SectionLabel className="block pt-2">
+        <button type="button" onClick={() => setOpen((o) => !o)} className="text-left">
+          Quality {open ? '▾' : '▸'}
+        </button>
+      </SectionLabel>
+      {open &&
+        (findings.length === 0 ? (
+          <p className="text-sm text-slate-500">No quality issues.</p>
+        ) : (
+          <ul className="space-y-2">
+            {findings.map((f) => (
+              <li key={f.ruleId} className="text-sm">
+                <span className={f.severity === 'warning' ? 'text-amber-600' : 'text-ink-muted'}>
+                  {f.severity === 'warning' ? '⚠' : 'ⓘ'}
+                </span>{' '}
+                {f.message}
               </li>
             ))}
           </ul>
