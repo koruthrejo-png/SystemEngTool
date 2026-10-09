@@ -1,8 +1,9 @@
 # Handoff: ReqArch2 — Current State
 
-## TL;DR (as of 2026-08-28, end of session)
+## TL;DR (as of 2026-10-09, end of session)
 
-- **On `main` through commit `832c627`. NOT PUSHED — 9 commits sit ahead of `origin`.** Working tree has only the unrelated `.claude/settings.local.json` edit.
+- **On `main` through commit `9c0a507`. NOT PUSHED — 16 commits sit ahead of `origin`.** Working tree has only the unrelated `.claude/settings.local.json` edit.
+- **Latest feature (2026-10-09): backlog item 37 — requirement quality linter — CODE COMPLETE, gate green, NOT live-verified (the AuthGate wall blocks it; see that session section).** Commits `8f27a70`·`469efc7`·`9c0a507`. Test baseline now **582 passed / 1 failed**.
 - **Latest feature (2026-08-28): user accounts via Supabase Auth — CODE COMPLETE, gate green, gate-level live-verified. NOT fully live-verified: the end-to-end email flow is blocked on manual Supabase/GitHub dashboard setup (see "Auth — manual dashboard setup" below).** Spec `docs/superpowers/specs/2026-08-09-accounts-auth-design.md`, plan `docs/superpowers/plans/2026-08-28-accounts-auth.md`. See the 2026-08-28 session section.
 - **Test baseline is now 556 passed / 1 failed** (was 519/1). The 1 is still the PRE-EXISTING `App.test.tsx` "open" button test.
 - **Previous feature (2026-07-30): backlog item 42 — Interface / Connection CSV export — COMPLETE, final opus review READY TO MERGE, pushed.** See its session section below. Before it, same day: the Requirements toolbar overhaul (`7af8a8b`).
@@ -13,6 +14,31 @@
 - **Test baseline: 515 passed / 1 failed.** The 1 = PRE-EXISTING `App.test.tsx` "open" button test (fails on base, unrelated, still needs updating — safe to ignore in every gate).
 - **Live-verify technique (updated 2026-07-30):** the dev app runs via `npm run dev` (electron-vite, renderer on `localhost:5173`). To drive/screenshot the **live HMR renderer** from a one-shot Playwright `_electron` script, launch a standalone Electron pointing at the repo **with `env: { ELECTRON_RENDERER_URL: 'http://localhost:5173/' }`** — otherwise the fresh instance loads the STALE built `out/renderer` bundle and you screenshot old UI (this bit me once this session). Import playwright as `import pkg from '…/node_modules/playwright-core/index.js'; const { _electron } = pkg` (CJS default import; a bare `'playwright-core'` specifier won't resolve from a scratchpad script). Select a module first (data lives per-module), then drive DOM/`window.api`. Prior technique (settings.json `lastProjectPath`, native-dialog stub via `app.evaluate`) still applies for the built app / file dialogs.
 - **Scratch pollution in SmokeTest (harmless):** THM-0001 = Approved/High + verificationMethod + history rows; Thermal has a soft-deleted THM-0002; plus older baseline/history seeds from prior sessions.
+
+## Session 2026-10-09 — Requirement quality linter (backlog item 37, CODE COMPLETE, gate green, NOT live-verified)
+
+Spec `docs/superpowers/specs/2026-07-28-requirement-quality-linter-design.md` (written 2026-07-28, unbuilt until now), plan `docs/superpowers/plans/2026-10-09-requirement-quality-linter.md`. Base `2785eb6`. 2 waves: the pure module inline, then the two UI surfaces as parallel subagents on disjoint files. Commits `8f27a70`(module)·`469efc7`(drawer)·`9c0a507`(table dot).
+
+**What shipped.** 7 deterministic heuristics flagging weak requirement statements. **No DB, no IPC, no store slice, no new dependency** — lint is derived live from the already-loaded `Requirement` and recomputed on render, mirroring the `attention.ts`/`filter.ts` pure-helper pattern.
+- **`src/renderer/src/components/RequirementsList/lint.ts`** — `LINT_RULES` (data), `lintRequirement(r): LintFinding[]`, `lintCount(r): { warnings, infos }`. Warnings: `no-shall`, `weak-word`, `no-ac`. Infos: `compound`, `no-verification-method`, `vague-quantifier`, `too-short`. Word rules are whole-word case-insensitive, so `"shoulder"` does not trip `should`.
+- **Drawer** — a collapsible `QualitySection` after `HistorySection`, copying its idiom exactly. One row per finding, `⚠` amber / `ⓘ` muted. Empty state "No quality issues."
+- **Table** — an amber dot in the `reqId` cell when `warnings > 0`. Infos never dot.
+
+**Four decisions that departed from the spec, all deliberate — do not "fix" them back:**
+1. **`no-verification-method` is a live rule.** The spec gated it on item 39 being unbuilt and told implementers to keep it inert; item 39 shipped 2026-07-28, `Requirement.verificationMethod` exists, so the guard is a plain null check. The spec was simply stale here.
+2. **The rule shape is one function, not two fields.** Spec had `test: (r) => RegExpMatchArray | boolean | null` plus `message: (m) => string`, plumbing a match object between them. `check: (r) => string | null` returns the message or null — same behaviour, half the type surface.
+3. **`compound` fires on keyword-count >= 2 ONLY.** The spec's prose offered a second trigger (" and " after a keyword) but its own mandated test requires `"The system shall log X and Y"` to stay quiet — and that sentence has " and " after a keyword. The two halves of the spec contradict; counting keywords is the reading that satisfies both mandated cases.
+4. **The dot rides inside the `reqId` cell, not a dedicated grid column** (user's choice at the gate). `gridTemplateColumns` is derived from `visibleColumns` and consumed in 3 places, and a new column would also force `COLUMNS_STORAGE_KEY` to v4 because the `DEFAULT_KEYS` guard rejects a saved layout whose key set changed. **Accepted cost: hiding the ID column hides the dot.** A `ponytail:` comment records it at the call site.
+
+**Two fixes applied on top of the subagents' output:**
+- The table-dot agent used `as any` on two test fixtures. Root cause was not the tests: `baseReq` was an untyped literal, so TypeScript narrowed `acceptanceCriteria`/`verificationMethod` to the literal type `null` and any override with a real value was an error. Annotating `const baseReq: Requirement` removed both casts and now typechecks every other field in the fixture too.
+- The dot carried `aria-label` on a bare `<span>`, which has no nameable role — the label worked for `getByLabelText` and for nothing else. Added `role="img"`.
+
+**Gate:** both typechecks clean, `electron-vite build` clean (3 targets), full suite **582 passed / 1 failed** — exactly +26 over the 556 baseline (21 lint + 2 drawer + 3 dot), and the 1 is still the pre-existing `App.test.tsx` "open" button test.
+
+**❌ NOT LIVE-VERIFIED, and the reason matters.** Every prior feature here closed with a Playwright `_electron` drive of the built app. **That path is now blocked by the auth feature shipped 2026-08-28:** `AuthGate` wraps the shell, `session.bin` is absent from `userData` on this machine (verified, not assumed — this machine has never signed in), and sign-up cannot complete because the Supabase custom-SMTP dashboard work is still outstanding. So a launched app shows the sign-in form and the requirements table is unreachable. Stubbing a session to get past the wall would be verifying a path the user never takes, so it was not done. **Live-verify of item 37 is therefore blocked on the same dashboard setup that blocks the auth feature's own verification** — do that first, then drive both in one pass.
+
+**Carried follow-ups (none block):** no whole-branch opus review on this feature yet; nothing pushed to `origin`.
 
 ## Session 2026-08-28 — User accounts via Supabase Auth (CODE COMPLETE, gate green, NOT pushed)
 
