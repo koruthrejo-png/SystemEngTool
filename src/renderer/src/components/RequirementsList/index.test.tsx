@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RequirementsList from './index'
+import type { Requirement } from '../../../../types'
 
 const storeState: any = {}
 
@@ -422,11 +423,12 @@ describe('RequirementsList', () => {
   })
 
   // Context menu tests (item 43)
-  const baseReq = {
+  const baseReq: Requirement = {
     id: 1, moduleId: 1, reqId: 'R-1', text: 'Test requirement',
     acceptanceCriteria: null, source: null, rationale: null, verificationStatus: 'Unverified',
     status: 'Draft', priority: 'Low', reqType: 'Functional', entryType: 'Requirement', headingId: null,
-    position: 0, deletedAt: null, createdAt: '', updatedAt: '', verificationMethod: null
+    position: 0, deletedAt: null, createdAt: '', updatedAt: '', verificationMethod: null,
+    createdBy: null, updatedBy: null
   }
 
   function renderList(reqs: typeof baseReq[] = [], overrides: any = {}): void {
@@ -536,5 +538,32 @@ describe('RequirementsList', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /Move to section/ }))
     fireEvent.click(screen.getByRole('menuitem', { name: '(none)' }))
     expect(updateRequirement).toHaveBeenCalledWith(1, { headingId: null })
+  })
+
+  // Lint dot (quality warnings only — infos stay silent on purpose)
+  it('shows a warning dot on a requirement with lint warnings', () => {
+    renderList([{ ...baseReq, id: 1, reqId: 'R-1', text: 'It should go', acceptanceCriteria: null }])
+    // no-shall + weak-word + no-ac
+    expect(screen.getByLabelText('3 quality warnings')).toBeInTheDocument()
+  })
+
+  it('shows no dot on a clean requirement', () => {
+    renderList([{
+      ...baseReq, id: 1, reqId: 'R-1',
+      text: 'The system shall record the brake pressure.',
+      acceptanceCriteria: 'Pressure is logged every 100ms.',
+      verificationMethod: 'Test'
+    }])
+    expect(screen.queryByLabelText(/quality warning/)).not.toBeInTheDocument()
+  })
+
+  it('shows no dot when only infos fire', () => {
+    renderList([{
+      ...baseReq, id: 1, reqId: 'R-1',
+      text: 'The system shall record the brake pressure.',
+      acceptanceCriteria: 'Pressure is logged every 100ms.',
+      verificationMethod: null
+    }])
+    expect(screen.queryByLabelText(/quality warning/)).not.toBeInTheDocument()
   })
 })

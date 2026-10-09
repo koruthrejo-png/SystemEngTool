@@ -6,6 +6,7 @@ import { Button, Chip, SectionLabel, Select } from '../ui'
 import { REQUIREMENT_STATUSES, REQUIREMENT_PRIORITIES } from '../../../../types'
 import { buildOutline, visibleRows, canReparent, moveTargets, type OutlineRow } from './outline'
 import { applyFilters } from './filter'
+import { lintCount } from './lint'
 import FilterPanel from './FilterPanel'
 import HeaderMenu from '../HeaderMenu'
 
@@ -245,8 +246,19 @@ export default function RequirementsList(): JSX.Element {
   // One data cell, rendered by column key so header and body share the live column order.
   function cell(key: DataColKey, req: (typeof requirements)[number]): JSX.Element {
     switch (key) {
-      case 'reqId':
-        return <span className="text-xs font-mono text-ink-faint pt-0.5 truncate">{req.reqId}</span>
+      case 'reqId': {
+        const { warnings } = lintCount(req)
+        const title = `${warnings} quality warning${warnings === 1 ? '' : 's'}`
+        return (
+          <span className="flex items-center gap-1 pt-0.5 min-w-0">
+            {warnings > 0 && (
+              /* ponytail: dot rides in the ID cell, so hiding the ID column hides it too — accepted over a new grid column, which would mean touching gridTemplateColumns in 3 places plus a COLUMNS_STORAGE_KEY bump. */
+              <span role="img" className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title={title} aria-label={title} />
+            )}
+            <span className="text-xs font-mono text-ink-faint truncate">{req.reqId}</span>
+          </span>
+        )
+      }
       case 'entryType':
         return (
           <EditableCell key={req.entryType} value={req.entryType} multiline={false} allowEmpty={false}
